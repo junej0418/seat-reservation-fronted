@@ -316,13 +316,13 @@
 <!-- 이 스크립트 src는 백엔드 서버의 실제 주소에 맞춰져야 합니다. -->
 <!-- 현재 로컬 개발 환경을 가정하여 http://localhost:3000을 사용합니다. -->
 <!-- 만약 백엔드를 'https://your-backend-url.com'에 배포했다면, 아래 src도 그 주소로 변경해야 합니다. -->
-<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+<script src="https://seat-reservation-backend-ygl9.onrender.com"></script>
 
 <script>
 (() => {
   // *** 중요: 백엔드 서버 URL 설정 ***
   // 프론트엔드가 실행되는 환경에 따라 동적으로 백엔드 URL을 결정하는 함수
-  const getBackendUrl = (backendPort = 3000) => {
+  const BACKEND_URL = "https://seat-reservation-backend-ygl9.onrender.com"
     const protocol = window.location.protocol; // 현재 페이지의 프로토콜 (http:, https:, file:)
     const host = window.location.hostname;     // 현재 페이지의 호스트 (localhost, 127.0.0.1, 또는 실제 IP)
 
