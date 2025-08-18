@@ -337,7 +337,7 @@
 (() => {
   const BACKEND_URL = "https://seat-reservation-backend-ygl9.onrender.com";
   const socket = io(BACKEND_URL);
-  const ADMIN_PASSWORD = "admin1234";
+  const ADMIN_PASSWORD = "admingghsdorm15th"; // 관리자 비밀번호
 
   let allReservations = {};
   let adminSettings = {};
@@ -349,7 +349,7 @@
   const loginForm = document.getElementById('loginForm');
   const roomNoInput = document.getElementById('roomNo');
   const userNameInput = document.getElementById('userName');
-  const dormitorySelect = document.getElementById('dormitory');
+  const dormitorySelect = document.getElementById('dormitory'); // <-- 이 변수는 <select> 요소를 참조합니다.
   const roomError = document.getElementById('roomError');
   const nameError = document.getElementById('nameError');
   const dormError = document.getElementById('dormError');
@@ -501,7 +501,6 @@
       if (!adminPage.classList.contains("hidden")) {
         await loadAdminPage(); // 관리자 페이지 업데이트
       }
-      // 예약 가능 시간 업데이트 로직이 isReservationTimeAllowed에만 있는 경우 renderSeatMap 재호출하여 좌석도 업데이트
       updateReservationAvailability(); 
       if (!seatMapPage.classList.contains("hidden") && currentUser && currentFloor) {
         renderSeatMap(currentUser.dormitory, currentFloor);
@@ -559,9 +558,9 @@
 
     const roomNo = roomNoInput.value.trim();
     const name = userNameInput.value.trim();
-    const dorm = dormitorySelect.value; // 선택된 기숙사 값
+    const selectedDorm = dormitorySelect.value; // **수정: dormitorySelect.value를 변수에 저장**
 
-    console.log('Input values:', { roomNo, name, dorm }); // 입력 값 확인
+    console.log('Input values:', { roomNo, name, selectedDorm }); // 입력 값 확인
 
     let valid = true; // 입력 유효성 검사 플래그
     if (!roomNoPattern.test(roomNo)) {
@@ -572,7 +571,7 @@
       nameError.textContent = '이름은 한글 2~4자여야 합니다.';
       valid = false;
     }
-    if (!dorm) { // select 태그는 value가 ""이면 선택 안된 상태
+    if (!selectedDorm) { // **수정: selectedDorm 사용**
       dormError.textContent = '기숙사를 선택하세요.';
       valid = false;
     }
@@ -588,22 +587,26 @@
     console.log('User has existing reservation?', hasReservation);
 
     if (hasReservation) {
+      // 기존 예약이 있다면 해당 예약 정보를 가져와서 바로 좌석 선택 페이지로 이동
       const existing = Object.values(allReservations).find(r => r.roomNo === roomNo && r.name === name);
-      currentUser = {roomNo, name, dormitory: dorm}; 
+      currentUser = {roomNo, name, dormitory: selectedDorm}; // **수정: selectedDorm 사용**
       currentFloor = existing.floor;
       selectedSeat = existing.seat;
-      setFloorOptions(dormitory); 
+      setFloorOptions(selectedDorm); // **수정: selectedDorm 사용**
       floorSelect.value = currentFloor;
-      welcomeText.textContent = `${name} (${dormitory} 기숙사)`; // "님" 중복 해결
-      selectedDormTitle.textContent = dormitory;
+      welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`; // **수정: selectedDorm 사용**
+      selectedDormTitle.textContent = selectedDorm; // **수정: selectedDorm 사용**
       selectedFloorTitle.textContent = currentFloor;
-      renderSeatMap(dormitory, currentFloor);
+      renderSeatMap(selectedDorm, currentFloor); // **수정: selectedDorm 사용**
       updateReservationAvailability();
+      console.log('Existing user: Redirecting to seat map page.');
       showSection(seatMapPage);
     } else {
-      currentUser = {roomNo, name, dormitory: dorm};
-      setFloorOptions(dormitory);
-      welcomeText.textContent = `${name} (${dormitory} 기숙사)`; // "님" 중복 해결
+      // 새로운 예약인 경우, 층 선택 페이지로 이동
+      currentUser = {roomNo, name, dormitory: selectedDorm}; // **수정: selectedDorm 사용**
+      setFloorOptions(selectedDorm); // **수정: selectedDorm 사용**
+      welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`; // **수정: selectedDorm 사용**
+      console.log('New user: Redirecting to floor select page.');
       showSection(floorSelectPage);
     }
   });
@@ -958,11 +961,12 @@
   // `DOMContentLoaded` 이벤트를 사용하여 DOM이 완전히 로드된 후에 초기화 함수 호출
   document.addEventListener('DOMContentLoaded', async () => {
       console.log('DOM Content Loaded. Starting initial fetches.');
-      // HTML 요소 참조가 이 시점에서는 확실히 null이 아님을 보장
-      if (!loginForm) { console.error('loginForm element not found!'); return; }
-      if (!roomNoInput) { console.error('roomNoInput element not found!'); return; }
-      if (!userNameInput) { console.error('userNameInput element not found!'); return; }
-      if (!dormitorySelect) { console.error('dormitorySelect element not found!'); return; }
+      
+      // 혹시 모를 DOM 요소 참조 오류 방지 (추가 디버깅 포인트)
+      if (!loginForm) { console.error('Error: loginForm element not found!'); return; }
+      if (!roomNoInput) { console.error('Error: roomNoInput element not found!'); return; }
+      if (!userNameInput) { console.error('Error: userNameInput element not found!'); return; }
+      if (!dormitorySelect) { console.error('Error: dormitorySelect element not found!'); return; }
       
       await fetchAllReservations();
       await fetchAdminSettings();
