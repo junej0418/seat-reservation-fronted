@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <title>랜선석 예약 시스템</title>
 <style>
-  /* 반응형 및 모바일 최적화 */
+  /* 기본 스타일 */
   body {
     font-family: 'Malgun Gothic', Arial, sans-serif;
-    margin: 0; padding: 10px 0; /* 상하 여백 추가 */
+    margin: 0; padding: 10px 0;
     background: #fafafc;
     color: #2c3e50;
   }
@@ -18,22 +18,23 @@
     color: #334155;
   }
   .container {
-    max-width: 960px; /* 최대 너비 증가 */
+    max-width: 960px;
     margin: 10px auto 40px;
     background: white;
-    padding: 15px 20px; /* 내부 여백 조정 */
+    padding: 15px 20px;
     border-radius: 12px;
     box-shadow: 0 0 20px rgba(0,0,0,0.06);
   }
   .hidden { display: none; }
 
+  /* 폼 요소 */
   form {
     max-width: 400px;
     margin: 0 auto;
   }
   label {
     font-weight: 700;
-    margin-top: 12px; /* 여백 조정 */
+    margin-top: 12px;
     display: block;
     color: #475569;
   }
@@ -45,7 +46,7 @@
     border: 2px solid #cbd5e1;
     border-radius: 8px;
     box-sizing: border-box;
-    transition: border-color 0.3s; /* 트랜지션 단축 */
+    transition: border-color 0.3s;
   }
   input[type=text]:focus, input[type=password]:focus, input[type=datetime-local]:focus, select:focus {
     border-color: #fbbf24;
@@ -53,10 +54,12 @@
   }
   .error {
     color: #dc2626;
-    font-size: 0.9rem; /* rem 단위 사용 */
+    font-size: 0.9rem;
     height: 20px;
     margin-top: 4px;
   }
+
+  /* 버튼 스타일 */
   button {
     background-color: #fbbf24;
     border: none;
@@ -66,11 +69,11 @@
     font-weight: 700;
     color: #92400e;
     cursor: pointer;
-    margin-top: 20px; /* 여백 조정 */
+    margin-top: 20px;
     box-shadow: 1px 3px 6px rgba(251,191,36,0.5);
-    transition: background-color 0.3s; /* 트랜지션 단축 */
+    transition: background-color 0.3s;
     display: inline-block;
-    min-width: 120px; /* 최소 너비 */
+    min-width: 120px;
   }
   button:hover:not(:disabled) {
     background-color: #f59e0b;
@@ -99,13 +102,18 @@
   }
 
   /* 좌석 배치도 */
+  #seatMapWrapper { /* 좌석 배치도 스크롤링을 위한 래퍼 */
+    overflow-x: auto; /* 내용이 넘칠 경우 가로 스크롤 */
+    -webkit-overflow-scrolling: touch; /* 모바일에서 부드러운 스크롤 */
+    padding-bottom: 10px; /* 스크롤바 때문에 내용이 가려지지 않도록 */
+  }
+
   #seatMap {
     margin: 20px auto 40px;
     display: grid;
     gap: 8px;
     justify-content: center;
-    width: 100%; /* 너비를 100%로 설정 */
-    max-width: 100%;
+    min-width: fit-content; /* 내용에 맞춰 최소 너비 설정, 스크롤 가능하게 함 */
   }
   .seat-btn {
     background: #fef3c7;
@@ -119,7 +127,7 @@
     justify-content: center;
     align-items: center;
     font-size: 1.1rem;
-    min-width: 36px; /* 최소 너비 줄임 */
+    min-width: 44px; /* PC/태블릿 기본 좌석 너비 */
     aspect-ratio: 1/1; /* 1:1 비율 유지 */
     transition: background-color 0.3s, border-color 0.3s;
   }
@@ -162,7 +170,7 @@
     background: #ef4444;
     color: white;
     border: none;
-    border-radius: 6px; /* 둥근 정도 조정 */
+    border-radius: 6px;
     padding: 6px 12px;
     font-weight: 600;
     cursor: pointer;
@@ -174,7 +182,7 @@
 
   /* 예약 안내 메시지 */
   #reservationAvailabilityMessage {
-    margin-top: 10px; /* 여백 조정 */
+    margin-top: 10px;
     font-weight: 700;
     padding: 0.5em;
     border-radius: 5px;
@@ -201,6 +209,7 @@
       padding: 15px;
     }
     .seat-btn {
+      min-width: 38px; /* 태블릿 등 중간 사이즈 */
       font-size: 1rem;
     }
   }
@@ -219,12 +228,9 @@
     
     #seatMap {
       gap: 5px; /* 간격 조정 */
-      /* 복잡한 그리드 대신 auto-fit으로 유동적으로 */
-      grid-template-columns: repeat(auto-fit, minmax(28px, 1fr)); 
-      max-width: 100%;
     }
     .seat-btn {
-      min-width: 28px;
+      min-width: 28px; /* 휴대폰 등 작은 화면에서의 좌석 최소 너비 */
       font-size: 0.9rem;
       padding: 0; /* 패딩 제거로 크기 조절 */
     }
@@ -276,7 +282,9 @@
 <!-- 좌석 선택 페이지 -->
 <div class="container hidden" id="seatMapPage">
   <h2>좌석 배치도 - <span id="selectedDorm"></span> <span id="selectedFloor"></span>층</h2>
-  <div id="seatMap"></div>
+  <div id="seatMapWrapper"> <!-- 스크롤링을 위한 래퍼 추가 -->
+    <div id="seatMap"></div>
+  </div>
   <div id="reservationAvailabilityMessage"></div>
   <button id="confirmBtn" type="button" disabled>예약 확정</button>
   <button id="cancelSeatBtn" type="button">취소 및 뒤로가기</button>
@@ -309,7 +317,7 @@
     <div id="timeSettingMessage"></div>
   </form>
 
-  <hr style="margin: 2em 0;"> <!-- 구분선 추가 -->
+  <hr style="margin: 2em 0;">
 
   <h2>예약 현황</h2>
   <table>
@@ -439,7 +447,7 @@
   async function fetchAllReservations() {
     try {
       const res = await fetch(`${BACKEND_URL}/api/reservations`);
-      if (!res.ok) throw new Error('예약 조회 실패');
+      if (!res.ok) throw new Error('예약 데이터 불러오기 실패');
       const data = await res.json();
       allReservations = {};
       data.forEach(r => allReservations[r._id] = r);
@@ -498,11 +506,11 @@
       return { allowed: false, message: '관리자가 예약 가능 시간을 설정하지 않았습니다.' };
     }
     const now = new Date();
-    const start = new Date(adminSettings.reservationStartTime);
-    const end = new Date(adminSettings.reservationEndTime);
-    return now >= start && now <= end
-      ? { allowed: true, message: `예약 가능 시간입니다. (${formatDate(start)} ~ ${formatDate(end)})` }
-      : { allowed: false, message: `현재 예약 가능 시간이 아닙니다. (${formatDate(start)} ~ ${formatDate(end)})` };
+    const startTime = new Date(adminSettings.reservationStartTime);
+    const endTime = new Date(adminSettings.reservationEndTime);
+    return now >= startTime && now <= endTime
+      ? { allowed: true, message: `예약 가능 시간입니다. (${formatDate(startTime)} ~ ${formatDate(endTime)})` }
+      : { allowed: false, message: `현재 예약 가능 시간이 아닙니다. (${formatDate(startTime)} ~ ${formatDate(endTime)})` };
   }
 
   // 날짜 포맷팅 유틸리티
@@ -516,12 +524,14 @@
     [loginPage, floorSelectPage, seatMapPage, adminLoginPage, adminPage].forEach(el => el.classList.add('hidden'));
     section.classList.remove('hidden');
     
-    // 예약 가능 시간 실시간 체크 인터벌 관리
+    // 예약 가능 시간 실시간 체크 인터벌 관리 (새로고침 없이 바로 반영되도록)
     if (section === seatMapPage) {
-      if (availabilityCheckInterval) clearInterval(availabilityCheckInterval);
+      // 좌석 선택 페이지로 이동할 때만 인터벌 시작
+      if (availabilityCheckInterval) clearInterval(availabilityCheckInterval); // 기존 인터벌 클리어
       updateReservationAvailability(); // 즉시 한번 호출하여 초기 상태 반영
       availabilityCheckInterval = setInterval(updateReservationAvailability, 1000); // 1초마다 체크
     } else {
+      // 다른 페이지로 이동 시 인터벌 중지
       if (availabilityCheckInterval) {
         clearInterval(availabilityCheckInterval);
         availabilityCheckInterval = null;
@@ -536,7 +546,7 @@
 
     const roomNo = roomNoInput.value.trim();
     const name = userNameInput.value.trim();
-    const dormitory = dormitorySelect.value;
+    const dorm = dormitorySelect.value;
 
     let valid = true;
     if (!roomNoPattern.test(roomNo)) {
@@ -563,9 +573,9 @@
       setFloorOptions(dormitory);
       floorSelect.value = currentFloor;
       welcomeText.textContent = `${name}님, ${dormitory} 기숙사`;
-      selectedDormTitle.textContent = dormitory;
+      selectedDormTitle.textContent = dorm;
       selectedFloorTitle.textContent = currentFloor;
-      renderSeatMap(dormitory, currentFloor);
+      renderSeatMap(dorm, currentFloor);
       updateReservationAvailability();
       showSection(seatMapPage);
     } else {
@@ -651,6 +661,7 @@
       seatMapContainer.textContent = '해당 층 좌석 배치도가 없습니다.';
       return;
     }
+    // 그리드 컬럼 설정 (반응형: 1fr로 유연하게, minmax로 최소 크기 보장)
     const maxCols = Math.max(...layout.map(row => row.length));
     seatMapContainer.style.gridTemplateColumns = `repeat(${maxCols}, 1fr)`;
 
@@ -727,7 +738,7 @@
     
     // 예약 가능 상태가 변경되었고 현재 좌석 배치도 화면이라면, 좌석 버튼 상태도 즉시 업데이트
     if (hasAllowedStateChanged && !seatMapPage.classList.contains("hidden") && currentUser && currentFloor) {
-        renderSeatMap(currentUser.dormitory, currentFloor);
+        renderSeatMap(currentUser.dormitory, currentFloor); // 좌석의 활성화/비활성화 상태를 갱신하기 위해 다시 렌더링
     }
   }
 
@@ -842,7 +853,6 @@
           return;
       }
       try {
-          // 백엔드의 모든 예약 삭제 API 호출 (이 API는 app.js에 추가되어야 합니다.)
           const response = await fetch(`${BACKEND_URL}/api/reservations/all`, {
               method: 'DELETE'
           });
@@ -888,12 +898,6 @@
         timeSettingMessage.textContent = "예약 가능 시간이 설정되었습니다.";
         timeSettingMessage.style.color = "green";
         await loadAdminPage(); // 설정 변경 후 관리자 페이지 즉시 업데이트
-        // 설정이 변경되었으므로, 좌석 배치도 화면의 예약 가능 상태도 즉시 갱신
-        updateReservationAvailability(); 
-        if (!seatMapPage.classList.contains("hidden") && currentUser && currentFloor) {
-            renderSeatMap(currentUser.dormitory, currentFloor);
-        }
-
       } else {
         timeSettingMessage.textContent = "설정 저장 실패";
         timeSettingMessage.style.color = "red";
