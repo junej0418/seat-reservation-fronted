@@ -250,11 +250,11 @@
     <input type="text" id="roomNo" name="roomNo" placeholder="101호" required />
     <div id="roomError" class="error"></div>
 
-    <label for="userName">이름 (한글 2~4자)</label>
+    <label for="userName">이름 (한글 2~4자):</label>
     <input type="text" id="userName" name="userName" placeholder="홍길동" required />
     <div id="nameError" class="error"></div>
 
-    <label for="dormitory">기숙사 선택</label>
+    <label for="dormitory">기숙사 선택:</label>
     <select id="dormitory" name="dormitory" required>
       <option value="" disabled selected>선택하세요</option>
       <option value="꿈동">꿈동</option>
@@ -294,7 +294,7 @@
 <div class="container hidden" id="adminLoginPage">
   <h1>관리자 로그인</h1>
   <form id="adminLoginForm" autocomplete="off" novalidate>
-    <label for="adminPassword">비밀번호</label>
+    <label for="adminPassword">비밀번호:</label>
     <input type="password" id="adminPassword" name="adminPassword" required />
     <div id="adminError" class="error"></div>
     <button type="submit">로그인</button>
@@ -339,8 +339,8 @@
 
   let allReservations = {};
   let adminSettings = {};
-  let availabilityCheckInterval = null; // 예약 가능 시간 즉시 반영을 위한 인터벌 변수
-  let prevAllowedState = null; // 예약 가능 상태 변경 감지용
+  let availabilityCheckInterval = null;
+  let prevAllowedState = null;
 
   const loginPage = document.getElementById('loginPage');
   const loginForm = document.getElementById('loginForm');
@@ -374,7 +374,7 @@
   const adminPage = document.getElementById('adminPage');
   const adminLogoutBtn = document.getElementById('adminLogoutBtn');
   const reservationListBody = document.getElementById('reservationListBody');
-  const clearAllReservationsBtn = document.getElementById('clearAllReservationsBtn'); // 모든 예약 취소 버튼
+  const clearAllReservationsBtn = document.getElementById('clearAllReservationsBtn');
 
   const reservationTimeForm = document.getElementById('reservationTimeForm');
   const resStartTimeInput = document.getElementById('resStartTime');
@@ -429,6 +429,7 @@
         [null,null,1,2,null,null,null,null,null,null,null,null,null,null,15,16,null,null],
         [null,17,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]
       ],
+      // 이곳의 좌석 배치도 데이터를 수정했습니다.
       "4-1": [
         [null,3,null,4,5,null,6,null,null],
         [null,2,null,null,null,null,7,null,null],
@@ -447,7 +448,7 @@
   async function fetchAllReservations() {
     try {
       const res = await fetch(`${BACKEND_URL}/api/reservations`);
-      if (!res.ok) throw new Error('예약 데이터 불러오기 실패');
+      if (!res.ok) throw new Error('예약 조회 실패');
       const data = await res.json();
       allReservations = {};
       data.forEach(r => allReservations[r._id] = r);
@@ -491,8 +492,8 @@
       if (!adminPage.classList.contains("hidden")) {
         await loadAdminPage(); // 관리자 페이지 업데이트
       }
-      // 예약 가능 시간 업데이트 로직이 isReservationTimeAllowed에만 있는 경우 renderSeatMap 재호출하여 좌석도 업데이트
-      updateReservationAvailability(); 
+      updateReservationAvailability(); // 예약 가능 메시지와 버튼 상태 즉시 업데이트
+      // 좌석 배치도 화면에서도 즉시 업데이트
       if (!seatMapPage.classList.contains("hidden") && currentUser && currentFloor) {
         renderSeatMap(currentUser.dormitory, currentFloor);
       }
@@ -526,12 +527,10 @@
     
     // 예약 가능 시간 실시간 체크 인터벌 관리 (새로고침 없이 바로 반영되도록)
     if (section === seatMapPage) {
-      // 좌석 선택 페이지로 이동할 때만 인터벌 시작
       if (availabilityCheckInterval) clearInterval(availabilityCheckInterval); // 기존 인터벌 클리어
       updateReservationAvailability(); // 즉시 한번 호출하여 초기 상태 반영
-      availabilityCheckInterval = setInterval(updateReservationAvailability, 1000); // 1초마다 체크
+      availabilityCheckInterval = setInterval(updateReservationAvailability, 1000); 
     } else {
-      // 다른 페이지로 이동 시 인터벌 중지
       if (availabilityCheckInterval) {
         clearInterval(availabilityCheckInterval);
         availabilityCheckInterval = null;
@@ -541,14 +540,16 @@
 
   // --- 이벤트 리스너 ---
   loginForm.addEventListener('submit', async e => {
-    e.preventDefault();
-    clearErrors();
+    e.preventDefault(); // 중요: 폼 기본 제출 동작 방지
+
+    // 모든 에러 메시지 초기화
+    clearErrors(); 
 
     const roomNo = roomNoInput.value.trim();
     const name = userNameInput.value.trim();
-    const dorm = dormitorySelect.value;
+    const dorm = dormitorySelect.value; // 여기서 dorm 변수 사용
 
-    let valid = true;
+    let valid = true; // 입력 유효성 검사 플래그
     if (!roomNoPattern.test(roomNo)) {
       roomError.textContent = '룸 번호는 000호 형식으로 입력하세요.';
       valid = false;
@@ -557,31 +558,32 @@
       nameError.textContent = '이름은 한글 2~4자여야 합니다.';
       valid = false;
     }
-    if (!dormitory) {
+    if (!dorm) { // select 태그는 value가 ""이면 선택 안된 상태
       dormError.textContent = '기숙사를 선택하세요.';
       valid = false;
     }
-    if (!valid) return;
+
+    if (!valid) return; // 유효성 검사 실패 시 여기서 함수 종료
 
     const hasReservation = Object.values(allReservations).some(r => r.roomNo === roomNo && r.name === name);
 
     if (hasReservation) {
       const existing = Object.values(allReservations).find(r => r.roomNo === roomNo && r.name === name);
-      currentUser = {roomNo, name, dormitory};
+      currentUser = {roomNo, name, dormitory: dorm}; // dormitory: dorm (변수 이름 일치)
       currentFloor = existing.floor;
       selectedSeat = existing.seat;
-      setFloorOptions(dormitory);
+      setFloorOptions(dorm); // dorm 사용
       floorSelect.value = currentFloor;
-      welcomeText.textContent = `${name}님, ${dormitory} 기숙사`;
-      selectedDormTitle.textContent = dorm;
+      welcomeText.textContent = `${name}님, ${dorm} 기숙사`; // dorm 사용
+      selectedDormTitle.textContent = dorm; // dorm 사용
       selectedFloorTitle.textContent = currentFloor;
-      renderSeatMap(dorm, currentFloor);
+      renderSeatMap(dorm, currentFloor); // dorm 사용
       updateReservationAvailability();
       showSection(seatMapPage);
     } else {
-      currentUser = {roomNo, name, dormitory};
-      setFloorOptions(dormitory);
-      welcomeText.textContent = `${name}님, ${dormitory} 기숙사`;
+      currentUser = {roomNo, name, dormitory: dorm}; // dormitory: dorm
+      setFloorOptions(dorm); // dorm 사용
+      welcomeText.textContent = `${name}님, ${dorm} 기숙사`; // dorm 사용
       showSection(floorSelectPage);
     }
   });
@@ -813,7 +815,7 @@
     });
 
     if (resArr.length === 0) {
-      reservationListBody.innerHTML = '<tr><td colspan="6">예약 내역이 없습니다.</td></tr>';
+      reservationListBody.innerHTML = '<tr><td colspan="6">등록된 예약이 없습니다.</td></tr>';
       return;
     }
     resArr.forEach((resv) => {
