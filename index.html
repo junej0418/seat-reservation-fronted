@@ -448,7 +448,7 @@
   async function fetchAllReservations() {
     try {
       const res = await fetch(`${BACKEND_URL}/api/reservations`);
-      if (!res.ok) throw new Error('예약 데이터 불러오기 실패');
+      if (!res.ok) throw new Error('예약 조회 실패');
       const data = await res.json();
       allReservations = {};
       data.forEach(r => allReservations[r._id] = r);
@@ -492,8 +492,8 @@
       if (!adminPage.classList.contains("hidden")) {
         await loadAdminPage(); // 관리자 페이지 업데이트
       }
-      // 예약 가능 시간 업데이트 로직이 isReservationTimeAllowed에만 있는 경우 renderSeatMap 재호출하여 좌석도 업데이트
-      updateReservationAvailability(); 
+      updateReservationAvailability(); // 예약 가능 메시지와 버튼 상태 즉시 업데이트
+      // 좌석 배치도 화면에서도 즉시 업데이트
       if (!seatMapPage.classList.contains("hidden") && currentUser && currentFloor) {
         renderSeatMap(currentUser.dormitory, currentFloor);
       }
