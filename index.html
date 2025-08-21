@@ -263,6 +263,9 @@
     </select>
     <div id="dormError" class="error"></div>
 
+    <!-- 🍯 허니팟 필드 추가: 봇만 채워넣는 숨겨진 필드 -->
+    <input type="text" name="honeypot_field" style="display: none !important; visibility: hidden !important; opacity: 0 !important; width: 0 !important; height: 0 !important; border: none !important; padding: 0 !important; margin: 0 !important;" tabindex="-1" autocomplete="off" />
+
     <button type="submit">다음</button>
   </form>
   <nav>
@@ -337,7 +340,7 @@
 (() => {
   const BACKEND_URL = "https://seat-reservation-backend-ygl9.onrender.com";
   const socket = io(BACKEND_URL);
-  // ADMIN_PASSWORD 상수를 프론트엔드에서 제거했습니다. 이제 백엔드에서 검증합니다.
+  // ADMIN_PASSWORD 상수는 프론트엔드에서 제거했습니다. 이제 백엔드에서 검증합니다.
 
   let allReservations = {};
   let adminSettings = {};
@@ -452,7 +455,7 @@
     console.log('Fetching all reservations...');
     try {
       const res = await fetch(`${BACKEND_URL}/api/reservations`);
-      if (!res.ok) throw new Error('예약 데이터 불러오기 실패');
+      if (!res.ok) throw new Error('예약 데이터 불러오기 실패: ' + res.statusText);
       const data = await res.json();
       allReservations = {};
       data.forEach(r => allReservations[r._id] = r);
@@ -468,7 +471,7 @@
     console.log('Fetching admin settings...');
     try {
       const res = await fetch(`${BACKEND_URL}/api/admin-settings`);
-      if (!res.ok) throw new Error('관리자 설정 불러오기 실패');
+      if (!res.ok) throw new Error('관리자 설정 불러오기 실패: ' + res.statusText);
       adminSettings = await res.json();
       console.log('Admin settings fetched successfully:', adminSettings);
     } catch (e) {
@@ -978,8 +981,8 @@
   document.addEventListener('DOMContentLoaded', async () => {
       console.log('DOM Content Loaded. Starting initial fetches.');
       
-      // HTML 요소 참조가 이 시점에서는 확실히 null이 아님을 보장
-      // 오류 디버깅을 위해 이 부분에 명시적으로 추가했습니다.
+      // 혹시 모를 DOM 요소 참조 오류 방지 (추가 디버깅 포인트)
+      // 이 로그가 잘 뜨는지 확인해주세요.
       if (!loginPage) console.error('Error: loginPage element not found!');
       if (!loginForm) console.error('Error: loginForm element not found!');
       if (!roomNoInput) console.error('Error: roomNoInput element not found!');
