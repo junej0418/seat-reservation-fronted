@@ -239,6 +239,69 @@
     th, td { padding: 6px 4px; }
     td button { padding: 3px 6px; font-size: 0.75rem; }
   }
+
+  /* 공지 팝업 스타일 */
+  .announcement-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  .announcement-popup {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    font-size: 1.1rem;
+    line-height: 1.5;
+  }
+  .announcement-popup h3 {
+    margin-top: 0;
+    color: #b45309;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+  }
+  .announcement-popup p {
+    margin-bottom: 20px;
+    color: #333;
+  }
+  .announcement-popup button.close-btn {
+    background: #b45309;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+    margin-top: 0; /* 기존 버튼 마진 초기화 */
+  }
+  .announcement-popup button.close-btn:hover {
+    background: #8e420b;
+  }
+  /* 관리자 페이지의 공지 입력란 스타일 */
+  #announcementMessageInput {
+    width: calc(100% - 20px);
+    height: 80px;
+    padding: 10px;
+    margin-top: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: vertical;
+    font-size: 1rem;
+  }
+  #announcementActiveCheckbox {
+    margin-top: 15px;
+    margin-right: 8px;
+  }
 </style>
 </head>
 <body>
@@ -324,6 +387,20 @@
 
   <hr style="margin: 2em 0;">
 
+  <h2>공지사항 설정</h2>
+  <form id="announcementForm" novalidate>
+    <label for="announcementMessageInput">공지 내용:</label>
+    <textarea id="announcementMessageInput" placeholder="모든 사용자에게 표시될 공지 내용을 입력하세요." rows="4"></textarea>
+    <div>
+      <input type="checkbox" id="announcementActiveCheckbox">
+      <label for="announcementActiveCheckbox" style="display: inline-block; margin-top: 0; font-weight: normal;">공지 활성화</label>
+    </div>
+    <button type="submit">공지 저장</button>
+    <div id="announcementMessageStatus" class="error"></div>
+  </form>
+
+  <hr style="margin: 2em 0;">
+
   <h2>예약 현황</h2>
   <table>
     <thead>
@@ -335,6 +412,15 @@
   <button id="clearAllReservationsBtn" type="button" style="background-color: #dc2626; color: white; float: right; margin-top: 15px;">모든 예약 취소</button>
 </div>
 
+<!-- 공지사항 팝업 오버레이 -->
+<div class="announcement-overlay hidden" id="announcementOverlay">
+  <div class="announcement-popup">
+    <h3>공지사항</h3>
+    <p id="announcementMessage"></p>
+    <button class="close-btn" type="button">닫기</button>
+  </div>
+</div>
+
 <script src="https://seat-reservation-backend-ygl9.onrender.com/socket.io/socket.io.js"></script>
 <script>
 (() => {
@@ -344,10 +430,11 @@
 
   let allReservations = {};
   let adminSettings = {};
+  let currentAnnouncement = {}; // 공지사항 데이터를 저장할 변수
   let availabilityCheckInterval = null;
   let prevAllowedState = null;
 
-  // DOM 요소 참조 (getElementById는 항상 스크립트 로드 시점에 존재해야 함)
+  // DOM 요소 참조 
   const loginPage = document.getElementById('loginPage');
   const loginForm = document.getElementById('loginForm');
   const roomNoInput = document.getElementById('roomNo');
@@ -386,6 +473,16 @@
   const resStartTimeInput = document.getElementById('resStartTime');
   const resEndTimeInput = document.getElementById('resEndTime');
   const timeSettingMessage = document.getElementById('timeSettingMessage');
+
+  // 공지사항 관련 DOM 요소
+  const announcementOverlay = document.getElementById('announcementOverlay');
+  const announcementPopupMessage = document.getElementById('announcementMessage');
+  const announcementCloseBtn = announcementOverlay.querySelector('.close-btn');
+  const announcementForm = document.getElementById('announcementForm');
+  const announcementMessageInput = document.getElementById('announcementMessageInput');
+  const announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
+  const announcementMessageStatus = document.getElementById('announcementMessageStatus');
+
 
   let currentUser = null;
   let currentFloor = null;
@@ -455,7 +552,7 @@
     console.log('Fetching all reservations...');
     try {
       const res = await fetch(`${BACKEND_URL}/api/reservations`);
-      if (!res.ok) throw new Error('예약 데이터 불러오기 실패: ' + res.statusText);
+      if (!res.ok) throw new Error('예약 데이터 불러오기 실패');
       const data = await res.json();
       allReservations = {};
       data.forEach(r => allReservations[r._id] = r);
@@ -471,13 +568,33 @@
     console.log('Fetching admin settings...');
     try {
       const res = await fetch(`${BACKEND_URL}/api/admin-settings`);
-      if (!res.ok) throw new Error('관리자 설정 불러오기 실패: ' + res.statusText);
+      if (!res.ok) throw new Error('관리자 설정 불러오기 실패');
       adminSettings = await res.json();
       console.log('Admin settings fetched successfully:', adminSettings);
     } catch (e) {
       alert('관리자 설정을 가져오는 데 문제가 발생했습니다. 백엔드 서버 상태를 확인하세요.');
       console.error('API 호출 에러: 관리자 설정 로드 실패', e);
       return { reservationStartTime: null, reservationEndTime: null };
+    }
+  }
+
+  // --- 공지사항 API 통신 ---
+  async function fetchAnnouncement() {
+    console.log('Fetching announcement...');
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/announcement`);
+      if (!res.ok) throw new Error('공지사항 불러오기 실패: ' + res.statusText);
+      const data = await res.json();
+      currentAnnouncement = data;
+      console.log('Announcement fetched:', currentAnnouncement);
+      if (currentAnnouncement.active && currentAnnouncement.message) {
+        showAnnouncement(currentAnnouncement.message);
+      } else {
+        hideAnnouncement();
+      }
+    } catch (e) {
+      console.error('API 호출 에러: 공지사항 로드 실패', e);
+      hideAnnouncement(); // 에러 발생 시 팝업 숨김
     }
   }
 
@@ -509,6 +626,25 @@
         renderSeatMap(currentUser.dormitory, currentFloor);
       }
       console.log('🔗 Socket.IO: 관리자 설정 실시간 업데이트 완료');
+    });
+
+    // 새로운 Socket.IO 이벤트: 공지사항 업데이트
+    socket.on('announcementUpdated', async updated => {
+      console.log('🔗 Socket.IO: 공지사항 실시간 업데이트 수신');
+      currentAnnouncement = updated;
+      if (currentAnnouncement.active && currentAnnouncement.message) {
+        showAnnouncement(currentAnnouncement.message);
+      } else {
+        hideAnnouncement();
+      }
+      // 관리자 페이지에 있다면 공지 설정 UI도 업데이트
+      if (!adminPage.classList.contains("hidden")) {
+        announcementMessageInput.value = currentAnnouncement.message;
+        announcementActiveCheckbox.checked = currentAnnouncement.active;
+        announcementMessageStatus.textContent = "공지사항이 업데이트되었습니다.";
+        announcementMessageStatus.style.color = "green";
+      }
+      console.log('🔗 Socket.IO: 공지사항 실시간 업데이트 완료');
     });
   }
 
@@ -562,8 +698,9 @@
     const roomNo = roomNoInput.value.trim();
     const name = userNameInput.value.trim();
     const selectedDorm = dormitorySelect.value; // **수정: dormitorySelect.value를 변수에 저장**
+    const honeypotField = loginForm.querySelector('input[name="honeypot_field"]').value; // 허니팟 필드 값 가져오기
 
-    console.log('Input values:', { roomNo, name, selectedDorm }); // 입력 값 확인
+    console.log('Input values:', { roomNo, name, selectedDorm, honeypotField }); // 입력 값 확인
 
     let valid = true; // 입력 유효성 검사 플래그
     if (!roomNoPattern.test(roomNo)) {
@@ -574,9 +711,15 @@
       nameError.textContent = '이름은 한글 2~4자여야 합니다.';
       valid = false;
     }
-    if (!selectedDorm) { // **수정: selectedDorm 사용**
+    if (!selectedDorm) { 
       dormError.textContent = '기숙사를 선택하세요.';
       valid = false;
+    }
+    // 프론트엔드 유효성 검사에서 허니팟 필드 검증 (옵션)
+    if (honeypotField) { 
+        console.warn('🍯 Honeypot field filled on frontend. Likely a bot.');
+        valid = false; // 봇으로 간주하고 프론트엔드에서 바로 차단
+        alert('비정상적인 요청이 감지되었습니다. (Honeypot)');
     }
 
     if (!valid) {
@@ -591,23 +734,23 @@
 
     if (hasReservation) {
       const existing = Object.values(allReservations).find(r => r.roomNo === roomNo && r.name === name);
-      currentUser = {roomNo, name, dormitory: selectedDorm}; // **수정: selectedDorm 사용**
+      currentUser = {roomNo, name, dormitory: selectedDorm}; 
       currentFloor = existing.floor;
       selectedSeat = existing.seat;
-      setFloorOptions(selectedDorm); // **수정: selectedDorm 사용**
+      setFloorOptions(selectedDorm); 
       floorSelect.value = currentFloor;
-      welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`; // **수정: selectedDorm 사용**
-      selectedDormTitle.textContent = selectedDorm; // **수정: selectedDorm 사용**
+      welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`; 
+      selectedDormTitle.textContent = selectedDorm; 
       selectedFloorTitle.textContent = currentFloor;
-      renderSeatMap(selectedDorm, currentFloor); // **수정: selectedDorm 사용**
+      renderSeatMap(selectedDorm, currentFloor); 
       updateReservationAvailability();
       console.log('Existing user: Redirecting to seat map page.');
       showSection(seatMapPage);
     } else {
       // 새로운 예약인 경우, 층 선택 페이지로 이동
-      currentUser = {roomNo, name, dormitory: selectedDorm}; // **수정: selectedDorm 사용**
-      setFloorOptions(selectedDorm); // **수정: selectedDorm 사용**
-      welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`; // **수정: selectedDorm 사용**
+      currentUser = {roomNo, name, dormitory: selectedDorm}; 
+      setFloorOptions(selectedDorm); 
+      welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`; 
       console.log('New user: Redirecting to floor select page.');
       showSection(floorSelectPage);
     }
@@ -675,6 +818,11 @@
         if (result.success) { // 백엔드가 { success: true }를 반환
             console.log('Admin login successful. Redirecting to admin page.'); // 디버깅
             await loadAdminPage(); // 관리자 페이지 데이터 로드
+            // ⭐ 관리자 로그인 성공 시 공지사항 설정 UI도 업데이트 ⭐
+            if (currentAnnouncement) {
+                announcementMessageInput.value = currentAnnouncement.message;
+                announcementActiveCheckbox.checked = currentAnnouncement.active;
+            }
             showSection(adminPage);
         } else {
             console.log('Admin login failed. Message:', result.message); // 디버깅
@@ -693,7 +841,6 @@
   // --- 좌석 배치도 관련 함수들 ---
   function setFloorOptions(dorm) {
     console.log('setFloorOptions called with dorm:', dorm); // 디버깅
-    // Check if seatLayouts[dorm] is defined before using Object.keys
     if (!seatLayouts[dorm]) {
         console.error('Error: seatLayouts[' + dorm + '] is undefined or null. Check dorm value and seatLayouts definition.');
         floorSelect.innerHTML = '<option value="" disabled selected>해당 기숙사의 층 정보가 없습니다.</option>';
@@ -907,6 +1054,13 @@
       resEndTimeInput.value = new Date(adminSettings.reservationEndTime).toISOString().slice(0, 16);
     else resEndTimeInput.value = "";
     timeSettingMessage.textContent = "";
+    
+    // ⭐ 공지사항 설정 UI 업데이트 ⭐
+    if (currentAnnouncement) {
+        announcementMessageInput.value = currentAnnouncement.message;
+        announcementActiveCheckbox.checked = currentAnnouncement.active;
+        announcementMessageStatus.textContent = ''; // 상태 메시지 초기화
+    }
   }
 
   // 모든 예약 취소 버튼 이벤트
@@ -971,6 +1125,56 @@
     }
   });
 
+  // --- 공지사항 관리 ---
+  announcementForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = announcementMessageInput.value.trim();
+      const active = announcementActiveCheckbox.checked;
+
+      if (!message && active) {
+          announcementMessageStatus.textContent = '활성화하려면 공지 내용을 입력하세요.';
+          announcementMessageStatus.style.color = 'red';
+          return;
+      }
+      if (!message && !active) { // 내용 없으면서 비활성화는 그냥 성공 처리
+          announcementMessageStatus.textContent = '공지 비활성화 및 내용 삭제 완료.';
+          announcementMessageStatus.style.color = 'green';
+      }
+
+      try {
+          const response = await fetch(`${BACKEND_URL}/api/announcement`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message, active })
+          });
+          if (response.ok) {
+              announcementMessageStatus.textContent = active ? '공지사항이 저장되고 활성화되었습니다.' : '공지사항이 저장되고 비활성화되었습니다.';
+              announcementMessageStatus.style.color = 'green';
+              // Socket.IO를 통해 currentAnnouncement 업데이트 및 팝업 표시/숨김은 자동으로 처리
+          } else {
+              announcementMessageStatus.textContent = '공지 저장 실패';
+              announcementMessageStatus.style.color = 'red';
+          }
+      } catch (e) {
+          console.error('공지 저장 중 오류:', e);
+          announcementMessageStatus.textContent = '공지 저장 중 서버 오류 발생';
+          announcementMessageStatus.style.color = 'red';
+      }
+  });
+
+  // 공지 팝업 표시/숨김 함수
+  function showAnnouncement(message) {
+      announcementPopupMessage.textContent = message;
+      announcementOverlay.classList.remove('hidden');
+  }
+
+  function hideAnnouncement() {
+      announcementOverlay.classList.add('hidden');
+  }
+
+  announcementCloseBtn.addEventListener('click', hideAnnouncement);
+
+
   function clearErrors() {
     roomError.textContent = "";
     nameError.textContent = "";
@@ -978,7 +1182,6 @@
   }
 
   // 초기 데이터 로드 및 페이지 표시
-  // `DOMContentLoaded` 이벤트를 사용하여 DOM이 완전히 로드된 후에 초기화 함수 호출
   document.addEventListener('DOMContentLoaded', async () => {
       console.log('DOM Content Loaded. Starting initial fetches.');
       
@@ -1018,6 +1221,14 @@
       if (!reservationListBody) console.error('Error: reservationListBody element not found!');
       if (!clearAllReservationsBtn) console.error('Error: clearAllReservationsBtn element not found!');
 
+      if (!announcementOverlay) console.error('Error: announcementOverlay element not found!');
+      if (!announcementPopupMessage) console.error('Error: announcementPopupMessage element not found!');
+      if (!announcementCloseBtn) console.error('Error: announcementCloseBtn element not found!');
+      if (!announcementForm) console.error('Error: announcementForm element not found!');
+      if (!announcementMessageInput) console.error('Error: announcementMessageInput element not found!');
+      if (!announcementActiveCheckbox) console.error('Error: announcementActiveCheckbox element not found!');
+      if (!announcementMessageStatus) console.error('Error: announcementMessageStatus element not found!');
+
       if (!reservationTimeForm) console.error('Error: reservationTimeForm element not found!');
       if (!resStartTimeInput) console.error('Error: resStartTimeInput element not found!');
       if (!resEndTimeInput) console.error('Error: resEndTimeInput element not found!');
@@ -1029,6 +1240,7 @@
       
       await fetchAllReservations();
       await fetchAdminSettings();
+      await fetchAnnouncement(); // ⭐ 새로운 기능: 공지사항 초기 로드 ⭐
       console.log('Initial fetches completed. Showing login page.');
       showSection(loginPage);
   });
