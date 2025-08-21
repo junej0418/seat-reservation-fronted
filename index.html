@@ -693,6 +693,7 @@
   // --- 좌석 배치도 관련 함수들 ---
   function setFloorOptions(dorm) {
     console.log('setFloorOptions called with dorm:', dorm); // 디버깅
+    // Check if seatLayouts[dorm] is defined before using Object.keys
     if (!seatLayouts[dorm]) {
         console.error('Error: seatLayouts[' + dorm + '] is undefined or null. Check dorm value and seatLayouts definition.');
         floorSelect.innerHTML = '<option value="" disabled selected>해당 기숙사의 층 정보가 없습니다.</option>';
