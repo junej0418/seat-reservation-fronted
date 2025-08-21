@@ -430,11 +430,10 @@
 
   let allReservations = {};
   let adminSettings = {};
-  let currentAnnouncement = {}; // 공지사항 데이터를 저장할 변수
   let availabilityCheckInterval = null;
   let prevAllowedState = null;
 
-  // DOM 요소 참조 
+  // DOM 요소 참조 (getElementById는 항상 스크립트 로드 시점에 존재해야 함)
   const loginPage = document.getElementById('loginPage');
   const loginForm = document.getElementById('loginForm');
   const roomNoInput = document.getElementById('roomNo');
@@ -477,7 +476,7 @@
   // 공지사항 관련 DOM 요소
   const announcementOverlay = document.getElementById('announcementOverlay');
   const announcementPopupMessage = document.getElementById('announcementMessage');
-  const announcementCloseBtn = announcementOverlay.querySelector('.close-btn');
+  const announcementCloseBtn = announcementOverlay ? announcementOverlay.querySelector('.close-btn') : null; // null 체크 추가
   const announcementForm = document.getElementById('announcementForm');
   const announcementMessageInput = document.getElementById('announcementMessageInput');
   const announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
@@ -641,7 +640,7 @@
       if (!adminPage.classList.contains("hidden")) {
         announcementMessageInput.value = currentAnnouncement.message;
         announcementActiveCheckbox.checked = currentAnnouncement.active;
-        announcementMessageStatus.textContent = "공지사항이 업데이트되었습니다.";
+        announcementMessageStatus.textContent = "공지사항이 업데이트되었습니다."; // 공지 업데이트 상태 표시
         announcementMessageStatus.style.color = "green";
       }
       console.log('🔗 Socket.IO: 공지사항 실시간 업데이트 완료');
@@ -818,7 +817,7 @@
         if (result.success) { // 백엔드가 { success: true }를 반환
             console.log('Admin login successful. Redirecting to admin page.'); // 디버깅
             await loadAdminPage(); // 관리자 페이지 데이터 로드
-            // ⭐ 관리자 로그인 성공 시 공지사항 설정 UI도 업데이트 ⭐
+            // ⭐ 공지사항 설정 UI도 업데이트 ⭐
             if (currentAnnouncement) {
                 announcementMessageInput.value = currentAnnouncement.message;
                 announcementActiveCheckbox.checked = currentAnnouncement.active;
@@ -971,15 +970,20 @@
     }
 
     try {
+      // 폼 데이터 준비
+      const roomNo = currentUser.roomNo;
+      const name = currentUser.name;
+      const dormitory = currentUser.dormitory;
+      const floor = currentFloor;
+      const seat = selectedSeat;
+      // 허니팟 필드 값은 이 API에서는 중요하지 않으므로 포함하지 않거나, 빈값으로 전송
+      const honeypotField = ''; 
+
       const response = await fetch(`${BACKEND_URL}/api/reservations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          roomNo: currentUser.roomNo,
-          name: currentUser.name,
-          dormitory: currentUser.dormitory,
-          floor: currentFloor,
-          seat: selectedSeat,
+          roomNo, name, dormitory, floor, seat, honeypot_field: honeypotField // 허니팟 필드 함께 전송
         }),
       });
       const result = await response.json();
@@ -1169,10 +1173,20 @@
   }
 
   function hideAnnouncement() {
-      announcementOverlay.classList.add('hidden');
+      console.log("hideAnnouncement called."); // 닫기 버튼 눌렸는지 확인
+      if (announcementOverlay) { // 널 체크
+          announcementOverlay.classList.add('hidden');
+      } else {
+          console.error("announcementOverlay not found during hideAnnouncement.");
+      }
   }
 
-  announcementCloseBtn.addEventListener('click', hideAnnouncement);
+  // 팝업 닫기 버튼 이벤트 리스너: DOMContentLoaded 내부에서 할당
+  if (announcementCloseBtn) {
+      announcementCloseBtn.addEventListener('click', hideAnnouncement);
+  } else {
+      console.error("announcementCloseBtn element not found. Close button might not work.");
+  }
 
 
   function clearErrors() {
@@ -1185,54 +1199,56 @@
   document.addEventListener('DOMContentLoaded', async () => {
       console.log('DOM Content Loaded. Starting initial fetches.');
       
-      // 혹시 모를 DOM 요소 참조 오류 방지 (추가 디버깅 포인트)
-      // 이 로그가 잘 뜨는지 확인해주세요.
-      if (!loginPage) console.error('Error: loginPage element not found!');
-      if (!loginForm) console.error('Error: loginForm element not found!');
-      if (!roomNoInput) console.error('Error: roomNoInput element not found!');
-      if (!userNameInput) console.error('Error: userNameInput element not found!');
-      if (!dormitorySelect) console.error('Error: dormitorySelect element not found!');
-      if (!roomError) console.error('Error: roomError element not found!');
-      if (!nameError) console.error('Error: nameError element not found!');
-      if (!dormError) console.error('Error: dormError element not found!');
-      if (!adminLoginBtn) console.error('Error: adminLoginBtn element not found!');
+      // DOM 요소 참조 검사 로그
+      console.log('--- DOM Element Checks ---');
+      if (!loginPage) console.error('Error: loginPage element not found!'); else console.log('loginPage found.');
+      if (!loginForm) console.error('Error: loginForm element not found!'); else console.log('loginForm found.');
+      if (!roomNoInput) console.error('Error: roomNoInput element not found!'); else console.log('roomNoInput found.');
+      if (!userNameInput) console.error('Error: userNameInput element not found!'); else console.log('userNameInput found.');
+      if (!dormitorySelect) console.error('Error: dormitorySelect element not found!'); else console.log('dormitorySelect found.');
+      if (!roomError) console.error('Error: roomError element not found!'); else console.log('roomError found.');
+      if (!nameError) console.error('Error: nameError element not found!'); else console.log('nameError found.');
+      if (!dormError) console.error('Error: dormError element not found!'); else console.log('dormError found.');
+      if (!adminLoginBtn) console.error('Error: adminLoginBtn element not found!'); else console.log('adminLoginBtn found.');
 
-      if (!floorSelectPage) console.error('Error: floorSelectPage element not found!');
-      if (!floorSelect) console.error('Error: floorSelect element not found!');
-      if (!floorNextBtn) console.error('Error: floorNextBtn element not found!');
-      if (!backToLoginBtn) console.error('Error: backToLoginBtn element not found!');
-      if (!welcomeText) console.error('Error: welcomeText element not found!');
+      if (!floorSelectPage) console.error('Error: floorSelectPage element not found!'); else console.log('floorSelectPage found.');
+      if (!floorSelect) console.error('Error: floorSelect element not found!'); else console.log('floorSelect found.');
+      if (!floorNextBtn) console.error('Error: floorNextBtn element not found!'); else console.log('floorNextBtn found.');
+      if (!backToLoginBtn) console.error('Error: backToLoginBtn element not found!'); else console.log('backToLoginBtn found.');
+      if (!welcomeText) console.error('Error: welcomeText element not found!'); else console.log('welcomeText found.');
 
-      if (!seatMapPage) console.error('Error: seatMapPage element not found!');
-      if (!seatMapContainer) console.error('Error: seatMapContainer element not found!');
-      if (!confirmBtn) console.error('Error: confirmBtn element not found!');
-      if (!cancelSeatBtn) console.error('Error: cancelSeatBtn element not found!');
-      if (!selectedDormTitle) console.error('Error: selectedDormTitle element not found!');
-      if (!selectedFloorTitle) console.error('Error: selectedFloorTitle element not found!');
-      if (!reservationAvailabilityMessage) console.error('Error: reservationAvailabilityMessage element not found!');
+      if (!seatMapPage) console.error('Error: seatMapPage element not found!'); else console.log('seatMapPage found.');
+      if (!seatMapContainer) console.error('Error: seatMapContainer element not found!'); else console.log('seatMapContainer found.');
+      if (!confirmBtn) console.error('Error: confirmBtn element not found!'); else console.log('confirmBtn found.');
+      if (!cancelSeatBtn) console.error('Error: cancelSeatBtn element not found!'); else console.log('cancelSeatBtn found.');
+      if (!selectedDormTitle) console.error('Error: selectedDormTitle element not found!'); else console.log('selectedDormTitle found.');
+      if (!selectedFloorTitle) console.error('Error: selectedFloorTitle element not found!'); else console.log('selectedFloorTitle found.');
+      if (!reservationAvailabilityMessage) console.error('Error: reservationAvailabilityMessage element not found!'); else console.log('reservationAvailabilityMessage found.');
 
-      if (!adminLoginPage) console.error('Error: adminLoginPage element not found!');
-      if (!adminLoginForm) console.error('Error: adminLoginForm element not found!');
-      if (!adminPasswordInput) console.error('Error: adminPasswordInput element not found!');
-      if (!adminError) console.error('Error: adminError element not found!');
+      if (!adminLoginPage) console.error('Error: adminLoginPage element not found!'); else console.log('adminLoginPage found.');
+      if (!adminLoginForm) console.error('Error: adminLoginForm element not found!'); else console.log('adminLoginForm found.');
+      if (!adminPasswordInput) console.error('Error: adminPasswordInput element not found!'); else console.log('adminPasswordInput found.');
+      if (!adminError) console.error('Error: adminError element not found!'); else console.log('adminError found.');
 
-      if (!adminPage) console.error('Error: adminPage element not found!');
-      if (!adminLogoutBtn) console.error('Error: adminLogoutBtn element not found!');
-      if (!reservationListBody) console.error('Error: reservationListBody element not found!');
-      if (!clearAllReservationsBtn) console.error('Error: clearAllReservationsBtn element not found!');
+      if (!adminPage) console.error('Error: adminPage element not found!'); else console.log('adminPage found.');
+      if (!adminLogoutBtn) console.error('Error: adminLogoutBtn element not found!'); else console.log('adminLogoutBtn found.');
+      if (!reservationListBody) console.error('Error: reservationListBody element not found!'); else console.log('reservationListBody found.');
+      if (!clearAllReservationsBtn) console.error('Error: clearAllReservationsBtn element not found!'); else console.log('clearAllReservationsBtn found.');
 
-      if (!announcementOverlay) console.error('Error: announcementOverlay element not found!');
-      if (!announcementPopupMessage) console.error('Error: announcementPopupMessage element not found!');
-      if (!announcementCloseBtn) console.error('Error: announcementCloseBtn element not found!');
-      if (!announcementForm) console.error('Error: announcementForm element not found!');
-      if (!announcementMessageInput) console.error('Error: announcementMessageInput element not found!');
-      if (!announcementActiveCheckbox) console.error('Error: announcementActiveCheckbox element not found!');
-      if (!announcementMessageStatus) console.error('Error: announcementMessageStatus element not found!');
+      // 공지사항 관련 DOM 요소 체크 추가
+      if (!announcementOverlay) console.error('Error: announcementOverlay element not found!'); else console.log('announcementOverlay found.');
+      if (!announcementPopupMessage) console.error('Error: announcementPopupMessage element not found!'); else console.log('announcementPopupMessage found.');
+      // if (!announcementCloseBtn) console.error('Error: announcementCloseBtn element not found!'); else console.log('announcementCloseBtn found.'); // 이미 위에서 체크
+      if (!announcementForm) console.error('Error: announcementForm element not found!'); else console.log('announcementForm found.');
+      if (!announcementMessageInput) console.error('Error: announcementMessageInput element not found!'); else console.log('announcementMessageInput found.');
+      if (!announcementActiveCheckbox) console.error('Error: announcementActiveCheckbox element not found!'); else console.log('announcementActiveCheckbox found.');
+      if (!announcementMessageStatus) console.error('Error: announcementMessageStatus element not found!'); else console.log('announcementMessageStatus found.');
 
-      if (!reservationTimeForm) console.error('Error: reservationTimeForm element not found!');
-      if (!resStartTimeInput) console.error('Error: resStartTimeInput element not found!');
-      if (!resEndTimeInput) console.error('Error: resEndTimeInput element not found!');
-      if (!timeSettingMessage) console.error('Error: timeSettingMessage element not found!');
+      if (!reservationTimeForm) console.error('Error: reservationTimeForm element not found!'); else console.log('reservationTimeForm found.');
+      if (!resStartTimeInput) console.error('Error: resStartTimeInput element not found!'); else console.log('resStartTimeInput found.');
+      if (!resEndTimeInput) console.error('Error: resEndTimeInput element not found!'); else console.log('resEndTimeInput found.');
+      if (!timeSettingMessage) console.error('Error: timeSettingMessage element not found!'); else console.log('timeSettingMessage found.');
+      console.log('--- End DOM Element Checks ---');
 
       // 만약 위에서 어떤 에러라도 발생한다면, 이 아래 함수들은 호출되지 않아야 합니다.
       // 실제 코드가 실행되는지를 확인하기 위한 로그
