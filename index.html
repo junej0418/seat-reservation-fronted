@@ -273,6 +273,8 @@
   .announcement-popup p {
     margin-bottom: 20px;
     color: #333;
+    /* ⭐ 중요 수정: 공지 메시지 내 엔터 공백을 유지하도록 함 ⭐ */
+    white-space: pre-wrap; 
   }
   .announcement-popup button.close-btn {
     background: #b45309;
@@ -552,7 +554,7 @@
     console.log('Fetching all reservations...');
     try {
       const res = await fetch(`${BACKEND_URL}/api/reservations`);
-      if (!res.ok) throw new Error('예약 데이터 불러오기 실패');
+      if (!res.ok) throw new Error('예약 데이터 불러오기 실패: ' + res.statusText);
       const data = await res.json();
       allReservations = {};
       data.forEach(r => allReservations[r._id] = r);
@@ -568,7 +570,7 @@
     console.log('Fetching admin settings...');
     try {
       const res = await fetch(`${BACKEND_URL}/api/admin-settings`);
-      if (!res.ok) throw new Error('관리자 설정 불러오기 실패');
+      if (!res.ok) throw new Error('관리자 설정 불러오기 실패: ' + res.statusText);
       adminSettings = await res.json();
       console.log('Admin settings fetched successfully:', adminSettings);
     } catch (e) {
@@ -1169,8 +1171,9 @@
 
   // 공지 팝업 표시/숨김 함수
   function showAnnouncement(message) {
+      console.log("showAnnouncement called with message:", message); // 디버깅
       if (announcementOverlay && announcementPopupMessage) {
-          announcementPopupMessage.textContent = message;
+          announcementPopupMessage.textContent = message; // ⭐ 텍스트 내용 할당 ⭐
           announcementOverlay.classList.remove('hidden');
       } else {
           console.error("공지 팝업 요소를 찾을 수 없습니다.");
@@ -1187,9 +1190,10 @@
   }
 
   // 팝업 닫기 버튼 이벤트 리스너: DOMContentLoaded 내부에서 할당
-  // 이제 DOMContentLoaded 바깥에 있어도 DOM이 로드된 후에 실행됨
-  if (announcementCloseBtn) {
+  if (announcementCloseBtn) { // ⭐ annoucementCloseBtn이 null이 아닐 때만 이벤트 리스너 등록 ⭐
       announcementCloseBtn.addEventListener('click', hideAnnouncement);
+  } else {
+      console.error("announcementCloseBtn element not found. Close button might not work.");
   }
 
 
@@ -1243,7 +1247,8 @@
       // 공지사항 관련 DOM 요소 체크 추가
       if (!announcementOverlay) console.error('Error: announcementOverlay element not found!'); else console.log('announcementOverlay found.');
       if (!announcementPopupMessage) console.error('Error: announcementPopupMessage element not found!'); else console.log('announcementPopupMessage found.');
-      // if (!announcementCloseBtn) console.error('Error: announcementCloseBtn element not found!'); else console.log('announcementCloseBtn found.'); // 이미 위에서 체크
+      // if (!announcementCloseBtn) console.error('Error: announcementCloseBtn element not found!'); else console.log('announcementCloseBtn found.'); // 이미 위에서 null 체크
+
       if (!announcementForm) console.error('Error: announcementForm element not found!'); else console.log('announcementForm found.');
       if (!announcementMessageInput) console.error('Error: announcementMessageInput element not found!'); else console.log('announcementMessageInput found.');
       if (!announcementActiveCheckbox) console.error('Error: announcementActiveCheckbox element not found!'); else console.log('announcementActiveCheckbox found.');
@@ -1261,7 +1266,7 @@
       
       await fetchAllReservations();
       await fetchAdminSettings();
-      await fetchAnnouncement(); // ⭐ 새로운 기능: 공지사항 초기 로드 ⭐
+      await fetchAnnouncement(); // ⭐ 공지사항 초기 로드 ⭐
       console.log('Initial fetches completed. Showing login page.');
       showSection(loginPage);
   });
