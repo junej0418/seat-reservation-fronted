@@ -25,7 +25,6 @@
     border-radius: 12px;
     box-shadow: 0 0 20px rgba(0,0,0,0.06);
   }
-  /* ⭐ 중요 수정: .hidden 클래스에 !important 추가 ⭐ */
   .hidden { display: none !important; } /* 다른 스타일에 의해 덮어쓰기 방지 */
 
   /* 폼 요소 */
@@ -557,7 +556,7 @@
     console.log('Fetching all reservations...');
     try {
       const res = await fetch(`${BACKEND_URL}/api/reservations`);
-      if (!res.ok) throw new Error('예약 데이터 불러오기 실패: ' + res.statusText);
+      if (!res.ok) throw new Error('예약 데이터 불러오기 실패');
       const data = await res.json();
       allReservations = {};
       data.forEach(r => allReservations[r._id] = r);
@@ -893,27 +892,37 @@
           btn.classList.add('seat-btn');
           btn.textContent = seatNum;
 
-          // ⭐ 내가 예약한 자리 표시 로직 강화 (로그 추가) ⭐
-          const booked = Object.values(allReservations).find(r => r.dormitory===dorm && r.floor===floor && r.seat===seatNum);
+          // ⭐⭐ 내가 예약한 자리 표시 로직 강화 (로그 추가) ⭐⭐
+          // booked 변수 정의는 기존 예약이 해당 좌석에 있는지를 찾습니다.
+          const booked = Object.values(allReservations).find(r => 
+            r.dormitory === dorm && 
+            r.floor === floor && 
+            r.seat === seatNum
+          );
           
-          if (booked) {
+          if (booked) { // 현재 좌석에 예약이 있다면
             btn.classList.add('booked');
             btn.disabled = true; // 기본적으로 예약된 좌석은 비활성화
 
-            // 디버깅 로그 추가: 현재 유저와 예약된 자리의 정보 비교
-            console.log(`Checking seat ${seatNum}: current user(${currentUser ? currentUser.roomNo + '/' + currentUser.name : 'none'}) vs booked(${booked.roomNo + '/' + booked.name})`);
-            
-            // 자신의 예약인 경우만 이름 표시 및 활성화
-            if (currentUser && booked.roomNo === currentUser.roomNo && booked.name === currentUser.name) {
-              console.log(`Seat ${seatNum} is current user's.`);
+            // 현재 로그인한 사용자의 정보를 더 명확하게 확인
+            console.log(`--- Checking seat ${seatNum} ---`);
+            console.log(`Current User: roomNo='${currentUser ? currentUser.roomNo : 'N/A'}', name='${currentUser ? currentUser.name : 'N/A'}'`);
+            console.log(`Booked by: roomNo='${booked.roomNo}', name='${booked.name}'`);
+
+            // ⭐⭐ 수정: 현재 로그인한 사용자와 예약된 사용자가 일치하는지 정확히 비교 ⭐⭐
+            if (currentUser && 
+                currentUser.roomNo === booked.roomNo && 
+                currentUser.name === booked.name) 
+            {
+              console.log(`Match found: Seat ${seatNum} is current user's. Marking as 'mine'.`);
               btn.classList.add('mine');
               btn.disabled = false; // 자신의 예약 좌석은 다시 활성화
               btn.title = `내 예약 (${booked.name}님)`; 
             } else {
-              console.log(`Seat ${seatNum} is booked by another user.`);
+              console.log(`No match: Seat ${seatNum} is booked by another user.`);
               btn.title = `예약된 좌석`; // 일반 사용자 화면에서는 예약자 이름 숨기기
             }
-          } else {
+          } else { // 현재 좌석에 예약이 없다면
             btn.disabled = !allowed;
             btn.title = allowed ? '예약 가능 자리' : '예약 가능 시간이 아닙니다.';
             btn.onclick = () => {
@@ -933,7 +942,16 @@
 
   function highlightSelectedSeat() {
     seatMapContainer.querySelectorAll("button.seat-btn").forEach(btn => {
-      btn.classList.toggle("mine", parseInt(btn.textContent) === selectedSeat);
+      // 기존 mine 클래스 제거 후, 현재 선택된 좌석에만 mine 클래스 추가
+      // currentUser의 기존 예약 좌석도 다시 mine 클래스를 가지도록 처리
+      if (currentUser && btn.classList.contains('mine') && (parseInt(btn.textContent) !== selectedSeat && parseInt(btn.textContent) !== currentUser.seat)) {
+          btn.classList.remove('mine');
+      } else if (parseInt(btn.textContent) === selectedSeat) { // 새로 선택된 좌석
+          btn.classList.add('mine');
+      } else if (currentUser && parseInt(btn.textContent) === currentUser.seat && currentUser.dormitory === selectedDormTitle.textContent && currentUser.floor === selectedFloorTitle.textContent) {
+          // 현재 유저의 기존 좌석 (선택된 좌석이 아닐 때)
+          btn.classList.add('mine');
+      }
     });
   }
 
@@ -941,10 +959,9 @@
     const status = isReservationTimeAllowed();
     reservationAvailabilityMessage.textContent = status.message;
 
-    // 예약 가능 상태가 변경되었는지 감지
     const currentAllowedState = status.allowed;
     const hasAllowedStateChanged = (prevAllowedState !== null && prevAllowedState !== currentAllowedState);
-    prevAllowedState = currentAllowedState; // 다음 체크를 위해 현재 상태 저장
+    prevAllowedState = currentAllowedState;
 
     if (currentAllowedState) {
       reservationAvailabilityMessage.classList.add("available");
@@ -972,34 +989,40 @@
     }
 
     try {
-      // 폼 데이터 준비
-      const roomNo = currentUser.roomNo;
-      const name = currentUser.name;
-      const dormitory = currentUser.dormitory;
-      const floor = currentFloor;
-      const seat = selectedSeat;
-      // 허니팟 필드 값은 이 API에서는 중요하지 않으므로 포함하지 않거나, 빈값으로 전송
-      const honeypotField = ''; 
+      // 예약 폼 데이터 준비
+      const reservationData = {
+          roomNo: currentUser.roomNo,
+          name: currentUser.name,
+          dormitory: currentUser.dormitory,
+          floor: currentFloor,
+          seat: selectedSeat,
+          honeypot_field: '' // 허니팟 필드 (빈값으로 전송)
+      };
 
       const response = await fetch(`${BACKEND_URL}/api/reservations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          roomNo, name, dormitory, floor, seat, honeypot_field: honeypotField // 허니팟 필드 함께 전송
-        }),
+        body: JSON.stringify(reservationData),
       });
       const result = await response.json();
 
-      if (response.ok) {
+      if (response.ok) { // 2xx 상태 코드 (예: 200, 201)
         alert(`${currentUser.dormitory} ${currentFloor}층 ${selectedSeat}번 자리 예약 완료!`);
-        currentUser = null;
+        // 성공 시 currentUser의 좌석 정보도 업데이트 (UI 갱신에 사용될 수 있도록)
+        currentUser.seat = selectedSeat; 
+        
+        currentUser = null; // 초기화
         currentFloor = null;
         selectedSeat = null;
         loginForm.reset();
         showSection(loginPage);
-      } else {
+      } else { // 4xx, 5xx 상태 코드
         alert("예약 실패: " + (result.message || "알 수 없는 오류"));
-        if (currentUser && currentFloor) renderSeatMap(currentUser.dormitory, currentFloor);
+        // 실패 시 UI를 다시 그려서 최신 상태 반영
+        if (currentUser && currentFloor) {
+            await fetchAllReservations(); // 최신 예약 데이터 다시 가져오기
+            renderSeatMap(currentUser.dormitory, currentFloor);
+        }
       }
     } catch (e) {
       alert("예약 처리 중 오류가 발생했습니다. 서버 상태를 확인하세요.");
@@ -1190,8 +1213,6 @@
 
   if (announcementCloseBtn) { 
       announcementCloseBtn.addEventListener('click', hideAnnouncement);
-  } else {
-      console.error("announcementCloseBtn element not found. Close button might not work.");
   }
 
 
@@ -1257,7 +1278,6 @@
       if (!timeSettingMessage) console.error('Error: timeSettingMessage element not found!'); else console.log('timeSettingMessage found.');
       console.log('--- End DOM Element Checks ---');
 
-      // 만약 위에서 어떤 에러라도 발생한다면, 이 아래 함수들은 호출되지 않아야 합니다.
       // 실제 코드가 실행되는지를 확인하기 위한 로그
       console.log('All element references checked. Starting fetch operations.');
       
@@ -1268,7 +1288,6 @@
       showSection(loginPage);
   });
 })();
-</script>
 </script>
 </body>
 </html>
