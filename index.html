@@ -259,7 +259,7 @@
     box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
     max-width: 500px;
     width: 90%;
-    text-align: center;
+    text-align: left; /* ⭐ 공지 텍스트 왼쪽 정렬 ⭐ */
     position: relative;
     font-size: 1.1rem;
     line-height: 1.5;
@@ -269,12 +269,12 @@
     color: #b45309;
     font-size: 1.5rem;
     margin-bottom: 20px;
+    text-align: center; /* 제목은 중앙 정렬 */
   }
   .announcement-popup p {
     margin-bottom: 20px;
     color: #333;
-    /* ⭐ 중요 수정: 공지 메시지 내 엔터 공백을 유지하도록 함 ⭐ */
-    white-space: pre-wrap; 
+    white-space: pre-wrap; /* ⭐ 공지 메시지 내 엔터 공백 유지 ⭐ */
   }
   .announcement-popup button.close-btn {
     background: #b45309;
@@ -286,6 +286,9 @@
     font-size: 1rem;
     transition: background 0.3s;
     margin-top: 0; /* 기존 버튼 마진 초기화 */
+    display: block; /* 버튼을 블록 요소로 만들어 하단에 배치 */
+    margin-left: auto; /* 오른쪽 정렬 */
+    margin-right: auto; /* 중앙 정렬 (이전 right 덮어쓰기) */
   }
   .announcement-popup button.close-btn:hover {
     background: #8e420b;
@@ -890,23 +893,27 @@
           btn.classList.add('seat-btn');
           btn.textContent = seatNum;
 
+          // ⭐ 내가 예약한 자리 표시 로직 강화 (로그 추가) ⭐
           const booked = Object.values(allReservations).find(r => r.dormitory===dorm && r.floor===floor && r.seat===seatNum);
-
+          
           if (booked) {
             btn.classList.add('booked');
             btn.disabled = true; // 기본적으로 예약된 좌석은 비활성화
 
-            // 일반 사용자 화면에서는 예약자 이름 숨기기
-            btn.title = `예약된 좌석`; 
-
+            // 디버깅 로그 추가: 현재 유저와 예약된 자리의 정보 비교
+            console.log(`Checking seat ${seatNum}: current user(${currentUser ? currentUser.roomNo + '/' + currentUser.name : 'none'}) vs booked(${booked.roomNo + '/' + booked.name})`);
+            
             // 자신의 예약인 경우만 이름 표시 및 활성화
-            if (currentUser && booked.roomNo===currentUser.roomNo && booked.name===currentUser.name) {
+            if (currentUser && booked.roomNo === currentUser.roomNo && booked.name === currentUser.name) {
+              console.log(`Seat ${seatNum} is current user's.`);
               btn.classList.add('mine');
               btn.disabled = false; // 자신의 예약 좌석은 다시 활성화
-              btn.title = `내 예약 (${booked.name}님)`; // 자신의 예약은 이름 표시
+              btn.title = `내 예약 (${booked.name}님)`; 
+            } else {
+              console.log(`Seat ${seatNum} is booked by another user.`);
+              btn.title = `예약된 좌석`; // 일반 사용자 화면에서는 예약자 이름 숨기기
             }
           } else {
-            // 예약 가능 여부에 따라 좌석 버튼 활성화/비활성화
             btn.disabled = !allowed;
             btn.title = allowed ? '예약 가능 자리' : '예약 가능 시간이 아닙니다.';
             btn.onclick = () => {
@@ -962,14 +969,6 @@
       alert("예약 가능 시간이 아닙니다.");
       updateReservationAvailability();
       return;
-    }
-
-    try {
-      await fetch(`${BACKEND_URL}/api/reservations/user/${currentUser.roomNo}/${currentUser.name}`, {
-        method: "DELETE",
-      });
-    } catch (e) {
-      console.warn("기존 예약 삭제 중 오류:", e);
     }
 
     try {
@@ -1173,7 +1172,7 @@
   function showAnnouncement(message) {
       console.log("showAnnouncement called with message:", message); // 디버깅
       if (announcementOverlay && announcementPopupMessage) {
-          announcementPopupMessage.textContent = message; // ⭐ 텍스트 내용 할당 ⭐
+          announcementPopupMessage.textContent = message; 
           announcementOverlay.classList.remove('hidden');
       } else {
           console.error("공지 팝업 요소를 찾을 수 없습니다.");
@@ -1189,8 +1188,7 @@
       }
   }
 
-  // 팝업 닫기 버튼 이벤트 리스너: DOMContentLoaded 내부에서 할당
-  if (announcementCloseBtn) { // ⭐ annoucementCloseBtn이 null이 아닐 때만 이벤트 리스너 등록 ⭐
+  if (announcementCloseBtn) { 
       announcementCloseBtn.addEventListener('click', hideAnnouncement);
   } else {
       console.error("announcementCloseBtn element not found. Close button might not work.");
@@ -1208,7 +1206,6 @@
       console.log('DOM Content Loaded. Starting initial fetches.');
       
       // DOM 요소 참조 검사 로그 (유지하여 디버깅에 활용)
-      // 이 로그가 잘 뜨는지 확인해주세요.
       console.log('--- DOM Element Checks ---');
       if (!loginPage) console.error('Error: loginPage element not found!'); else console.log('loginPage found.');
       if (!loginForm) console.error('Error: loginForm element not found!'); else console.log('loginForm found.');
@@ -1271,6 +1268,7 @@
       showSection(loginPage);
   });
 })();
+</script>
 </script>
 </body>
 </html>
