@@ -402,7 +402,7 @@
     <button id="confirmBtn" type="button" disabled>예약 확정</button>
     <button id="cancelSeatBtn" type="button">취소 및 뒤로가기</button>
   </div>
-  <!-- 색상 범례 추가 -->
+  <!-- ⭐ 색상 범례 추가 ⭐ -->
   <div class="color-legend">
     <div class="legend-item"><div class="legend-box empty"></div>빈자리</div>
     <div class="legend-item"><div class="legend-box booked"></div>예약됨</div>
@@ -851,13 +851,8 @@
     }
   }
 
-  // confirmBtn 이벤트 리스너도 DOMContentLoaded 안으로 이동
-  // (이전 코드에서 이미 이렇게 되어 있었습니다.)
-  // 관리자 페이지 함수들과 공지사항 함수들은 이미 최상위 레벨에 있습니다.
-
-  // --- 이벤트 리스너 함수 정의 (DOMContentLoaded 외부에서) ---
-  // 이렇게 함수들을 DOMContentLoaded 외부, 즉 IIFE(즉시 실행 함수)의 최상위 스코프에 정의하면
-  // DOMContentLoaded 안의 코드들이 이 함수들을 항상 참조할 수 있습니다.
+  // --- 이벤트 리스너 함수들 (DOMContentLoaded 외부에서 정의) ---
+  // 이렇게 함수들을 IIFE의 최상위 스코프에 정의하면 DOMContentLoaded 안의 코드들이 이 함수들을 항상 참조할 수 있습니다.
 
   async function handleSubmitLoginForm(e) {
     console.log('Login form submitted. Event triggered.');
@@ -1208,19 +1203,19 @@
           if (response.ok) {
               if (announcementMessageStatus) { 
                   announcementMessageStatus.textContent = active ? '공지사항이 저장되고 활성화되었습니다.' : '공지사항이 저장되고 비활성화되었습니다.';
-                  announcementMessageStatus.style.color = 'green';
+                  announcementMessageStatus.style.color = "green";
               }
           } else {
               if (announcementMessageStatus) { 
                   announcementMessageStatus.textContent = '공지 저장 실패';
-                  announcementMessageStatus.style.color = 'red';
+                  announcementMessageStatus.style.color = "red";
               }
           }
       } catch (e) {
           console.error('공지 저장 중 오류:', e);
           if (announcementMessageStatus) { 
               announcementMessageStatus.textContent = '공지 저장 중 서버 오류 발생';
-              announcementMessageStatus.style.color = 'red';
+              announcementMessageStatus.style.color = "red";
           }
       }
   }
@@ -1250,6 +1245,7 @@
       console.log('DOM Content Loaded. Script execution starts.');
       
       // ⭐⭐ 모든 DOM 요소 참조를 DOMContentLoaded 안에서 수행 ⭐⭐
+      // 이 변수들은 DOM이 완전히 로드된 후에 할당됩니다.
       loginPage = document.getElementById('loginPage');
       loginForm = document.getElementById('loginForm');
       roomNoInput = document.getElementById('roomNo');
@@ -1347,34 +1343,34 @@
       // 이벤트 리스너의 콜백 함수는 최상위 스코프에 정의된 함수를 참조합니다.
       if (loginForm) {
           console.log('Attaching event listener to loginForm.');
-          loginForm.addEventListener('submit', handleSubmitLoginForm); // 수정: 인라인 함수 대신 함수 참조
+          loginForm.addEventListener('submit', handleSubmitLoginForm); 
       } else {
           console.error("Critical Error: loginForm element not found. Login will not work. Please check HTML IDs.");
       }
 
-      if (backToLoginBtn) backToLoginBtn.addEventListener('click', handleClickBackToLoginBtn); // 수정
-      if (floorNextBtn) floorNextBtn.addEventListener('click', handleClickFloorNextBtn); // 수정
-      if (cancelSeatBtn) cancelSeatBtn.addEventListener('click', handleClickCancelSeatBtn); // 수정
-      if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleClickAdminLoginBtn); // 수정
-      if (document.getElementById('adminLoginBackBtn')) document.getElementById('adminLoginBackBtn').addEventListener('click', handleClickAdminLoginBackBtn); // 수정
+      if (backToLoginBtn) backToLoginBtn.addEventListener('click', handleClickBackToLoginBtn); 
+      if (floorNextBtn) floorNextBtn.addEventListener('click', handleClickFloorNextBtn); 
+      if (cancelSeatBtn) cancelSeatBtn.addEventListener('click', handleClickCancelSeatBtn); 
+      if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleClickAdminLoginBtn); 
+      if (document.getElementById('adminLoginBackBtn')) document.getElementById('adminLoginBackBtn').addEventListener('click', handleClickAdminLoginBackBtn); 
       
       if (adminLoginForm) { 
-          adminLoginForm.addEventListener('submit', handleSubmitAdminLoginForm); // 수정
+          adminLoginForm.addEventListener('submit', handleSubmitAdminLoginForm); 
       } else {
           console.error("Critical Error: adminLoginForm element not found. Admin login will not work. Please check HTML IDs.");
       }
 
-      if (adminLogoutBtn) adminLogoutBtn.addEventListener('click', handleClickAdminLogoutBtn); // 수정
-      if (clearAllReservationsBtn) clearAllReservationsBtn.addEventListener('click', handleClickClearAllReservationsBtn); // 수정
+      if (adminLogoutBtn) adminLogoutBtn.addEventListener('click', handleClickAdminLogoutBtn); 
+      if (clearAllReservationsBtn) clearAllReservationsBtn.addEventListener('click', handleClickClearAllReservationsBtn); 
 
-      if (confirmBtn) confirmBtn.addEventListener("click", handleSubmitConfirmBtn); // 수정 (handleSubmitConfirmBtn 추가)
+      if (confirmBtn) confirmBtn.addEventListener("click", handleSubmitConfirmBtn); 
 
       if (reservationTimeForm) { 
-          reservationTimeForm.addEventListener("submit", handleSubmitReservationTimeForm); // 수정
+          reservationTimeForm.addEventListener("submit", handleSubmitReservationTimeForm); 
       }
 
       if (announcementForm) { 
-          announcementForm.addEventListener('submit', handleSubmitAnnouncementForm); // 수정
+          announcementForm.addEventListener('submit', handleSubmitAnnouncementForm); 
       }
       
       if (announcementCloseBtn) { 
