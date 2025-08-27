@@ -851,11 +851,7 @@
     }
   }
 
-  // confirmBtn 이벤트 리스너도 DOMContentLoaded 안으로 이동
-  // (이전 코드에서 이미 이렇게 되어 있었습니다.)
-  // 관리자 페이지 함수들과 공지사항 함수들은 이미 최상위 레벨에 있습니다.
-
-  // --- 이벤트 리스너 함수 정의 (DOMContentLoaded 외부에서) ---
+  // --- 이벤트 리스너 함수들 (DOMContentLoaded 외부에서 정의) ---
   // 이렇게 함수들을 IIFE의 최상위 스코프에 정의하면 DOMContentLoaded 안의 코드들이 이 함수들을 항상 참조할 수 있습니다.
 
   async function handleSubmitLoginForm(e) {
@@ -931,7 +927,7 @@
 
   function handleClickFloorNextBtn() {
     console.log('Floor Next button clicked.');
-    if (!floorSelect) { // ⭐ 중요: floorSelect가 null인지 확인 후 반환 ⭐
+    if (!floorSelect) { // ⭐ 중요: floorSelect가 null인지 확인 후 에러 처리 ⭐
       console.error('Error: floorSelect element is null in handleClickFloorNextBtn.');
       alert('오류: 층 선택 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
       return;
@@ -1058,7 +1054,7 @@
       alert("예약 처리 중 오류가 발생했습니다. 서버 상태를 확인하세요.");
       console.error(e);
     }
-  });
+  }
 
   async function loadAdminPage() {
     if(reservationListBody) reservationListBody.innerHTML = ""; 
@@ -1070,7 +1066,7 @@
         }
         const parseFloor = (f) => parseFloat(f.replace('-', '.'));
         if (parseFloor(a.floor) !== parseFloor(b.floor)) {
-            return parseFloor(a.floor) - parseFloor(b.floor);
+            return parseFloor(a.floor) - parseFloor(b.buffer);
         }
         return a.seat - b.seat;
     });
@@ -1249,12 +1245,11 @@
   }
 
 
-  // --- 초기 데이터 로드 및 페이지 표시 ---
+  // --- 초기 데이터 로드 및 페이지 표시 (이전 코드와 동일) ---
   document.addEventListener('DOMContentLoaded', async () => {
       console.log('DOM Content Loaded. Script execution starts.');
       
       // ⭐⭐ 모든 DOM 요소 참조를 DOMContentLoaded 안에서 수행 ⭐⭐
-      // 이 변수들은 DOM이 완전히 로드된 후에 할당됩니다.
       loginPage = document.getElementById('loginPage');
       loginForm = document.getElementById('loginForm');
       roomNoInput = document.getElementById('roomNo');
