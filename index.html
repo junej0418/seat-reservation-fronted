@@ -901,10 +901,10 @@
       currentFloor = existing.floor;
       selectedSeat = existing.seat;
       setFloorOptions(selectedDorm); 
-      floorSelect.value = currentFloor;
-      welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`; 
-      selectedDormTitle.textContent = selectedDorm; 
-      selectedFloorTitle.textContent = currentFloor;
+      if (floorSelect) floorSelect.value = currentFloor; // floorSelect null 체크 추가
+      if (welcomeText) welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`; // welcomeText null 체크 추가
+      if (selectedDormTitle) selectedDormTitle.textContent = selectedDorm; // selectedDormTitle null 체크 추가
+      if (selectedFloorTitle) selectedFloorTitle.textContent = currentFloor; // selectedFloorTitle null 체크 추가
       renderSeatMap(selectedDorm, currentFloor); 
       updateReservationAvailability();
       console.log('Existing user: Redirecting to seat map page.');
@@ -912,7 +912,7 @@
     } else {
       currentUser = {roomNo, name, dormitory: selectedDorm}; 
       setFloorOptions(selectedDorm); 
-      welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`; 
+      if (welcomeText) welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`; // welcomeText null 체크 추가
       console.log('New user: Redirecting to floor select page.');
       showSection(floorSelectPage);
     }
@@ -921,13 +921,13 @@
   function handleClickBackToLoginBtn() {
     console.log('Back to Login button clicked.');
     currentUser = currentFloor = selectedSeat = null;
-    loginForm.reset();
+    if (loginForm) loginForm.reset(); // loginForm null 체크
     showSection(loginPage);
   }
 
   function handleClickFloorNextBtn() {
     console.log('Floor Next button clicked.');
-    if (!floorSelect) { // ⭐ 중요: floorSelect가 null인지 확인 후 에러 처리 ⭐
+    if (!floorSelect) { 
       console.error('Error: floorSelect element is null in handleClickFloorNextBtn.');
       alert('오류: 층 선택 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
       return;
@@ -939,10 +939,10 @@
       return;
     }
     currentFloor = floor;
-    selectedDormTitle.textContent = currentUser.dormitory;
-    selectedFloorTitle.textContent = currentFloor;
+    if (selectedDormTitle) selectedDormTitle.textContent = currentUser.dormitory; // null 체크
+    if (selectedFloorTitle) selectedFloorTitle.textContent = currentFloor; // null 체크
     selectedSeat = null;
-    confirmBtn.disabled = true;
+    if (confirmBtn) confirmBtn.disabled = true; // null 체크
     renderSeatMap(currentUser.dormitory, currentFloor);
     updateReservationAvailability();
     showSection(seatMapPage);
@@ -951,14 +951,14 @@
   function handleClickCancelSeatBtn() {
     console.log('Cancel Seat button clicked.');
     selectedSeat = null;
-    confirmBtn.disabled = true;
+    if (confirmBtn) confirmBtn.disabled = true; 
     showSection(floorSelectPage);
   }
 
   function handleClickAdminLoginBtn() {
     console.log('Admin Login button clicked.');
-    adminLoginForm.reset();
-    adminError.textContent = '';
+    if (adminLoginForm) adminLoginForm.reset(); // null 체크
+    if (adminError) adminError.textContent = ''; // null 체크
     showSection(adminLoginPage);
   }
 
@@ -986,17 +986,17 @@
             console.log('Admin login successful. Redirecting to admin page.'); 
             await loadAdminPage(); 
             if (currentAnnouncement) {
-                announcementMessageInput.value = currentAnnouncement.message;
-                announcementActiveCheckbox.checked = currentAnnouncement.active;
+                if (announcementMessageInput) announcementMessageInput.value = currentAnnouncement.message; // null 체크
+                if (announcementActiveCheckbox) announcementActiveCheckbox.checked = currentAnnouncement.active; // null 체크
             }
             showSection(adminPage);
         } else {
             console.log('Admin login failed. Message:', result.message); 
-            adminError.textContent = result.message || '로그인 실패: 알 수 없는 오류';
+            if (adminError) adminError.textContent = result.message || '로그인 실패: 알 수 없는 오류'; // null 체크
         }
     } catch (error) {
         console.error('Admin login fetch error:', error); 
-        adminError.textContent = '로그인 요청 중 오류 발생. 서버를 확인하세요.';
+        if (adminError) adminError.textContent = '로그인 요청 중 오류 발생. 서버를 확인하세요.'; // null 체크
     }
   }
 
@@ -1245,11 +1245,12 @@
   }
 
 
-  // --- 초기 데이터 로드 및 페이지 표시 (이전 코드와 동일) ---
+  // --- 초기 데이터 로드 및 페이지 표시 ---
   document.addEventListener('DOMContentLoaded', async () => {
       console.log('DOM Content Loaded. Script execution starts.');
       
       // ⭐⭐ 모든 DOM 요소 참조를 DOMContentLoaded 안에서 수행 ⭐⭐
+      // 이 변수들은 DOM이 완전히 로드된 후에 할당됩니다.
       loginPage = document.getElementById('loginPage');
       loginForm = document.getElementById('loginForm');
       roomNoInput = document.getElementById('roomNo');
