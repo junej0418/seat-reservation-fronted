@@ -115,7 +115,7 @@
     justify-content: center;
     min-width: fit-content; /* 내용에 맞춰 최소 너비 설정, 스크롤 가능하게 함 */
   }
-  /* ⭐ 좌석 색상 커스터마이징 ⭐ */
+  /*  좌석 색상 커스터마이징  */
   .seat-btn {
     background: #CCFFCC; /* 빈자리: 연한 초록색 */
     border: 2px solid #88CC88; /* 약간 더 진한 초록 테두리 */
@@ -260,7 +260,7 @@
     box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
     max-width: 500px;
     width: 90%;
-    text-align: left; /* ⭐ 공지 텍스트 왼쪽 정렬 ⭐ */
+    text-align: left; /*  공지 텍스트 왼쪽 정렬 */
     position: relative;
     font-size: 1.1rem;
     line-height: 1.5;
@@ -275,7 +275,7 @@
   .announcement-popup p {
     margin-bottom: 20px;
     color: #333;
-    white-space: pre-wrap; /* ⭐ 공지 메시지 내 엔터 공백 유지 ⭐ */
+    white-space: pre-wrap; /*  공지 메시지 내 엔터 공백 유지  */
   }
   .announcement-popup button.close-btn {
     background: #b45309;
@@ -309,17 +309,18 @@
     margin-top: 15px;
     margin-right: 8px;
   }
-  /* ⭐ 버튼 그룹 스타일 (뒤로가기 버튼 왼쪽 정렬) ⭐ */
+  /*  버튼 그룹 스타일 (뒤로가기 버튼 왼쪽 정렬)  */
   .button-group {
     display: flex; /* Flexbox 활성화 */
-    justify-content: flex-start; /* 왼쪽 정렬 */
-    gap: 15px; /* 버튼 사이 간격 */
+    justify-content: space-between; /* 양 끝 정렬 */
+    align-items: center; /* 세로 중앙 정렬 */
+    width: 100%; /* 너비 100% */
     margin-top: 20px;
   }
-  .button-group button { /* 그룹 내 버튼은 기존 버튼 마진 초기화 */
-    margin-top: 0;
+  .button-group button { 
+    margin-top: 0; /* 그룹 내 버튼의 상단 마진 초기화 */
   }
-  /* ⭐ 색상 범례 스타일 ⭐ */
+  /*  색상 범례 스타일  */
   .color-legend {
     text-align: center;
     margin-top: 30px;
@@ -382,6 +383,7 @@
 
 <!-- 층 선택 페이지 -->
 <div class="container hidden" id="floorSelectPage">
+  <!-- "님" 중복 해결을 위해 HTML에서 "님, 층을 선택해주세요" 로 고정하고 welcomeText는 이름과 기숙사만 표시 -->
   <h2><span id="welcomeText"></span>님, 층을 선택해주세요</h2> 
   <div class="button-group"> <!-- 버튼 그룹으로 묶음 -->
     <button id="backToLoginBtn" type="button">뒤로가기</button>
@@ -400,7 +402,7 @@
     <button id="cancelSeatBtn" type="button">취소 및 뒤로가기</button>
     <button id="confirmBtn" type="button" disabled>예약 확정</button>
   </div>
-  <!-- ⭐ 색상 범례 추가 ⭐ -->
+  <!--  색상 범례 추가 -->
   <div class="color-legend">
     <div class="legend-item"><div class="legend-box empty"></div>빈자리</div>
     <div class="legend-item"><div class="legend-box booked"></div>예약됨</div>
@@ -939,7 +941,7 @@
           btn.classList.add('seat-btn');
           btn.textContent = seatNum;
 
-          // ⭐⭐ 내가 예약한 자리 표시 로직 강화 (로그 추가) ⭐⭐
+          //  내가 예약한 자리 표시 로직 강화 (로그 추가) 
           // booked 변수 정의는 기존 예약이 해당 좌석에 있는지를 찾습니다.
           const booked = Object.values(allReservations).find(r => 
             r.dormitory === dorm && 
@@ -953,10 +955,10 @@
 
             // 현재 로그인한 사용자의 정보를 더 명확하게 확인
             console.log(`--- Checking seat ${seatNum} ---`);
-            console.log(`Current User: roomNo='${currentUser ? currentUser.roomNo : 'N/A'}', name='${currentUser ? currentUser.name : 'N/A'}'`);
-            console.log(`Booked by: roomNo='${booked.roomNo}', name='${booked.name}'`);
+            console.log(`Current User: roomNo='${currentUser ? currentUser.roomNo : 'N/A'}', name='${currentUser ? currentUser.name : 'N/A'}', floor='${currentUser ? currentUser.floor : 'N/A'}', seat='${currentUser ? currentUser.seat : 'N/A'}'`);
+            console.log(`Booked by: roomNo='${booked.roomNo}', name='${booked.name}', floor='${booked.floor}', seat='${booked.seat}'`);
 
-            // ⭐⭐ 수정: 현재 로그인한 사용자와 예약된 사용자가 일치하는지 정확히 비교 ⭐⭐
+            //  수정: 현재 로그인한 사용자와 예약된 사용자가 일치하는지 정확히 비교 
             if (currentUser && 
                 currentUser.roomNo === booked.roomNo && 
                 currentUser.name === booked.name) 
@@ -997,9 +999,8 @@
           btn.classList.add('mine');
       } 
       // 기존 유저의 예약 좌석에도 mine 클래스 추가 (선택된 좌석과 다르고, 현재 층과 기숙사 정보와 일치할 때)
-      else if (currentUser && currentUser.seat === parseInt(btn.textContent) &&
-                 currentUser.dormitory === selectedDormTitle.textContent && 
-                 currentUser.floor === selectedFloorTitle.textContent) {
+      // 수정: currentUser가 현재 화면의 기숙사와 층에 있는지 추가로 확인 
+      else if (currentUser && currentUser.dormitory === selectedDormTitle.textContent && currentUser.floor === selectedFloorTitle.textContent && currentUser.seat === parseInt(btn.textContent)) {
           btn.classList.add('mine');
       }
     });
@@ -1060,7 +1061,7 @@
       if (response.ok) { // 2xx 상태 코드 (예: 200, 201)
         alert(`${result.newReservation.dormitory} ${result.newReservation.floor}층 ${result.newReservation.seat}번 자리 예약 완료!`);
         
-        // ⭐ 사용자 예약 정보 업데이트 ⭐
+        //  사용자 예약 정보 업데이트 
         currentUser.dormitory = result.newReservation.dormitory;
         currentUser.floor = result.newReservation.floor;
         currentUser.seat = result.newReservation.seat;
@@ -1079,7 +1080,7 @@
         alert("예약 실패: " + (result.message || "알 수 없는 오류"));
         // 실패 시 UI를 다시 그려서 최신 상태 반영
         if (currentUser && currentFloor) {
-            await fetchAllReservations(); // 최신 예약 데이터 다시 가져오기
+            await fetchAllReservations(); // 최신 예약 데이터 다시 가져오기 (Socket.IO에서 할 수 있지만 안전장치)
             renderSeatMap(currentUser.dormitory, currentFloor);
         }
       }
@@ -1143,7 +1144,7 @@
     else resEndTimeInput.value = "";
     timeSettingMessage.textContent = "";
     
-    // ⭐ 공지사항 설정 UI 업데이트 ⭐
+    //  공지사항 설정 UI 업데이트 
     if (currentAnnouncement) {
         announcementMessageInput.value = currentAnnouncement.message;
         announcementActiveCheckbox.checked = currentAnnouncement.active;
@@ -1342,11 +1343,9 @@
       
       await fetchAllReservations();
       await fetchAdminSettings();
-      await fetchAnnouncement(); // ⭐ 공지사항 초기 로드 ⭐
+      await fetchAnnouncement(); //  공지사항 초기 로드 
       console.log('Initial fetches completed. Showing login page.');
       showSection(loginPage);
   });
 })();
 </script>
-</body>
-</html>
