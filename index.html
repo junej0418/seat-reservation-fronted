@@ -115,12 +115,12 @@
     justify-content: center;
     min-width: fit-content; /* 내용에 맞춰 최소 너비 설정, 스크롤 가능하게 함 */
   }
+  /* ⭐ 좌석 색상 커스터마이징 ⭐ */
   .seat-btn {
-    background: #fef3c7;
-    border: 2px solid #fbbf24;
-    border-radius: 6px;
+    background: #CCFFCC; /* 빈자리: 연한 초록색 */
+    border: 2px solid #88CC88; /* 약간 더 진한 초록 테두리 */
     font-weight: 700;
-    color: #92400e;
+    color: #336633; /* 짙은 초록색 글자 */
     cursor: pointer;
     user-select: none;
     display: flex;
@@ -129,21 +129,23 @@
     font-size: 1.1rem;
     min-width: 44px; /* PC/태블릿 기본 좌석 너비 */
     aspect-ratio: 1/1; /* 1:1 비율 유지 */
+    border-radius: 6px;
     transition: background-color 0.3s, border-color 0.3s;
   }
   .seat-btn:hover:not(.booked) {
-    background-color: #fde68a;
-    border-color: #fbbf24;
+    background-color: #AACC88; /* 호버 시 약간 진하게 */
+    border-color: #669944;
   }
   .seat-btn.booked {
-    background: #d1d5db;
-    color: #6b7280;
+    background: #FFCCCC; /* 예약됨: 연한 빨간색 */
+    border: 2px solid #CC8888; /* 약간 더 진한 빨간 테두리 */
+    color: #663333; /* 짙은 빨간색 글자 */
     cursor: not-allowed;
   }
   .seat-btn.mine {
-    background: #fef08a;
-    border-color: #ca8a04;
-    font-weight: 800;
+    background: #FFCCFF; /* 본인 자리: 연한 핑크 */
+    border: 2px solid #CC88CC; /* 약간 더 진한 핑크 테두리 */
+    color: #663366; /* 짙은 핑크 글자 */
   }
   .seat-btn.empty {
     visibility: hidden;
@@ -286,8 +288,8 @@
     transition: background 0.3s;
     margin-top: 0; /* 기존 버튼 마진 초기화 */
     display: block; /* 버튼을 블록 요소로 만들어 하단에 배치 */
-    margin-left: auto; /* 오른쪽 정렬 */
-    margin-right: auto; /* 중앙 정렬 (이전 right 덮어쓰기) */
+    margin-left: auto; /* 중앙 정렬 */
+    margin-right: auto; /* 중앙 정렬 */
   }
   .announcement-popup button.close-btn:hover {
     background: #8e420b;
@@ -307,6 +309,43 @@
     margin-top: 15px;
     margin-right: 8px;
   }
+  /* ⭐ 버튼 그룹 스타일 (뒤로가기 버튼 왼쪽 정렬) ⭐ */
+  .button-group {
+    display: flex; /* Flexbox 활성화 */
+    justify-content: flex-start; /* 왼쪽 정렬 */
+    gap: 15px; /* 버튼 사이 간격 */
+    margin-top: 20px;
+  }
+  .button-group button { /* 그룹 내 버튼은 기존 버튼 마진 초기화 */
+    margin-top: 0;
+  }
+  /* ⭐ 색상 범례 스타일 ⭐ */
+  .color-legend {
+    text-align: center;
+    margin-top: 30px;
+    padding: 15px;
+    border-top: 1px solid #eee;
+    display: flex; /* 가로 정렬 */
+    flex-wrap: wrap; /* 반응형으로 줄바꿈 */
+    justify-content: center; /* 중앙 정렬 */
+    gap: 20px; /* 아이템 간 간격 */
+    font-size: 0.9rem;
+    color: #555;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* 색상 박스와 텍스트 사이 간격 */
+  }
+  .legend-box {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
+  .legend-box.empty { background-color: #CCFFCC; border-color: #88CC88; }
+  .legend-box.booked { background-color: #FFCCCC; border-color: #CC8888; }
+  .legend-box.mine { background-color: #FFCCFF; border-color: #CC88CC; }
 </style>
 </head>
 <body>
@@ -343,13 +382,11 @@
 
 <!-- 층 선택 페이지 -->
 <div class="container hidden" id="floorSelectPage">
-  <!-- "님" 중복 해결을 위해 HTML에서 "님, 층을 선택해주세요" 로 고정하고 welcomeText는 이름과 기숙사만 표시 -->
   <h2><span id="welcomeText"></span>님, 층을 선택해주세요</h2> 
-  <select id="floorSelect" required>
-    <option value="" disabled selected>층 선택</option>
-  </select>
-  <button id="floorNextBtn" type="button">좌석 선택으로</button>
-  <button id="backToLoginBtn" type="button">뒤로가기</button>
+  <div class="button-group"> <!-- 버튼 그룹으로 묶음 -->
+    <button id="backToLoginBtn" type="button">뒤로가기</button>
+    <button id="floorNextBtn" type="button">좌석 선택으로</button>
+  </div>
 </div>
 
 <!-- 좌석 선택 페이지 -->
@@ -359,8 +396,16 @@
     <div id="seatMap"></div>
   </div>
   <div id="reservationAvailabilityMessage"></div>
-  <button id="confirmBtn" type="button" disabled>예약 확정</button>
-  <button id="cancelSeatBtn" type="button">취소 및 뒤로가기</button>
+  <div class="button-group"> <!-- 버튼 그룹으로 묶음 -->
+    <button id="cancelSeatBtn" type="button">취소 및 뒤로가기</button>
+    <button id="confirmBtn" type="button" disabled>예약 확정</button>
+  </div>
+  <!-- ⭐ 색상 범례 추가 ⭐ -->
+  <div class="color-legend">
+    <div class="legend-item"><div class="legend-box empty"></div>빈자리</div>
+    <div class="legend-item"><div class="legend-box booked"></div>예약됨</div>
+    <div class="legend-item"><div class="legend-box mine"></div>내 자리</div>
+  </div>
 </div>
 
 <!-- 관리자 로그인 페이지 -->
@@ -370,9 +415,11 @@
     <label for="adminPassword">비밀번호:</label>
     <input type="password" id="adminPassword" name="adminPassword" required />
     <div id="adminError" class="error"></div>
-    <button type="submit">로그인</button>
+    <div class="button-group"> <!-- 버튼 그룹으로 묶음 -->
+      <button id="adminLoginBackBtn" type="button">로그인페이지로 돌아가기</button>
+      <button type="submit">로그인</button>
+    </div>
   </form>
-  <button id="adminLoginBackBtn" type="button">로그인페이지로 돌아가기</button>
 </div>
 
 <!-- 관리자 페이지 -->
@@ -556,7 +603,7 @@
     console.log('Fetching all reservations...');
     try {
       const res = await fetch(`${BACKEND_URL}/api/reservations`);
-      if (!res.ok) throw new Error('예약 데이터 불러오기 실패');
+      if (!res.ok) throw new Error('예약 데이터 불러오기 실패: ' + res.statusText);
       const data = await res.json();
       allReservations = {};
       data.forEach(r => allReservations[r._id] = r);
@@ -942,18 +989,22 @@
 
   function highlightSelectedSeat() {
     seatMapContainer.querySelectorAll("button.seat-btn").forEach(btn => {
-      // 기존 mine 클래스 제거 후, 현재 선택된 좌석에만 mine 클래스 추가
-      // currentUser의 기존 예약 좌석도 다시 mine 클래스를 가지도록 처리
-      if (currentUser && btn.classList.contains('mine') && (parseInt(btn.textContent) !== selectedSeat && parseInt(btn.textContent) !== currentUser.seat)) {
-          btn.classList.remove('mine');
-      } else if (parseInt(btn.textContent) === selectedSeat) { // 새로 선택된 좌석
+      // 모든 mine 클래스 제거 (이전 선택 해제)
+      btn.classList.remove('mine');
+
+      // 새로 선택된 좌석에 mine 클래스 추가
+      if (parseInt(btn.textContent) === selectedSeat) {
           btn.classList.add('mine');
-      } else if (currentUser && parseInt(btn.textContent) === currentUser.seat && currentUser.dormitory === selectedDormTitle.textContent && currentUser.floor === selectedFloorTitle.textContent) {
-          // 현재 유저의 기존 좌석 (선택된 좌석이 아닐 때)
+      } 
+      // 기존 유저의 예약 좌석에도 mine 클래스 추가 (선택된 좌석과 다르고, 현재 층과 기숙사 정보와 일치할 때)
+      else if (currentUser && currentUser.seat === parseInt(btn.textContent) &&
+                 currentUser.dormitory === selectedDormTitle.textContent && 
+                 currentUser.floor === selectedFloorTitle.textContent) {
           btn.classList.add('mine');
       }
     });
   }
+
 
   function updateReservationAvailability() {
     const status = isReservationTimeAllowed();
@@ -1007,15 +1058,23 @@
       const result = await response.json();
 
       if (response.ok) { // 2xx 상태 코드 (예: 200, 201)
-        alert(`${currentUser.dormitory} ${currentFloor}층 ${selectedSeat}번 자리 예약 완료!`);
-        // 성공 시 currentUser의 좌석 정보도 업데이트 (UI 갱신에 사용될 수 있도록)
-        currentUser.seat = selectedSeat; 
+        alert(`${result.newReservation.dormitory} ${result.newReservation.floor}층 ${result.newReservation.seat}번 자리 예약 완료!`);
         
-        currentUser = null; // 초기화
-        currentFloor = null;
-        selectedSeat = null;
-        loginForm.reset();
-        showSection(loginPage);
+        // ⭐ 사용자 예약 정보 업데이트 ⭐
+        currentUser.dormitory = result.newReservation.dormitory;
+        currentUser.floor = result.newReservation.floor;
+        currentUser.seat = result.newReservation.seat;
+
+        // 로그인 폼 리셋 대신 UI만 변경
+        // currentUser = null; 
+        // currentFloor = null;
+        selectedSeat = null; // 선택된 좌석만 초기화
+        // loginForm.reset();
+        // showSection(loginPage); // 로그인 화면으로 돌아가지 않고 현재 좌석 화면 유지
+        
+        // 현재 좌석 화면에서 UI만 업데이트
+        renderSeatMap(currentUser.dormitory, currentUser.floor);
+        updateReservationAvailability();
       } else { // 4xx, 5xx 상태 코드
         alert("예약 실패: " + (result.message || "알 수 없는 오류"));
         // 실패 시 UI를 다시 그려서 최신 상태 반영
