@@ -487,7 +487,7 @@
   let availabilityCheckInterval = null;
   let prevAllowedState = null;
 
-  // DOM 요소 참조 (getElementById는 항상 스크립트 로드 시점에 존재해야 함)
+  // DOM 요소 참조 (getElementById는 항상 스크ript 로드 시점에 존재해야 함)
   const loginPage = document.getElementById('loginPage');
   const loginForm = document.getElementById('loginForm');
   const roomNoInput = document.getElementById('roomNo');
@@ -530,7 +530,7 @@
   // 공지사항 관련 DOM 요소
   const announcementOverlay = document.getElementById('announcementOverlay');
   const announcementPopupMessage = document.getElementById('announcementMessage');
-  const announcementCloseBtn = announcementOverlay ? announcementOverlay.querySelector('.close-btn') : null; // null 체크 추가
+  const announcementCloseBtn = announcementOverlay ? announcementOverlay.querySelector('.close-btn') : null; 
   const announcementForm = document.getElementById('announcementForm');
   const announcementMessageInput = document.getElementById('announcementMessageInput');
   const announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
@@ -999,6 +999,7 @@
           btn.classList.add('mine');
       } 
       // 기존 유저의 예약 좌석에도 mine 클래스 추가 (선택된 좌석과 다르고, 현재 층과 기숙사 정보와 일치할 때)
+      // ⭐ 수정: currentUser가 현재 화면의 기숙사와 층에 있는지 추가로 확인 ⭐
       else if (currentUser && 
                currentUser.dormitory === selectedDormTitle.textContent && 
                currentUser.floor === selectedFloorTitle.textContent && 
@@ -1101,7 +1102,7 @@
         // 2. 층별 정렬 (숫자 순, '4-1' 같은 형식도 고려)
         const parseFloor = (f) => parseFloat(f.replace('-', '.'));
         if (parseFloor(a.floor) !== parseFloor(b.floor)) {
-            return parseFloor(a.floor) - parseFloor(b.floor);
+            return parseFloor(a.floor) - parseFloor(b.buffer);
         }
         // 3. 좌석 번호별 정렬
         return a.seat - b.seat;
