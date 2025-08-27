@@ -433,7 +433,7 @@
   <form id="reservationTimeForm" novalidate>
     <label for="resStartTime">예약 시작 시간:</label>
     <input type="datetime-local" id="resStartTime" required />
-    <label for="resEndTime"> 예약 종료 시간:</label>
+    <label for="resEndTime">예약 종료 시간:</label>
     <input type="datetime-local" id="resEndTime" required />
     <button type="submit">시간 설정 저장</button>
     <div id="timeSettingMessage"></div>
@@ -613,6 +613,9 @@
 
   // --- Socket.IO 이벤트 리스너 (실시간 동기화) ---
   // 이 리스너들은 DOMContentLoaded 밖에서 정의되어야 소켓 연결 시점에 바로 작동할 수 있습니다.
+  // socket 변수는 IIFE 전역 스코프에 이미 선언되어 있으므로, 이 부분에서 io()를 호출하여 할당합니다.
+  socket = io(BACKEND_URL); // 여기에 socket 변수 할당
+
   if (socket) {
     socket.on('reservationsUpdated', async updated => {
       console.log('🔗 Socket.IO: 예약 데이터 실시간 업데이트 수신');
@@ -723,8 +726,12 @@
         return; 
     }
 
-    if (floorSelect) floorSelect.innerHTML = '<option value="" disabled selected>층 선택</option>'; 
-    else { console.error('Error: floorSelect is null when trying to setFloorOptions. This should not happen if DOMContentLoaded is used correctly.'); return; } // 중요 디버깅: null일 경우 조기 반환
+    if (!floorSelect) { // ⭐ 중요: floorSelect가 null일 경우 이 오류를 발생시키고 조기 반환 ⭐
+      console.error('Critical Error: floorSelect is null when trying to setFloorOptions. Check HTML ID "floorSelect" and DOM loading.');
+      alert('오류: 층 선택 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+      return; 
+    }
+    floorSelect.innerHTML = '<option value="" disabled selected>층 선택</option>'; 
 
     const floors = Object.keys(seatLayouts[dorm]).sort((a,b) => {
       const parseFloor = (f) => parseFloat(f.replace('-', '.'));
@@ -735,18 +742,22 @@
       const option = document.createElement('option');
       option.value = floor;
       option.textContent = floor.includes('-') ? floor.replace('-', '층-') : floor + '층';
-      if(floorSelect) floorSelect.appendChild(option); 
+      floorSelect.appendChild(option); 
     });
   }
 
   function renderSeatMap(dorm, floor) {
     console.log('renderSeatMap called with dorm:', dorm, 'floor:', floor); 
-    if (seatMapContainer) seatMapContainer.innerHTML = ''; 
-    else { console.error('Error: seatMapContainer is null when trying to renderSeatMap'); return; } // 중요 디버깅: null일 경우 조기 반환
+    if (!seatMapContainer) { // ⭐ 중요: seatMapContainer가 null일 경우 이 오류를 발생시키고 조기 반환 ⭐
+        console.error('Critical Error: seatMapContainer is null when trying to renderSeatMap. Check HTML ID "seatMap" and DOM loading.');
+        alert('오류: 좌석 배치도 컨테이너를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+        return; 
+    }
+    seatMapContainer.innerHTML = ''; 
 
     const layout = seatLayouts[dorm]?.[floor];
     if (!layout) {
-      if (seatMapContainer) seatMapContainer.textContent = '해당 층 좌석 배치도가 없습니다.'; 
+      seatMapContainer.textContent = '해당 층 좌석 배치도가 없습니다.'; 
       console.warn('Layout for', dorm, floor, 'is undefined or null.'); 
       return;
     }
@@ -806,7 +817,7 @@
             };
           }
         }
-        if(seatMapContainer) seatMapContainer.appendChild(btn); 
+        seatMapContainer.appendChild(btn); 
       });
     });
     highlightSelectedSeat();
@@ -922,7 +933,7 @@
 
   function handleClickBackToLoginBtn() {
     console.log('Back to Login button clicked.');
-    currentUser = null; currentFloor = null; selectedSeat = null; // 모든 currentUser 관련 정보 초기화
+    currentUser = null; currentFloor = null; selectedSeat = null; 
     if (loginForm) loginForm.reset(); 
     showSection(loginPage);
   }
@@ -930,7 +941,7 @@
   function handleClickFloorNextBtn() {
     console.log('Floor Next button clicked.');
     if (!floorSelect) { 
-      console.error('Error: floorSelect element is null in handleClickFloorNextBtn.');
+      console.error('Error: floorSelect element is null in handleClickFloorNextBtn. This is CRITICAL. Please check HTML structure and JavaScript loading.');
       alert('오류: 층 선택 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
       return;
     }
@@ -1070,7 +1081,7 @@
         }
         const parseFloor = (f) => parseFloat(f.replace('-', '.'));
         if (parseFloor(a.floor) !== parseFloor(b.floor)) {
-            return parseFloor(a.floor) - parseFloor(b.buffer);
+            return parseFloor(a.floor) - parseFloor(b.floor);
         }
         return a.seat - b.seat;
     });
@@ -1315,7 +1326,7 @@
       console.log('dormError:', dormError);
       console.log('adminLoginBtn:', adminLoginBtn);
       console.log('floorSelectPage:', floorSelectPage);
-      console.log('floorSelect:', floorSelect);
+      console.log('floorSelect:', floorSelect); // <<< 여기서 floorSelect의 값이 중요합니다!
       console.log('floorNextBtn:', floorNextBtn);
       console.log('backToLoginBtn:', backToLoginBtn);
       console.log('welcomeText:', welcomeText);
@@ -1398,3 +1409,5 @@
   });
 })();
 </script>
+</body>
+</html>
