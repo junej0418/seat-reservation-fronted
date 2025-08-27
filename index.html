@@ -371,7 +371,7 @@
     </select>
     <div id="dormError" class="error"></div>
 
-    <!-- 허니팟 필드 추가: 봇만 채워넣는 숨겨진 필드 -->
+    <!-- 🍯 허니팟 필드 추가: 봇만 채워넣는 숨겨진 필드 -->
     <input type="text" name="honeypot_field" style="display: none !important; visibility: hidden !important; opacity: 0 !important; width: 0 !important; height: 0 !important; border: none !important; padding: 0 !important; margin: 0 !important;" tabindex="-1" autocomplete="off" />
 
     <button type="submit">다음</button>
@@ -402,7 +402,7 @@
     <button id="cancelSeatBtn" type="button">취소 및 뒤로가기</button>
     <button id="confirmBtn" type="button" disabled>예약 확정</button>
   </div>
-  <!-- 색상 범례 추가 -->
+  <!-- ⭐ 색상 범례 추가 ⭐ -->
   <div class="color-legend">
     <div class="legend-item"><div class="legend-box empty"></div>빈자리</div>
     <div class="legend-item"><div class="legend-box booked"></div>예약됨</div>
@@ -716,13 +716,16 @@
   // --- 좌석 배치도 관련 함수들 ---
   function setFloorOptions(dorm) {
     console.log('setFloorOptions called with dorm:', dorm); // 디버깅
+    // seatLayouts[dorm]이 유효한지 확인하고, floorSelect가 null이 아닌지 확인
     if (!seatLayouts[dorm]) {
         console.error('Error: seatLayouts[' + dorm + '] is undefined or null. Check dorm value and seatLayouts definition.');
-        if (floorSelect) floorSelect.innerHTML = '<option value="" disabled selected>해당 기숙사의 층 정보가 없습니다.</option>'; // null 체크
+        if (floorSelect) floorSelect.innerHTML = '<option value="" disabled selected>해당 기숙사의 층 정보가 없습니다.</option>'; 
         return; 
     }
 
-    if (floorSelect) floorSelect.innerHTML = '<option value="" disabled selected>층 선택</option>'; // null 체크
+    if (floorSelect) floorSelect.innerHTML = '<option value="" disabled selected>층 선택</option>'; 
+    else { console.error('floorSelect is null when trying to setFloorOptions'); return; } // 중요 디버깅
+
     const floors = Object.keys(seatLayouts[dorm]).sort((a,b) => {
       const parseFloor = (f) => parseFloat(f.replace('-', '.'));
       return parseFloor(a) - parseFloor(b);
@@ -732,22 +735,24 @@
       const option = document.createElement('option');
       option.value = floor;
       option.textContent = floor.includes('-') ? floor.replace('-', '층-') : floor + '층';
-      if(floorSelect) floorSelect.appendChild(option); // null 체크
+      if(floorSelect) floorSelect.appendChild(option); // floorSelect가 null이 아닌지 확인 후 추가
     });
   }
 
   function renderSeatMap(dorm, floor) {
     console.log('renderSeatMap called with dorm:', dorm, 'floor:', floor); // 디버깅
-    if (seatMapContainer) seatMapContainer.innerHTML = ''; // null 체크
+    if (seatMapContainer) seatMapContainer.innerHTML = ''; 
+    else { console.error('seatMapContainer is null when trying to renderSeatMap'); return; } // 중요 디버깅
+
     const layout = seatLayouts[dorm]?.[floor];
     if (!layout) {
-      if (seatMapContainer) seatMapContainer.textContent = '해당 층 좌석 배치도가 없습니다.'; // null 체크
-      console.warn('Layout for', dorm, floor, 'is undefined or null.'); // 디버깅
+      if (seatMapContainer) seatMapContainer.textContent = '해당 층 좌석 배치도가 없습니다.'; 
+      console.warn('Layout for', dorm, floor, 'is undefined or null.'); 
       return;
     }
     // 그리드 컬럼 설정 (반응형: 1fr로 유연하게, minmax로 최소 크기 보장)
     const maxCols = Math.max(...layout.map(row => row.length));
-    if(seatMapContainer) seatMapContainer.style.gridTemplateColumns = `repeat(${maxCols}, 1fr)`; // null 체크
+    seatMapContainer.style.gridTemplateColumns = `repeat(${maxCols}, 1fr)`;
 
     const allowed = isReservationTimeAllowed().allowed;
 
@@ -795,32 +800,29 @@
             btn.onclick = () => {
               if (allowed) { 
                 selectedSeat = seatNum;
-                if (confirmBtn) confirmBtn.disabled = false; // null 체크
+                if (confirmBtn) confirmBtn.disabled = false; 
                 highlightSelectedSeat();
               }
             };
           }
         }
-        if(seatMapContainer) seatMapContainer.appendChild(btn); // null 체크
+        seatMapContainer.appendChild(btn); 
       });
     });
     highlightSelectedSeat();
   }
 
   function highlightSelectedSeat() {
-    if(!seatMapContainer) return; // null 체크
+    if(!seatMapContainer) return; 
     seatMapContainer.querySelectorAll("button.seat-btn").forEach(btn => {
-      // 모든 mine 클래스 제거 (이전 선택 해제)
       btn.classList.remove('mine');
 
-      // 새로 선택된 좌석에 mine 클래스 추가
       if (parseInt(btn.textContent) === selectedSeat) {
           btn.classList.add('mine');
       } 
-      // 기존 유저의 예약 좌석에도 mine 클래스 추가 (선택된 좌석과 다르고, 현재 층과 기숙사 정보와 일치할 때)
       else if (currentUser && 
-               selectedDormTitle && currentUser.dormitory === selectedDormTitle.textContent && // null 체크
-               selectedFloorTitle && currentUser.floor === selectedFloorTitle.textContent && // null 체크
+               selectedDormTitle && currentUser.dormitory === selectedDormTitle.textContent && 
+               selectedFloorTitle && currentUser.floor === selectedFloorTitle.textContent && 
                currentUser.seat === parseInt(btn.textContent)) {
           btn.classList.add('mine');
       }
@@ -830,22 +832,21 @@
 
   function updateReservationAvailability() {
     const status = isReservationTimeAllowed();
-    if(reservationAvailabilityMessage) reservationAvailabilityMessage.textContent = status.message; // null 체크
+    if(reservationAvailabilityMessage) reservationAvailabilityMessage.textContent = status.message; 
 
     const currentAllowedState = status.allowed;
     const hasAllowedStateChanged = (prevAllowedState !== null && prevAllowedState !== currentAllowedState);
     prevAllowedState = currentAllowedState;
 
     if (currentAllowedState) {
-      if(reservationAvailabilityMessage) reservationAvailabilityMessage.classList.add("available"); // null 체크
-      if(confirmBtn) confirmBtn.disabled = (selectedSeat === null); // null 체크
+      if(reservationAvailabilityMessage) reservationAvailabilityMessage.classList.add("available"); 
+      if(confirmBtn) confirmBtn.disabled = (selectedSeat === null); 
     } else {
-      if(reservationAvailabilityMessage) reservationAvailabilityMessage.classList.remove("available"); // null 체크
-      if(confirmBtn) confirmBtn.disabled = true; // null 체크
+      if(reservationAvailabilityMessage) reservationAvailabilityMessage.classList.remove("available"); 
+      if(confirmBtn) confirmBtn.disabled = true; 
     }
     
-    // 예약 가능 상태가 변경되었고 현재 좌석 배치도 화면이라면, 좌석 버튼 상태도 즉시 업데이트
-    if (hasAllowedStateChanged && seatMapPage && !seatMapPage.classList.contains("hidden") && currentUser && currentFloor) { // null 체크
+    if (hasAllowedStateChanged && seatMapPage && !seatMapPage.classList.contains("hidden") && currentUser && currentFloor) { 
         renderSeatMap(currentUser.dormitory, currentFloor); 
     }
   }
@@ -862,14 +863,13 @@
     }
 
     try {
-      // 예약 폼 데이터 준비
       const reservationData = {
           roomNo: currentUser.roomNo,
           name: currentUser.name,
           dormitory: currentUser.dormitory,
           floor: currentFloor,
           seat: selectedSeat,
-          honeypot_field: '' // 허니팟 필드 (빈값으로 전송)
+          honeypot_field: '' 
       };
 
       const response = await fetch(`${BACKEND_URL}/api/reservations`, {
@@ -879,10 +879,10 @@
       });
       const result = await response.json();
 
-      if (response.ok) { // 2xx 상태 코드 (예: 200, 201)
+      if (response.ok) { 
         alert(`${result.newReservation.dormitory} ${result.newReservation.floor}층 ${result.newReservation.seat}번 자리 예약 완료!`);
         
-        // ⭐ 사용자 예약 정보 업데이트 ⭐
+        // 사용자 예약 정보 업데이트
         currentUser.dormitory = result.newReservation.dormitory;
         currentUser.floor = result.newReservation.floor;
         currentUser.seat = result.newReservation.seat;
@@ -892,7 +892,7 @@
         // 현재 좌석 화면에서 UI만 업데이트
         renderSeatMap(currentUser.dormitory, currentUser.floor);
         updateReservationAvailability();
-      } else { // 4xx, 5xx 상태 코드
+      } else { 
         alert("예약 실패: " + (result.message || "알 수 없는 오류"));
         // 실패 시 UI를 다시 그려서 최신 상태 반영
         if (currentUser && currentFloor) {
@@ -908,7 +908,7 @@
 
   // --- 관리자 페이지 관련 함수들 ---
   async function loadAdminPage() {
-    if(reservationListBody) reservationListBody.innerHTML = ""; // null 체크
+    if(reservationListBody) reservationListBody.innerHTML = ""; 
     let resArr = Object.values(allReservations);
     
     // 예약 현황 위치별 정렬 로직
@@ -927,7 +927,7 @@
     });
 
     if (resArr.length === 0) {
-      if(reservationListBody) reservationListBody.innerHTML = '<tr><td colspan="6">등록된 예약이 없습니다.</td></tr>'; // null 체크
+      if(reservationListBody) reservationListBody.innerHTML = '<tr><td colspan="6">등록된 예약이 없습니다.</td></tr>'; 
       return;
     }
     resArr.forEach((resv) => {
@@ -939,9 +939,9 @@
         <td>${resv.floor}</td>
         <td>${resv.seat}</td>
         <td><button type="button" class="cancel-btn" data-id="${resv._id}">취소</button></td>`;
-      if(reservationListBody) reservationListBody.appendChild(tr); // null 체크
+      if(reservationListBody) reservationListBody.appendChild(tr); 
     });
-    if(reservationListBody) { // null 체크
+    if(reservationListBody) { 
       reservationListBody.querySelectorAll(".cancel-btn").forEach((btn) => {
         btn.onclick = async () => {
           if (confirm("정말 예약을 취소하시겠습니까?")) {
@@ -954,20 +954,20 @@
       });
     }
 
-    if (resStartTimeInput) resStartTimeInput.value = adminSettings.reservationStartTime ? new Date(adminSettings.reservationStartTime).toISOString().slice(0, 16) : ""; // null 체크
-    if (resEndTimeInput) resEndTimeInput.value = adminSettings.reservationEndTime ? new Date(adminSettings.reservationEndTime).toISOString().slice(0, 16) : ""; // null 체크
-    if (timeSettingMessage) timeSettingMessage.textContent = ""; // null 체크
+    if (resStartTimeInput) resStartTimeInput.value = adminSettings.reservationStartTime ? new Date(adminSettings.reservationStartTime).toISOString().slice(0, 16) : ""; 
+    if (resEndTimeInput) resEndTimeInput.value = adminSettings.reservationEndTime ? new Date(adminSettings.reservationEndTime).toISOString().slice(0, 16) : ""; 
+    if (timeSettingMessage) timeSettingMessage.textContent = ""; 
     
     // 공지사항 설정 UI 업데이트
     if (currentAnnouncement) {
-        if (announcementMessageInput) announcementMessageInput.value = currentAnnouncement.message; // null 체크
-        if (announcementActiveCheckbox) announcementActiveCheckbox.checked = currentAnnouncement.active; // null 체크
-        if (announcementMessageStatus) announcementMessageStatus.textContent = ''; // null 체크
+        if (announcementMessageInput) announcementMessageInput.value = currentAnnouncement.message; 
+        if (announcementActiveCheckbox) announcementActiveCheckbox.checked = currentAnnouncement.active; 
+        if (announcementMessageStatus) announcementMessageStatus.textContent = ''; 
     }
   }
 
   // 모든 예약 취소 버튼 이벤트
-  if (clearAllReservationsBtn) { // null 체크
+  if (clearAllReservationsBtn) { 
       clearAllReservationsBtn.addEventListener('click', async () => {
           if (!confirm('정말 모든 예약을 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다!')) {
               return;
@@ -990,12 +990,12 @@
   }
 
 
-  if (reservationTimeForm) { // null 체크
+  if (reservationTimeForm) { 
       reservationTimeForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
         if (!resStartTimeInput.value || !resEndTimeInput.value) {
-          if (timeSettingMessage) { // null 체크
+          if (timeSettingMessage) { 
               timeSettingMessage.textContent = "시작과 종료 시간을 모두 입력하세요.";
               timeSettingMessage.style.color = "red";
           }
@@ -1003,7 +1003,7 @@
         }
 
         if (new Date(resEndTimeInput.value) <= new Date(resStartTimeInput.value)) {
-          if (timeSettingMessage) { // null 체크
+          if (timeSettingMessage) { 
               timeSettingMessage.textContent = "종료 시간은 시작 시간보다 늦어야 합니다.";
               timeSettingMessage.style.color = "red";
           }
@@ -1021,20 +1021,20 @@
           });
 
           if (res.ok) {
-            if (timeSettingMessage) { // null 체크
+            if (timeSettingMessage) { 
                 timeSettingMessage.textContent = "예약 가능 시간이 설정되었습니다.";
                 timeSettingMessage.style.color = "green";
             }
             await loadAdminPage(); 
           } else {
-            if (timeSettingMessage) { // null 체크
+            if (timeSettingMessage) { 
                 timeSettingMessage.textContent = "설정 실패";
                 timeSettingMessage.style.color = "red";
             }
           }
         } catch (e) {
           console.error(e);
-          if (timeSettingMessage) { // null 체크
+          if (timeSettingMessage) { 
               timeSettingMessage.textContent = "서버 오류 발생";
               timeSettingMessage.style.color = "red";
           }
@@ -1042,21 +1042,21 @@
       });
   }
 
-  if (announcementForm) { // null 체크
+  if (announcementForm) { 
       announcementForm.addEventListener('submit', async (e) => {
           e.preventDefault();
           const message = announcementMessageInput.value.trim();
           const active = announcementActiveCheckbox.checked;
 
           if (!message && active) {
-              if (announcementMessageStatus) { // null 체크
+              if (announcementMessageStatus) { 
                   announcementMessageStatus.textContent = '활성화하려면 공지 내용을 입력하세요.';
                   announcementMessageStatus.style.color = 'red';
               }
               return;
           }
           if (!message && !active) { 
-              if (announcementMessageStatus) { // null 체크
+              if (announcementMessageStatus) { 
                   announcementMessageStatus.textContent = '공지 비활성화 및 내용 삭제 완료.';
                   announcementMessageStatus.style.color = "green";
               }
@@ -1069,369 +1069,26 @@
                   body: JSON.stringify({ message, active })
               });
               if (response.ok) {
-                  if (announcementMessageStatus) { // null 체크
+                  if (announcementMessageStatus) { 
                       announcementMessageStatus.textContent = active ? '공지사항이 저장되고 활성화되었습니다.' : '공지사항이 저장되고 비활성화되었습니다.';
                       announcementMessageStatus.style.color = 'green';
                   }
               } else {
-                  if (announcementMessageStatus) { // null 체크
+                  if (announcementMessageStatus) { 
                       announcementMessageStatus.textContent = '공지 저장 실패';
                       announcementMessageStatus.style.color = 'red';
                   }
               }
           } catch (e) {
               console.error('공지 저장 중 오류:', e);
-              if (announcementMessageStatus) { // null 체크
+              if (announcementMessageStatus) { 
                   announcementMessageStatus.textContent = '공지 저장 중 서버 오류 발생';
                   announcementMessageStatus.style.color = 'red';
               }
           }
       });
   }
-
-  // 공지 팝업 표시/숨김 함수
-  function showAnnouncement(message) {
-      console.log("showAnnouncement called with message:", message); // 디버깅
-      if (announcementOverlay && announcementPopupMessage) {
-          announcementPopupMessage.textContent = message; 
-          announcementOverlay.classList.remove('hidden');
-      } else {
-          console.error("공지 팝업 요소를 찾을 수 없습니다.");
-      }
-  }
-
-  function hideAnnouncement() {
-      console.log("hideAnnouncement called."); 
-      if (announcementOverlay) {
-          announcementOverlay.classList.add('hidden');
-      } else {
-          console.error("announcementOverlay not found during hideAnnouncement.");
-      }
-  }
-
-  // 초기 데이터 로드 및 페이지 표시
-  document.addEventListener('DOMContentLoaded', async () => {
-      console.log('DOM Content Loaded. Script execution starts.');
-      
-      //  모든 DOM 요소 참조를 DOMContentLoaded 안에서 수행 
-      loginPage = document.getElementById('loginPage');
-      loginForm = document.getElementById('loginForm');
-      roomNoInput = document.getElementById('roomNo');
-      userNameInput = document.getElementById('userName');
-      dormitorySelect = document.getElementById('dormitory');
-      roomError = document.getElementById('roomError');
-      nameError = document.getElementById('nameError');
-      dormError = document.getElementById('dormError');
-      adminLoginBtn = document.getElementById('adminLoginBtn');
-
-      floorSelectPage = document.getElementById('floorSelectPage');
-      floorSelect = document.getElementById('floorSelect');
-      floorNextBtn = document.getElementById('floorNextBtn');
-      backToLoginBtn = document.getElementById('backToLoginBtn');
-      welcomeText = document.getElementById('welcomeText'); 
-
-      seatMapPage = document.getElementById('seatMapPage');
-      seatMapContainer = document.getElementById('seatMap');
-      confirmBtn = document.getElementById('confirmBtn');
-      cancelSeatBtn = document.getElementById('cancelSeatBtn');
-      selectedDormTitle = document.getElementById('selectedDorm');
-      selectedFloorTitle = document.getElementById('selectedFloor');
-      reservationAvailabilityMessage = document.getElementById('reservationAvailabilityMessage');
-
-      adminLoginPage = document.getElementById('adminLoginPage');
-      adminLoginForm = document.getElementById('adminLoginForm');
-      adminPasswordInput = document.getElementById('adminPassword');
-      adminError = document.getElementById('adminError');
-
-      adminPage = document.getElementById('adminPage');
-      adminLogoutBtn = document.getElementById('adminLogoutBtn');
-      reservationListBody = document.getElementById('reservationListBody');
-      clearAllReservationsBtn = document.getElementById('clearAllReservationsBtn');
-
-      reservationTimeForm = document.getElementById('reservationTimeForm');
-      resStartTimeInput = document.getElementById('resStartTime');
-      resEndTimeInput = document.getElementById('resEndTime');
-      timeSettingMessage = document.getElementById('timeSettingMessage');
-
-      announcementOverlay = document.getElementById('announcementOverlay');
-      announcementPopupMessage = document.getElementById('announcementMessage');
-      announcementCloseBtn = announcementOverlay ? announcementOverlay.querySelector('.close-btn') : null; 
-      announcementForm = document.getElementById('announcementForm');
-      announcementMessageInput = document.getElementById('announcementMessageInput');
-      announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
-      announcementMessageStatus = document.getElementById('announcementMessageStatus');
-      // DOM 요소 참조 끝 
-
-      // DOM 요소 참조 검사 로그
-      console.log('--- DOM Element Checks ---');
-      console.log('loginPage:', loginPage);
-      console.log('loginForm:', loginForm);
-      console.log('roomNoInput:', roomNoInput);
-      console.log('userNameInput:', userNameInput);
-      console.log('dormitorySelect:', dormitorySelect);
-      console.log('roomError:', roomError);
-      console.log('nameError:', nameError);
-      console.log('dormError:', dormError);
-      console.log('adminLoginBtn:', adminLoginBtn);
-      console.log('floorSelectPage:', floorSelectPage);
-      console.log('floorSelect:', floorSelect);
-      console.log('floorNextBtn:', floorNextBtn);
-      console.log('backToLoginBtn:', backToLoginBtn);
-      console.log('welcomeText:', welcomeText);
-      console.log('seatMapPage:', seatMapPage);
-      console.log('seatMapContainer:', seatMapContainer);
-      console.log('confirmBtn:', confirmBtn);
-      console.log('cancelSeatBtn:', cancelSeatBtn);
-      console.log('selectedDormTitle:', selectedDormTitle);
-      console.log('selectedFloorTitle:', selectedFloorTitle);
-      console.log('reservationAvailabilityMessage:', reservationAvailabilityMessage);
-      console.log('adminLoginPage:', adminLoginPage);
-      console.log('adminLoginForm:', adminLoginForm);
-      console.log('adminPasswordInput:', adminPasswordInput);
-      console.log('adminError:', adminError);
-      console.log('adminPage:', adminPage);
-      console.log('adminLogoutBtn:', adminLogoutBtn);
-      console.log('reservationListBody:', reservationListBody);
-      console.log('clearAllReservationsBtn:', clearAllReservationsBtn);
-      console.log('announcementOverlay:', announcementOverlay);
-      console.log('announcementPopupMessage:', announcementPopupMessage);
-      console.log('announcementCloseBtn:', announcementCloseBtn);
-      console.log('announcementForm:', announcementForm);
-      console.log('announcementMessageInput:', announcementMessageInput);
-      console.log('announcementActiveCheckbox:', announcementActiveCheckbox);
-      console.log('announcementMessageStatus:', announcementMessageStatus);
-      console.log('reservationTimeForm:', reservationTimeForm);
-      console.log('resStartTimeInput:', resStartTimeInput);
-      console.log('resEndTimeInput:', resEndTimeInput);
-      console.log('timeSettingMessage:', timeSettingMessage);
-      console.log('--- End DOM Element Checks ---');
-
-      //  모든 이벤트 리스너 등록 
-      // 이제 DOMContentLoaded 안에서 모든 요소가 할당되었으므로, 안전하게 리스너 등록 가능
-      if (loginForm) { // 로그인 폼 이벤트 리스너
-          loginForm.addEventListener('submit', async e => {
-            console.log('Login form submitted. Event triggered.');
-            e.preventDefault(); // 기본 폼 제출 동작 방지
-
-            clearErrors(); 
-
-            const roomNo = roomNoInput.value.trim();
-            const name = userNameInput.value.trim();
-            const selectedDorm = dormitorySelect.value; 
-            const honeypotField = loginForm.querySelector('input[name="honeypot_field"]').value; 
-
-            console.log('Input values:', { roomNo, name, selectedDorm, honeypotField }); 
-
-            let valid = true; 
-            if (!roomNoPattern.test(roomNo)) {
-              roomError.textContent = '룸 번호는 000호 형식으로 입력하세요.';
-              valid = false;
-            }
-            if (!koreanNamePattern.test(name)) {
-              nameError.textContent = '이름은 한글 2~4자여야 합니다.';
-              valid = false;
-            }
-            if (!selectedDorm) { 
-              dormError.textContent = '기숙사를 선택하세요.';
-              valid = false;
-            }
-            if (honeypotField) { 
-                console.warn('🍯 Honeypot field filled on frontend. Likely a bot.');
-                valid = false; 
-                alert('비정상적인 요청이 감지되었습니다. (Honeypot)');
-            }
-
-            if (!valid) {
-              console.log('Login form validation failed. Not proceeding.');
-              return; 
-            }
-            console.log('Login form validation passed. Proceeding with logic.');
-
-            const hasReservation = Object.values(allReservations).some(r => r.roomNo === roomNo && r.name === name);
-            console.log('User has existing reservation?', hasReservation);
-
-            if (hasReservation) {
-              const existing = Object.values(allReservations).find(r => r.roomNo === roomNo && r.name === name);
-              currentUser = {roomNo, name, dormitory: selectedDorm}; 
-              currentFloor = existing.floor;
-              selectedSeat = existing.seat;
-              setFloorOptions(selectedDorm); 
-              floorSelect.value = currentFloor;
-              welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`; 
-              selectedDormTitle.textContent = selectedDorm; 
-              selectedFloorTitle.textContent = currentFloor;
-              renderSeatMap(selectedDorm, currentFloor); 
-              updateReservationAvailability();
-              console.log('Existing user: Redirecting to seat map page.');
-              showSection(seatMapPage);
-            } else {
-              currentUser = {roomNo, name, dormitory: selectedDorm}; 
-              setFloorOptions(selectedDorm); 
-              welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`; 
-              console.log('New user: Redirecting to floor select page.');
-              showSection(floorSelectPage);
-            }
-          });
-      } else {
-          console.error("Critical Error: loginForm element not found. Login will not work. Please check HTML IDs.");
-      }
-
-      if (backToLoginBtn) backToLoginBtn.addEventListener('click', () => { console.log('Back to Login button clicked.'); currentUser = currentFloor = selectedSeat = null; loginForm.reset(); showSection(loginPage); });
-      if (floorNextBtn) floorNextBtn.addEventListener('click', () => { console.log('Floor Next button clicked.'); const floor = floorSelect.value; if (!floor) { alert('층을 선택하세요.'); console.log('Floor not selected.'); return; } currentFloor = floor; selectedDormTitle.textContent = currentUser.dormitory; selectedFloorTitle.textContent = currentFloor; selectedSeat = null; confirmBtn.disabled = true; renderSeatMap(currentUser.dormitory, currentFloor); updateReservationAvailability(); showSection(seatMapPage); });
-      if (cancelSeatBtn) cancelSeatBtn.addEventListener('click', () => { console.log('Cancel Seat button clicked.'); selectedSeat = null; confirmBtn.disabled = true; showSection(floorSelectPage); });
-      if (adminLoginBtn) adminLoginBtn.addEventListener('click', () => { console.log('Admin Login button clicked.'); adminLoginForm.reset(); adminError.textContent = ''; showSection(adminLoginPage); });
-      if (document.getElementById('adminLoginBackBtn')) document.getElementById('adminLoginBackBtn').addEventListener('click', () => { console.log('Admin Login Back button clicked.'); showSection(loginPage); });
-      
-      if (adminLoginForm) { 
-          adminLoginForm.addEventListener('submit', async e => {
-            console.log('Admin login form submitted. Event triggered.'); 
-            e.preventDefault();
-            const pw = adminPasswordInput.value.trim();
-
-            try {
-                console.log('Sending admin login request to backend...'); 
-                const response = await fetch(`${BACKEND_URL}/api/admin-login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: pw })
-                });
-                const result = await response.json();
-                
-                console.log('Admin login response:', result); 
-                if (result.success) { 
-                    console.log('Admin login successful. Redirecting to admin page.'); 
-                    await loadAdminPage(); 
-                    if (currentAnnouncement) {
-                        announcementMessageInput.value = currentAnnouncement.message;
-                        announcementActiveCheckbox.checked = currentAnnouncement.active;
-                    }
-                    showSection(adminPage);
-                } else {
-                    console.log('Admin login failed. Message:', result.message); 
-                    adminError.textContent = result.message || '로그인 실패: 알 수 없는 오류';
-                }
-            } catch (error) {
-                console.error('Admin login fetch error:', error); 
-                adminError.textContent = '로그인 요청 중 오류 발생. 서버를 확인하세요.';
-            }
-          });
-      } else {
-          console.error("Critical Error: adminLoginForm element not found. Admin login will not work. Please check HTML IDs.");
-      }
-
-      if (adminLogoutBtn) adminLogoutBtn.addEventListener('click', () => { showSection(loginPage); });
-      if (clearAllReservationsBtn) clearAllReservationsBtn.addEventListener('click', async () => { if (!confirm('정말 모든 예약을 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다!')) { return; } try { const response = await fetch(`${BACKEND_URL}/api/reservations/all`, { method: 'DELETE' }); if (response.ok) { alert('모든 예약이 성공적으로 취소되었습니다.'); } else { const errorResult = await response.json(); alert(`모든 예약 취소 실패: ${errorResult.message || '알 수 없는 오류'}`); } } catch (e) { console.error('모든 예약 취소 중 오류 발생:', e); alert('모든 예약 취소 중 통신 오류가 발생했습니다. 백엔드 서버를 확인하세요.'); } });
-
-      if (reservationTimeForm) { 
-          reservationTimeForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            if (!resStartTimeInput.value || !resEndTimeInput.value) {
-              if (timeSettingMessage) { 
-                  timeSettingMessage.textContent = "시작과 종료 시간을 모두 입력하세요.";
-                  timeSettingMessage.style.color = "red";
-              }
-              return;
-            }
-
-            if (new Date(resEndTimeInput.value) <= new Date(resStartTimeInput.value)) {
-              if (timeSettingMessage) { 
-                  timeSettingMessage.textContent = "종료 시간은 시작 시간보다 늦어야 합니다.";
-                  timeSettingMessage.style.color = "red";
-              }
-              return;
-            }
-
-            try {
-              const res = await fetch(`${BACKEND_URL}/api/admin-settings`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  reservationStartTime: new Date(resStartTimeInput.value).toISOString(),
-                  reservationEndTime: new Date(resEndTimeInput.value).toISOString(),
-                }),
-              });
-
-              if (res.ok) {
-                if (timeSettingMessage) { 
-                    timeSettingMessage.textContent = "예약 가능 시간이 설정되었습니다.";
-                    timeSettingMessage.style.color = "green";
-                }
-                await loadAdminPage(); 
-              } else {
-                if (timeSettingMessage) { 
-                    timeSettingMessage.textContent = "설정 실패";
-                    timeSettingMessage.style.color = "red";
-                }
-              }
-            } catch (e) {
-              console.error(e);
-              if (timeSettingMessage) { 
-                  timeSettingMessage.textContent = "서버 오류 발생";
-                  timeSettingMessage.style.color = "red";
-              }
-            }
-          });
-      }
-
-      if (announcementForm) { 
-          announcementForm.addEventListener('submit', async (e) => {
-              e.preventDefault();
-              const message = announcementMessageInput.value.trim();
-              const active = announcementActiveCheckbox.checked;
-
-              if (!message && active) {
-                  if (announcementMessageStatus) { 
-                      announcementMessageStatus.textContent = '활성화하려면 공지 내용을 입력하세요.';
-                      announcementMessageStatus.style.color = 'red';
-                  }
-                  return;
-              }
-              if (!message && !active) { 
-                  if (announcementMessageStatus) { 
-                      announcementMessageStatus.textContent = '공지 비활성화 및 내용 삭제 완료.';
-                      announcementMessageStatus.style.color = "green";
-                  }
-              }
-
-              try {
-                  const response = await fetch(`${BACKEND_URL}/api/announcement`, {
-                      method: 'PUT',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ message, active })
-                  });
-                  if (response.ok) {
-                      if (announcementMessageStatus) { 
-                          announcementMessageStatus.textContent = active ? '공지사항이 저장되고 활성화되었습니다.' : '공지사항이 저장되고 비활성화되었습니다.';
-                          announcementMessageStatus.style.color = 'green';
-                      }
-                  } else {
-                      if (announcementMessageStatus) { 
-                          announcementMessageStatus.textContent = '공지 저장 실패';
-                          announcementMessageStatus.style.color = 'red';
-                      }
-                  }
-              } catch (e) {
-                  console.error('공지 저장 중 오류:', e);
-                  if (announcementMessageStatus) { 
-                      announcementMessageStatus.textContent = '공지 저장 중 서버 오류 발생';
-                      announcementMessageStatus.style.color = 'red';
-                  }
-              }
-          });
-      }
-      
-      if (announcementCloseBtn) { 
-          announcementCloseBtn.addEventListener('click', hideAnnouncement);
-      }
-
-      // --- 초기 데이터 로드 및 페이지 표시 ---
-      console.log('All event listeners attached. Starting initial fetches.');
-      await fetchAllReservations();
-      await fetchAdminSettings();
-      await fetchAnnouncement(); 
-      console.log('Initial fetches completed. Showing login page.');
-      showSection(loginPage);
-  });
 })();
 </script>
+</body>
+</html>
