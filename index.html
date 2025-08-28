@@ -952,7 +952,7 @@
     showSection(loginPage);
   }
 
-  // 좌석 예약 확정 처리
+  // 좌석 예약 확정 처리 (수정된 부분: 예약 성공 시 홈 화면으로 이동)
   async function handleSubmitConfirmBtn() {
     if (!selectedSeat) {
       alert("좌석을 선택해주세요.");
@@ -981,17 +981,11 @@
 
       if (response.ok) {
         alert(`${result.newReservation.dormitory} ${result.newReservation.floor}층 ${result.newReservation.seat}번 자리 예약 완료!`);
-
-        currentUser.dormitory = result.newReservation.dormitory;
-        currentUser.floor = result.newReservation.floor;
-        currentUser.seat = result.newReservation.seat;
-
-        selectedSeat = null;
-
-        renderSeatMap(currentUser.dormitory, currentUser.floor);
-        updateReservationAvailability();
+        // 예약 확정 후 홈 화면(로그인 페이지)으로 돌아가기
+        handleClickBackToLoginBtn(); // 사용자 정보 초기화 및 로그인 페이지로 이동
       } else {
         alert("예약 실패: " + (result.message || "알 수 없는 오류"));
+        // 실패 시에는 현재 좌석 상태를 다시 로드
         if (currentUser && currentFloor) {
           await fetchAllReservations();
           renderSeatMap(currentUser.dormitory, currentFloor);
