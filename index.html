@@ -381,11 +381,11 @@
 <!-- 층 선택 페이지 -->
 <div class="container hidden" id="floorSelectPage">
   <h2><span id="welcomeText"></span>님, 층을 선택해주세요</h2>
+  <select id="floorSelect" aria-label="층 선택"></select> <!-- 층 선택 드롭다운이 버튼 그룹 위로 이동 -->
   <div class="button-group">
     <button id="backToLoginBtn" type="button">뒤로가기</button>
     <button id="floorNextBtn" type="button">좌석 선택으로</button>
   </div>
-  <select id="floorSelect" aria-label="층 선택"></select>
 </div>
 
 <!-- 좌석 선택 페이지 -->
@@ -396,8 +396,8 @@
   </div>
   <div id="reservationAvailabilityMessage"></div>
   <div class="button-group">
+    <button id="cancelSeatBtn" type="button">취소 및 뒤로가기</button> <!-- '취소 및 뒤로가기' 버튼이 '예약 확정' 버튼 앞으로 이동 -->
     <button id="confirmBtn" type="button" disabled>예약 확정</button>
-    <button id="cancelSeatBtn" type="button">취소 및 뒤로가기</button>
   </div>
   <div class="color-legend">
     <div class="legend-item"><div class="legend-box empty"></div>빈자리</div>
@@ -483,7 +483,7 @@
   let prevAllowedState = null;
   let currentAnnouncement = null;
 
-  // DOM 요소 변수
+  // DOM 요소 변수 (DOMContentLoaded 내부에서 초기화됨)
   let loginPage, loginForm, roomNoInput, userNameInput, dormitorySelect, roomError, nameError, dormError, adminLoginBtn;
   let floorSelectPage, floorSelect, floorNextBtn, backToLoginBtn, welcomeText;
   let seatMapPage, seatMapContainer, confirmBtn, cancelSeatBtn, selectedDormTitle, selectedFloorTitle, reservationAvailabilityMessage;
@@ -564,7 +564,7 @@
       data.forEach(r => allReservations[r._id] = r);
     } catch (e) {
       alert('예약 데이터를 가져오는 데 문제가 발생했습니다. 백엔드 서버 상태를 확인하세요.');
-      console.error('API 호출 에러:', e);
+      console.error('API 호출 에러: fetchAllReservations', e);
       return {};
     }
   }
@@ -576,7 +576,7 @@
       adminSettings = await res.json();
     } catch (e) {
       alert('관리자 설정을 가져오는 데 문제가 발생했습니다. 백엔드 서버 상태를 확인하세요.');
-      console.error('API 호출 에러:', e);
+      console.error('API 호출 에러: fetchAdminSettings', e);
       return { reservationStartTime: null, reservationEndTime: null };
     }
   }
@@ -593,7 +593,7 @@
         hideAnnouncement();
       }
     } catch (e) {
-      console.error('API 호출 에러:', e);
+      console.error('API 호출 에러: fetchAnnouncement', e);
       hideAnnouncement();
     }
   }
@@ -1145,7 +1145,7 @@
       return;
     }
 
-    if (!message && !active) {
+    if (!message && !active) { // 공지 내용이 없고 비활성화하는 경우
       if (announcementMessageStatus) {
         announcementMessageStatus.textContent = '공지 비활성화 및 내용 삭제 완료.';
         announcementMessageStatus.style.color = "green";
@@ -1197,9 +1197,9 @@
     }
   }
 
-  // DOMContentLoaded 이벤트 처리
+  // DOMContentLoaded 이벤트 처리 (스크립트의 시작점)
   document.addEventListener('DOMContentLoaded', async () => {
-    // DOM 요소 참조
+    // DOM 요소 참조 (DOM이 완전히 로드된 후에 할당)
     loginPage = document.getElementById('loginPage');
     loginForm = document.getElementById('loginForm');
     roomNoInput = document.getElementById('roomNo');
@@ -1211,7 +1211,7 @@
     adminLoginBtn = document.getElementById('adminLoginBtn');
 
     floorSelectPage = document.getElementById('floorSelectPage');
-    floorSelect = document.getElementById('floorSelect');
+    floorSelect = document.getElementById('floorSelect'); // <-- floorSelect를 여기서 참조
     floorNextBtn = document.getElementById('floorNextBtn');
     backToLoginBtn = document.getElementById('backToLoginBtn');
     welcomeText = document.getElementById('welcomeText');
@@ -1247,7 +1247,7 @@
     announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
     announcementMessageStatus = document.getElementById('announcementMessageStatus');
 
-    // Socket.IO 연결
+    // Socket.IO 연결 초기화
     try {
       if (typeof io !== 'undefined') {
         socket = io(BACKEND_URL);
@@ -1262,7 +1262,7 @@
       return;
     }
 
-    // 이벤트 리스너 등록
+    // 모든 이벤트 리스너 등록
     if (loginForm) loginForm.addEventListener('submit', handleSubmitLoginForm);
     if (backToLoginBtn) backToLoginBtn.addEventListener('click', handleClickBackToLoginBtn);
     if (floorNextBtn) floorNextBtn.addEventListener('click', handleClickFloorNextBtn);
@@ -1278,7 +1278,7 @@
     if (announcementForm) announcementForm.addEventListener('submit', handleSubmitAnnouncementForm);
     if (announcementCloseBtn) announcementCloseBtn.addEventListener('click', hideAnnouncement);
 
-    // 초기 데이터 로드 후 로그인 페이지 보여주기
+    // 초기 데이터 로드 및 로그인 페이지 보여주기
     await fetchAllReservations();
     await fetchAdminSettings();
     await fetchAnnouncement();
