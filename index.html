@@ -103,12 +103,11 @@
   }
 
   /* 좌석 배치도 */
-  #seatMapWrapper { /* 좌석 배치도 스크롤링을 위한 래퍼 */
+  #seatMapWrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 10px;
   }
-
   #seatMap {
     margin: 20px auto 40px;
     display: grid;
@@ -128,7 +127,7 @@
     align-items: center;
     font-size: 1.1rem;
     min-width: 44px;
-    aspect-ratio: 1/1;
+    aspect-ratio: 1 / 1;
     border-radius: 6px;
     transition: background-color 0.3s, border-color 0.3s;
   }
@@ -246,7 +245,7 @@
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0,0,0,0.7);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -256,7 +255,7 @@
     background: white;
     padding: 30px;
     border-radius: 10px;
-    box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 25px rgba(0,0,0,0.5);
     max-width: 500px;
     width: 90%;
     text-align: left;
@@ -291,7 +290,6 @@
   .announcement-popup button.close-btn:hover {
     background: #8e420b;
   }
-  /* 관리자 공지 입력란 스타일 */
   #announcementMessageInput {
     width: calc(100% - 20px);
     height: 80px;
@@ -306,7 +304,6 @@
     margin-top: 15px;
     margin-right: 8px;
   }
-  /* 버튼 그룹 스타일 */
   .button-group {
     display: flex;
     justify-content: space-between;
@@ -317,7 +314,6 @@
   .button-group button {
     margin-top: 0;
   }
-  /* 색상 범례 스타일 */
   .color-legend {
     text-align: center;
     margin-top: 30px;
@@ -368,7 +364,7 @@
     </select>
     <div id="dormError" class="error"></div>
 
-    <!-- 허니팟 필드: 봇 방지용 숨김 필드 -->
+    <!-- 봇 방지를 위한 허니팟 필드 -->
     <input type="text" name="honeypot_field" style="display:none !important; visibility:hidden !important; opacity:0 !important; width:0 !important; height:0 !important; border:none !important; padding:0 !important; margin:0 !important;" tabindex="-1" autocomplete="off" />
 
     <button type="submit">다음</button>
@@ -381,7 +377,7 @@
 <!-- 층 선택 페이지 -->
 <div class="container hidden" id="floorSelectPage">
   <h2><span id="welcomeText"></span>님, 층을 선택해주세요</h2>
-  <select id="floorSelect" aria-label="층 선택"></select> <!-- 층 선택 드롭다운이 버튼 그룹 위로 이동 -->
+  <select id="floorSelect" aria-label="층 선택"></select>
   <div class="button-group">
     <button id="backToLoginBtn" type="button">뒤로가기</button>
     <button id="floorNextBtn" type="button">좌석 선택으로</button>
@@ -396,7 +392,7 @@
   </div>
   <div id="reservationAvailabilityMessage"></div>
   <div class="button-group">
-    <button id="cancelSeatBtn" type="button">취소 및 뒤로가기</button> <!-- '취소 및 뒤로가기' 버튼이 '예약 확정' 버튼 앞으로 이동 -->
+    <button id="cancelSeatBtn" type="button">취소 및 뒤로가기</button>
     <button id="confirmBtn" type="button" disabled>예약 확정</button>
   </div>
   <div class="color-legend">
@@ -474,48 +470,36 @@
 <!-- Socket.IO 스크립트 -->
 <script src="https://seat-reservation-backend-ygl9.onrender.com/socket.io/socket.io.js"></script>
 
-<!-- Sentry SDK 로더 스크립트 (YOUR_DSN.min.js는 여러분의 고유 DSN 값입니다.) -->
-<!-- !! 중요 !! Sentry 대시보드에서 제공하는 정확한 URL과 Integrity Hash로 변경해야 합니다. -->
-<!-- 예를 들어, https://browser.sentry-cdn.com/7.x.x/bundle.min.js 이 형태가 될 수 있습니다. -->
-<script
-  src="https://browser.sentry-cdn.com/7.x.x/bundle.min.js"
-  integrity="sha384-YOUR_INTEGRITY_HASH_GOES_HERE"  <!-- 이 부분은 반드시 Sentry에서 제공하는 값으로 교체하세요! -->
-  crossorigin="anonymous"
-></script>
+<!-- Sentry SDK 로더 스크립트 -->
+<!-- !주의: 이 URL과 crossorigin은 Sentry 대시보드에서 제공하는 정확한 값으로 교체하세요! -->
+<!-- 예: https://browser.sentry-cdn.com/7.x.x/bundle.min.js 이거나, 여러분의 DSN이 포함된 특정 로더 스크립트일 수 있습니다. -->
+<script src="https://js.sentry-cdn.com/2bdeadfc575a5017d415ee4a34290e96.min.js" crossorigin="anonymous"></script>
 
 <!-- 랜선석 예약 시스템 메인 스크립트 -->
 <script>
 (() => {
-  // --- Sentry SDK 초기화 코드 ---
-  // Sentry SDK가 로드되었는지 확인 후 초기화합니다.
-  if (typeof window.Sentry !== 'undefined') {
-      window.Sentry.init({
-          dsn: "https://022c4e18bd53471829f4db2ff378413b@o4509920503463936.ingest.us.sentry.io/4509935964782592", // 여러분의 실제 DSN
-          integrations: [
-              // 'new' 키워드와 함께 window.Sentry.Integrations.BrowserTracing() 형태로 사용
-              new window.Sentry.Integrations.BrowserTracing(),
-              // Replay 기능도 마찬가지로 new window.Sentry.Integrations.Replay() 형태로 사용
-              new window.Sentry.Integrations.Replay(),
-          ],
-          // Set tracesSampleRate to 1.0 to capture 100%
-          // of transactions for performance monitoring.
-          tracesSampleRate: 1.0, 
-          // Set `tracePropagationTargets` to control for which URLs distributed tracing should be enabled
-          // 백엔드 APM (New Relic 등)과 연동 시 필요한 설정입니다.
-          // 지금은 없어도 Sentry 동작에 문제 없습니다.
-          // tracePropagationTargets: ["localhost", /^https:\/\/(www\.)?yourserver\.io\/api/], 
-          // Setting this option to true will send default PII data to Sentry.
-          // For example, automatic IP address collection on events
-          sendDefaultPii: true, 
-          
-          replaysSessionSampleRate: 0.1, // 모든 세션의 10%만 녹화
-          replaysOnErrorSampleRate: 1.0, // 에러 발생 시 해당 세션은 100% 녹화
+  // Sentry SDK 초기화 (Sentry.onLoad는 위에 사용된 Sentry 로더 스크립트에 적합)
+  // !주의: Sentry.onLoad 내의 dsn은 여러분의 실제 DSN으로 반드시 교체하세요.
+  if (typeof Sentry !== 'undefined' && typeof Sentry.onLoad === 'function') {
+    Sentry.onLoad(function() {
+      Sentry.init({
+        dsn: "https://022c4e18bd53471829f4db2ff378413b@o4509920503463936.ingest.us.sentry.io/4509935964782592", // 여러분의 실제 DSN
+        tracesSampleRate: 1.0, // 모든 트랜잭션 수집 (개발/테스트용)
+        sendDefaultPii: true, // 기본 개인 식별 정보 (IP 등) 전송
+        integrations: [
+          // Sentry Integrations (반드시 new 키워드와 함께 사용)
+          new Sentry.Integrations.BrowserTracing(),
+          new Sentry.Integrations.Replay(),
+        ],
+        replaysSessionSampleRate: 0.1, // 모든 세션의 10%만 리플레이 기록
+        replaysOnErrorSampleRate: 1.0, // 에러 발생 세션은 100% 리플레이 기록
       });
-      console.log("Sentry SDK 초기화 완료!"); // 디버깅용
+      console.log("Sentry initialized successfully."); // Sentry 초기화 성공 메시지
+    });
   } else {
-      console.warn("Sentry SDK가 로드되지 않았습니다. Sentry 모니터링을 할 수 없습니다.");
+    console.warn("Sentry SDK not found or onLoad is not available. Sentry monitoring may not work.");
   }
-  // --- Sentry SDK 초기화 코드 끝 ---
+
 
   const BACKEND_URL = "https://seat-reservation-backend-ygl9.onrender.com";
   let socket = null;
@@ -526,7 +510,7 @@
   let prevAllowedState = null;
   let currentAnnouncement = null;
 
-  // DOM 요소 변수 (DOMContentLoaded 내부에서 초기화됨)
+  // DOM 요소 참조 변수 선언 (DOMContentLoaded에서 할당)
   let loginPage, loginForm, roomNoInput, userNameInput, dormitorySelect, roomError, nameError, dormError, adminLoginBtn;
   let floorSelectPage, floorSelect, floorNextBtn, backToLoginBtn, welcomeText;
   let seatMapPage, seatMapContainer, confirmBtn, cancelSeatBtn, selectedDormTitle, selectedFloorTitle, reservationAvailabilityMessage;
@@ -542,6 +526,7 @@
   const roomNoPattern = /^\d{3}호$/;
   const koreanNamePattern = /^[가-힣]{2,4}$/;
 
+  // 좌석 배치도 데이터
   const seatLayouts = {
     "꿈동": {
       "2": [
@@ -608,7 +593,6 @@
     } catch (e) {
       alert('예약 데이터를 가져오는 데 문제가 발생했습니다. 백엔드 서버 상태를 확인하세요.');
       console.error('API 호출 에러: fetchAllReservations', e);
-      // Sentry에 에러 전송 (New Relic은 서버 측에서, Sentry는 클라이언트 측 에러 위주로)
       if (typeof window.Sentry !== 'undefined') {
         window.Sentry.captureException(e);
       }
@@ -1055,7 +1039,7 @@
     }
   }
 
-  // 좌석 예약 확정 처리 (수정된 부분: 예약 성공 시 홈 화면으로 이동)
+  // 좌석 예약 확정 처리 (예약 성공 시 홈 화면으로 이동)
   async function handleSubmitConfirmBtn() {
     if (!selectedSeat) {
       alert("좌석을 선택해주세요.");
@@ -1084,7 +1068,6 @@
 
       if (response.ok) {
         alert(`${result.newReservation.dormitory} ${result.newReservation.floor}층 ${result.newReservation.seat}번 자리 예약 완료!`);
-        // 예약 확정 후 홈 화면(로그인 페이지)으로 돌아가기
         handleClickBackToLoginBtn(); // 사용자 정보 초기화 및 로그인 페이지로 이동
       } else {
         alert("예약 실패: " + (result.message || "알 수 없는 오류"));
@@ -1269,7 +1252,7 @@
     if (!message && active) {
       if (announcementMessageStatus) {
         announcementMessageStatus.textContent = '활성화하려면 공지 내용을 입력하세요.';
-        announcementMessageStatus.style.color = 'red';
+        announcementMessageStatus.style.color = "red";
       }
       return;
     }
@@ -1283,7 +1266,7 @@
 
     try {
       const response = await fetch(`${BACKEND_URL}/api/announcement`, {
-        method: 'PUT',
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, active })
       });
