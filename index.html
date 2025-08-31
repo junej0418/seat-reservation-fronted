@@ -471,41 +471,52 @@
   </div>
 </div>
 
+<!-- Socket.IO 스크립트 -->
 <script src="https://seat-reservation-backend-ygl9.onrender.com/socket.io/socket.io.js"></script>
 
+<!-- Sentry SDK 로더 스크립트 (YOUR_DSN.min.js는 여러분의 고유 DSN 값입니다.) -->
+<!-- !! 중요 !! Sentry 대시보드에서 제공하는 정확한 URL과 Integrity Hash로 변경해야 합니다. -->
+<!-- 예를 들어, https://browser.sentry-cdn.com/7.x.x/bundle.min.js 이 형태가 될 수 있습니다. -->
 <script
-  src="https://js.sentry-cdn.com/022c4e18bd53471829f4db2ff378413b.min.js"
+  src="https://browser.sentry-cdn.com/7.x.x/bundle.min.js"
+  integrity="sha384-YOUR_INTEGRITY_HASH_GOES_HERE"  <!-- 이 부분은 반드시 Sentry에서 제공하는 값으로 교체하세요! -->
   crossorigin="anonymous"
 ></script>
 
+<!-- 랜선석 예약 시스템 메인 스크립트 -->
 <script>
 (() => {
-    // --- Sentry SDK 초기화 코드 ---
-    // Sentry SDK가 로드되었는지 확인 후 초기화합니다.
-    if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.init({
-            dsn: "https://022c4e18bd53471829f4db2ff378413b@o4509920503463936.ingest.us.sentry.io/4509935964782592", // 여기에 복사한 DSN을 붙여넣으세요!
-            integrations: [
-                // Sentry에서 제공하는 다양한 통합 기능들을 활성화할 수 있습니다.
-                // 오류 발생 시 성능 관련 데이터도 함께 수집합니다.
-                new Sentry.Integrations.BrowserTracing(),
-                // 사용자 세션 다시 보기 (재생) 기능 활성화: 사용자의 화면을 녹화하여 에러 발생 시 재현
-                // 데이터 사용량이 많고 개인정보 이슈가 있을 수 있으니 주의하여 설정하세요.
-                window.Sentry.replayIntegration(),
-            ],
-            // 오류 데이터 전송 샘플링 비율 (0.0 = 0%, 1.0 = 100%)
-            // 개발 시에는 1.0으로 100% 전송하여 모든 오류를 확인하고,
-            // 운영 시에는 데이터 볼륨 관리를 위해 0.1(10%) 등으로 줄일 수 있습니다.
-            tracesSampleRate: 1.0, 
-            // 세션 리플레이 샘플링 비율 (모든 사용자 세션을 녹화하지 않고 일부만)
-            replaysSessionSampleRate: 0.1, // 모든 세션의 10%만 녹화
-            // 에러 발생 세션 리플레이 샘플링 비율 (에러 발생 시 해당 세션은 100% 녹화)
-            replaysOnErrorSampleRate: 1.0, 
-        });
-        console.log("Sentry SDK 초기화 완료!"); // 디버깅용
-    } else {
-        console.warn("Sentry SDK가 로드되지 않았습니다. Sentry 모니터링을 할 수 없습니다.");
-    }
+  // --- Sentry SDK 초기화 코드 ---
+  // Sentry SDK가 로드되었는지 확인 후 초기화합니다.
+  if (typeof window.Sentry !== 'undefined') {
+      window.Sentry.init({
+          dsn: "https://022c4e18bd53471829f4db2ff378413b@o4509920503463936.ingest.us.sentry.io/4509935964782592", // 여러분의 실제 DSN
+          integrations: [
+              // 'new' 키워드와 함께 window.Sentry.Integrations.BrowserTracing() 형태로 사용
+              new window.Sentry.Integrations.BrowserTracing(),
+              // Replay 기능도 마찬가지로 new window.Sentry.Integrations.Replay() 형태로 사용
+              new window.Sentry.Integrations.Replay(),
+          ],
+          // Set tracesSampleRate to 1.0 to capture 100%
+          // of transactions for performance monitoring.
+          tracesSampleRate: 1.0, 
+          // Set `tracePropagationTargets` to control for which URLs distributed tracing should be enabled
+          // 백엔드 APM (New Relic 등)과 연동 시 필요한 설정입니다.
+          // 지금은 없어도 Sentry 동작에 문제 없습니다.
+          // tracePropagationTargets: ["localhost", /^https:\/\/(www\.)?yourserver\.io\/api/], 
+          // Setting this option to true will send default PII data to Sentry.
+          // For example, automatic IP address collection on events
+          sendDefaultPii: true, 
+          
+          replaysSessionSampleRate: 0.1, // 모든 세션의 10%만 녹화
+          replaysOnErrorSampleRate: 1.0, // 에러 발생 시 해당 세션은 100% 녹화
+      });
+      console.log("Sentry SDK 초기화 완료!"); // 디버깅용
+  } else {
+      console.warn("Sentry SDK가 로드되지 않았습니다. Sentry 모니터링을 할 수 없습니다.");
+  }
+  // --- Sentry SDK 초기화 코드 끝 ---
+
   const BACKEND_URL = "https://seat-reservation-backend-ygl9.onrender.com";
   let socket = null;
 
@@ -597,6 +608,10 @@
     } catch (e) {
       alert('예약 데이터를 가져오는 데 문제가 발생했습니다. 백엔드 서버 상태를 확인하세요.');
       console.error('API 호출 에러: fetchAllReservations', e);
+      // Sentry에 에러 전송 (New Relic은 서버 측에서, Sentry는 클라이언트 측 에러 위주로)
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureException(e);
+      }
       return {};
     }
   }
@@ -609,6 +624,9 @@
     } catch (e) {
       alert('관리자 설정을 가져오는 데 문제가 발생했습니다. 백엔드 서버 상태를 확인하세요.');
       console.error('API 호출 에러: fetchAdminSettings', e);
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureException(e);
+      }
       return { reservationStartTime: null, reservationEndTime: null };
     }
   }
@@ -626,6 +644,9 @@
       }
     } catch (e) {
       console.error('API 호출 에러: fetchAnnouncement', e);
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureException(e);
+      }
       hideAnnouncement();
     }
   }
@@ -634,6 +655,9 @@
   function setupSocketListeners() {
     if (!socket) {
       console.error("Critical Error: Socket.IO client is not initialized.");
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureMessage("Socket.IO client not initialized.");
+      }
       return;
     }
     socket.on('reservationsUpdated', async updated => {
@@ -721,12 +745,18 @@
   function setFloorOptions(dorm) {
     if (!floorSelect) {
       console.error('Critical Error: floorSelect is null when trying to setFloorOptions. Check HTML ID "floorSelect" and DOM loading.');
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureMessage('floorSelect element not found when setting floor options');
+      }
       alert('오류: 층 선택 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
       return;
     }
     floorSelect.innerHTML = '<option value="" disabled selected>층 선택</option>';
     if (!seatLayouts[dorm]) {
       floorSelect.innerHTML = '<option value="" disabled selected>해당 기숙사의 층 정보가 없습니다.</option>';
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureMessage(`seatLayouts for dormitory ${dorm} is undefined or null.`);
+      }
       return;
     }
     const floors = Object.keys(seatLayouts[dorm]).sort((a,b) => {
@@ -745,6 +775,9 @@
   function renderSeatMap(dorm, floor) {
     if (!seatMapContainer) {
       console.error('Critical Error: seatMapContainer is null when trying to renderSeatMap. Check HTML ID "seatMap" and DOM loading.');
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureMessage('seatMapContainer element not found when rendering seat map');
+      }
       alert('오류: 좌석 배치도 컨테이너를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
       return;
     }
@@ -753,6 +786,9 @@
     const layout = seatLayouts[dorm]?.[floor];
     if (!layout) {
       seatMapContainer.textContent = '해당 층 좌석 배치도가 없습니다.';
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureMessage(`Layout for dormitory ${dorm}, floor ${floor} is undefined or null.`);
+      }
       return;
     }
     const maxCols = Math.max(...layout.map(row => row.length));
@@ -874,6 +910,9 @@
     }
     if (honeypotField) {
       alert('비정상적인 요청이 감지되었습니다. (Honeypot)');
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureMessage('Honeypot field filled by bot on login form.');
+      }
       valid = false;
     }
     if (!valid) return;
@@ -900,6 +939,14 @@
       if (welcomeText) welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`;
       showSection(floorSelectPage);
     }
+    // Sentry에 사용자 정보 설정 (로그인 성공 시)
+    if (typeof window.Sentry !== 'undefined' && currentUser) {
+        window.Sentry.setUser({
+            id: currentUser.roomNo,
+            username: currentUser.name,
+            dormitory: currentUser.dormitory
+        });
+    }
   }
 
   // 뒤로가기 버튼 클릭 처리
@@ -909,12 +956,19 @@
     selectedSeat = null;
     if (loginForm) loginForm.reset();
     showSection(loginPage);
+    // Sentry 사용자 정보 초기화
+    if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.setUser(null);
+    }
   }
 
   // 층 선택 다음 버튼 클릭 처리
   function handleClickFloorNextBtn() {
     if (!floorSelect) {
       alert('오류: 층 선택 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureMessage('floorSelect element not found on floor next button click');
+      }
       return;
     }
     if (!floorSelect.value) {
@@ -970,18 +1024,35 @@
           if (announcementActiveCheckbox) announcementActiveCheckbox.checked = currentAnnouncement.active || false;
         }
         showSection(adminPage);
+        // Sentry에 관리자 정보 설정
+        if (typeof window.Sentry !== 'undefined') {
+          window.Sentry.setUser({
+              id: 'admin',
+              username: 'Administrator'
+          });
+        }
       } else {
         if (adminError) adminError.textContent = result.message || '로그인 실패: 알 수 없는 오류';
+        if (typeof window.Sentry !== 'undefined') {
+          window.Sentry.captureMessage(`Admin login failed: ${result.message || 'Unknown error'}`);
+        }
       }
     } catch (error) {
       if (adminError) adminError.textContent = '로그인 요청 중 오류 발생. 서버를 확인하세요.';
       console.error('Admin login fetch error:', error);
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureException(error);
+      }
     }
   }
 
   // 관리자 로그아웃 버튼 클릭 처리
   function handleClickAdminLogoutBtn() {
     showSection(loginPage);
+    // Sentry 사용자 정보 초기화
+    if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.setUser(null);
+    }
   }
 
   // 좌석 예약 확정 처리 (수정된 부분: 예약 성공 시 홈 화면으로 이동)
@@ -1022,10 +1093,16 @@
           await fetchAllReservations();
           renderSeatMap(currentUser.dormitory, currentFloor);
         }
+        if (typeof window.Sentry !== 'undefined') {
+          window.Sentry.captureMessage(`Reservation failed: ${result.message || 'Unknown error'}`);
+        }
       }
     } catch (e) {
       alert("예약 처리 중 오류가 발생했습니다. 서버 상태를 확인하세요.");
       console.error(e);
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureException(e);
+      }
     }
   }
 
@@ -1064,10 +1141,24 @@
       reservationListBody.querySelectorAll(".cancel-btn").forEach((btn) => {
         btn.onclick = async () => {
           if (confirm("정말 예약을 취소하시겠습니까?")) {
-            const id = btn.dataset.id;
-            const res = await fetch(`${BACKEND_URL}/api/reservations/${id}`, { method: "DELETE" });
-            if (res.ok) alert("예약이 취소되었습니다.");
-            else alert("예약 취소 실패");
+            try {
+              const id = btn.dataset.id;
+              const res = await fetch(`${BACKEND_URL}/api/reservations/${id}`, { method: "DELETE" });
+              if (res.ok) alert("예약이 취소되었습니다.");
+              else {
+                const errorResult = await res.json();
+                alert(`예약 취소 실패: ${errorResult.message || '알 수 없는 오류'}`);
+                if (typeof window.Sentry !== 'undefined') {
+                  window.Sentry.captureMessage(`Admin cancel reservation failed: ${errorResult.message || 'Unknown error'}`);
+                }
+              }
+            } catch (e) {
+              alert("예약 취소 처리 중 오류가 발생했습니다. 서버 상태를 확인하세요.");
+              console.error(e);
+              if (typeof window.Sentry !== 'undefined') {
+                window.Sentry.captureException(e);
+              }
+            }
           }
         };
       });
@@ -1099,10 +1190,16 @@
       } else {
         const errorResult = await response.json();
         alert(`모든 예약 취소 실패: ${errorResult.message || '알 수 없는 오류'}`);
+        if (typeof window.Sentry !== 'undefined') {
+          window.Sentry.captureMessage(`Clear all reservations failed: ${errorResult.message || 'Unknown error'}`);
+        }
       }
     } catch (e) {
       alert('모든 예약 취소 중 통신 오류가 발생했습니다. 백엔드 서버를 확인하세요.');
       console.error(e);
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureException(e);
+      }
     }
   }
 
@@ -1147,6 +1244,9 @@
           timeSettingMessage.textContent = "설정 실패";
           timeSettingMessage.style.color = "red";
         }
+        if (typeof window.Sentry !== 'undefined') {
+          window.Sentry.captureMessage(`Set reservation time failed.`);
+        }
       }
     } catch (e) {
       if (timeSettingMessage) {
@@ -1154,6 +1254,9 @@
         timeSettingMessage.style.color = "red";
       }
       console.error(e);
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureException(e);
+      }
     }
   }
 
@@ -1194,6 +1297,9 @@
           announcementMessageStatus.textContent = '공지 저장 실패';
           announcementMessageStatus.style.color = "red";
         }
+        if (typeof window.Sentry !== 'undefined') {
+          window.Sentry.captureMessage(`Save announcement failed.`);
+        }
       }
     } catch (e) {
       if (announcementMessageStatus) {
@@ -1201,6 +1307,9 @@
         announcementMessageStatus.style.color = "red";
       }
       console.error('공지 저장 중 오류:', e);
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureException(e);
+      }
     }
   }
 
@@ -1211,6 +1320,9 @@
       announcementOverlay.classList.remove('hidden');
     } else {
       console.error("공지 팝업 요소를 찾을 수 없습니다.");
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureMessage('Announcement popup elements not found.');
+      }
     }
   }
 
@@ -1220,6 +1332,9 @@
       announcementOverlay.classList.add('hidden');
     } else {
       console.error("announcementOverlay not found during hideAnnouncement.");
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureMessage('Announcement overlay element not found for hiding.');
+      }
     }
   }
 
@@ -1237,7 +1352,7 @@
     adminLoginBtn = document.getElementById('adminLoginBtn');
 
     floorSelectPage = document.getElementById('floorSelectPage');
-    floorSelect = document.getElementById('floorSelect'); // <-- floorSelect를 여기서 참조
+    floorSelect = document.getElementById('floorSelect');
     floorNextBtn = document.getElementById('floorNextBtn');
     backToLoginBtn = document.getElementById('backToLoginBtn');
     welcomeText = document.getElementById('welcomeText');
@@ -1280,11 +1395,17 @@
         setupSocketListeners();
       } else {
         alert("오류: Socket.IO 라이브러리가 로드되지 않았습니다. 페이지를 새로고침해주세요.");
+        if (typeof window.Sentry !== 'undefined') {
+          window.Sentry.captureMessage('Socket.IO library not loaded.');
+        }
         return;
       }
     } catch(e) {
       alert("웹사이트 초기화 중 오류가 발생했습니다. 개발자 콘솔을 확인해주세요.");
       console.error("Error during Socket.IO initialization or listener setup:", e);
+      if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.captureException(e);
+      }
       return;
     }
 
