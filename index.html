@@ -488,7 +488,7 @@
             integrations: [
                 // Sentry에서 제공하는 다양한 통합 기능들을 활성화할 수 있습니다.
                 // 오류 발생 시 성능 관련 데이터도 함께 수집합니다.
-                window.Sentry.browserTracingIntegration(),
+                new Sentry.Integrations.BrowserTracing(),
                 // 사용자 세션 다시 보기 (재생) 기능 활성화: 사용자의 화면을 녹화하여 에러 발생 시 재현
                 // 데이터 사용량이 많고 개인정보 이슈가 있을 수 있으니 주의하여 설정하세요.
                 window.Sentry.replayIntegration(),
