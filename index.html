@@ -472,8 +472,40 @@
 </div>
 
 <script src="https://seat-reservation-backend-ygl9.onrender.com/socket.io/socket.io.js"></script>
+
+<script
+  src="https://js.sentry-cdn.com/022c4e18bd53471829f4db2ff378413b.min.js"
+  crossorigin="anonymous"
+></script>
+
 <script>
 (() => {
+    // --- Sentry SDK 초기화 코드 ---
+    // Sentry SDK가 로드되었는지 확인 후 초기화합니다.
+    if (typeof window.Sentry !== 'undefined') {
+        window.Sentry.init({
+            dsn: "https://022c4e18bd53471829f4db2ff378413b@o4509920503463936.ingest.us.sentry.io/4509935964782592", // 여기에 복사한 DSN을 붙여넣으세요!
+            integrations: [
+                // Sentry에서 제공하는 다양한 통합 기능들을 활성화할 수 있습니다.
+                // 오류 발생 시 성능 관련 데이터도 함께 수집합니다.
+                window.Sentry.browserTracingIntegration(),
+                // 사용자 세션 다시 보기 (재생) 기능 활성화: 사용자의 화면을 녹화하여 에러 발생 시 재현
+                // 데이터 사용량이 많고 개인정보 이슈가 있을 수 있으니 주의하여 설정하세요.
+                window.Sentry.replayIntegration(),
+            ],
+            // 오류 데이터 전송 샘플링 비율 (0.0 = 0%, 1.0 = 100%)
+            // 개발 시에는 1.0으로 100% 전송하여 모든 오류를 확인하고,
+            // 운영 시에는 데이터 볼륨 관리를 위해 0.1(10%) 등으로 줄일 수 있습니다.
+            tracesSampleRate: 1.0, 
+            // 세션 리플레이 샘플링 비율 (모든 사용자 세션을 녹화하지 않고 일부만)
+            replaysSessionSampleRate: 0.1, // 모든 세션의 10%만 녹화
+            // 에러 발생 세션 리플레이 샘플링 비율 (에러 발생 시 해당 세션은 100% 녹화)
+            replaysOnErrorSampleRate: 1.0, 
+        });
+        console.log("Sentry SDK 초기화 완료!"); // 디버깅용
+    } else {
+        console.warn("Sentry SDK가 로드되지 않았습니다. Sentry 모니터링을 할 수 없습니다.");
+    }
   const BACKEND_URL = "https://seat-reservation-backend-ygl9.onrender.com";
   let socket = null;
 
