@@ -1084,7 +1084,14 @@
 
         const result = await sendReservation(reservationData);
         if (result.success) {
-          alert(result.message);
+          // 예약 성공 메시지 및 홈으로 리다이렉트
+          alert(`${reservationData.dormitory} ${reservationData.floor}층 ${reservationData.seat}번 자리 예약에 성공했습니다!`);
+          
+          currentUser = null;
+          currentFloor = null;
+          selectedSeat = null;
+          if (loginForm) loginForm.reset();
+          showSection(loginPage);
         } else {
           alert('예약 실패: ' + result.message);
         }
