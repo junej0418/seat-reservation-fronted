@@ -467,42 +467,10 @@
   </div>
 </div>
 
-<!-- Socket.IO 스크립트 -->
-<script src="https://seat-reservation-backend-ygl9.onrender.com/socket.io/socket.io.js"></script>
-
-<!-- Sentry SDK 로더 스크립트 -->
-<!-- !주의: 이 URL과 crossorigin은 Sentry 대시보드에서 제공하는 정확한 값으로 교체하세요! -->
-<!-- 예: https://browser.sentry-cdn.com/7.x.x/bundle.min.js 이거나, 여러분의 DSN이 포함된 특정 로더 스크립트일 수 있습니다. -->
-<script src="https://js.sentry-cdn.com/2bdeadfc575a5017d415ee4a34290e96.min.js" crossorigin="anonymous"></script>
-
-<!-- 랜선석 예약 시스템 메인 스크립트 -->
 <script>
-(() => {
-  // Sentry SDK 초기화 (Sentry.onLoad는 위에 사용된 Sentry 로더 스크립트에 적합)
-  // !주의: Sentry.onLoad 내의 dsn은 여러분의 실제 DSN으로 반드시 교체하세요.
-  if (typeof Sentry !== 'undefined' && typeof Sentry.onLoad === 'function') {
-    Sentry.onLoad(function() {
-      Sentry.init({
-        dsn: "https://022c4e18bd53471829f4db2ff378413b@o4509920503463936.ingest.us.sentry.io/4509935964782592", // 여러분의 실제 DSN
-        tracesSampleRate: 1.0, // 모든 트랜잭션 수집 (개발/테스트용)
-        sendDefaultPii: true, // 기본 개인 식별 정보 (IP 등) 전송
-        integrations: [
-          // Sentry Integrations (반드시 new 키워드와 함께 사용)
-          new Sentry.Integrations.BrowserTracing(),
-          new Sentry.Integrations.Replay(),
-        ],
-        replaysSessionSampleRate: 0.1, // 모든 세션의 10%만 리플레이 기록
-        replaysOnErrorSampleRate: 1.0, // 에러 발생 세션은 100% 리플레이 기록
-      });
-      console.log("Sentry initialized successfully."); // Sentry 초기화 성공 메시지
-    });
-  } else {
-    console.warn("Sentry SDK not found or onLoad is not available. Sentry monitoring may not work.");
-  }
-
-
   const BACKEND_URL = "https://seat-reservation-backend-ygl9.onrender.com";
   let socket = null;
+
 
   let allReservations = {};
   let adminSettings = {};
@@ -1414,7 +1382,6 @@
     await fetchAnnouncement();
     showSection(loginPage);
   });
-})();
 </script>
 </body>
 </html>
