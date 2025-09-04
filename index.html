@@ -227,1370 +227,6 @@
     label, input, select, textarea { font-size: 0.9rem; }
     button { padding: 8px 12px; font-size: 0.95rem; margin-top: 15px; min-width: auto; }
     nav button { padding: 5px 8px; font-size: 0.85rem; }
-    #seatMap {
-      gap: 4px;
-    }
-    .seat-btn {
-      min-width: 26px;
-      font-size: 0.85rem;
-      padding: 0;
-    }
-    table { font-size: 0.8rem; }
-    th, td { padding: 6px 4px; }
-    td button { padding: 3px 6px; font-size: 0.75rem; }
-  }
-
-  /* 공지 팝업 스타일 */
-  .announcement-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  .announcement-popup {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 0 25px rgba(0,0,0,0.5);
-    max-width: 500px;
-    width: 90%;
-    text-align: left;
-    position: relative;
-    font-size: 1.1rem;
-    line-height: 1.5;
-  }
-  .announcement-popup h3 {
-    margin-top: 0;
-    color: #b45309;
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  .announcement-popup p {
-    margin-bottom: 20px;
-    color: #333;
-    white-space: pre-wrap;
-  }
-  .announcement-popup button.close-btn {
-    background: #b45309;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 10px 20px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background 0.3s;
-    margin: 0 auto;
-    display: block;
-  }
-  .announcement-popup button.close-btn:hover {
-    background: #8e420b;
-  }
-  #announcementMessageInput {
-    width: calc(100% - 20px);
-    height: 80px;
-    padding: 10px;
-    margin-top: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    resize: vertical;
-    font-size: 1rem;
-  }
-  #announcementActiveCheckbox {
-    margin-top: 15px;
-    margin-right: 8px;
-  }
-  .button-group {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    margin-top: 20px;
-  }
-  .button-group button {
-    margin-top: 0;
-  }
-  .color-legend {
-    text-align: center;
-    margin-top: 30px;
-    padding: 15px;
-    border-top: 1px solid #eee;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-    font-size: 0.9rem;
-    color: #555;
-  }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .legend-box {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-  }
-  .legend-box.empty { background-color: #CCFFCC; border-color: #88CC88; }
-  .legend-box.booked { background-color: #FFCCCC; border-color: #CC8888; }
-  .legend-box.mine { background-color: #FFCCFF; border-color: #CC88CC; }
-</style>
-</head>
-<body>
-
-<!-- 로그인 페이지 -->
-<div class="container" id="loginPage">
-  <h1>랜선석 예약 로그인</h1>
-  <form id="loginForm" autocomplete="off" novalidate>
-    <label for="roomNo">룸 번호 (000호 형식):</label>
-    <input type="text" id="roomNo" name="roomNo" placeholder="예: 101호" required />
-    <div id="roomError" class="error"></div>
-
-    <label for="userName">이름 (한글 2~4자):</label>
-    <input type="text" id="userName" name="userName" placeholder="예: 홍길동" required />
-    <div id="nameError" class="error"></div>
-
-    <label for="dormitory">기숙사 선택:</label>
-    <select id="dormitory" name="dormitory" required>
-      <option value="" disabled selected>선택하세요</option>
-      <option value="꿈동">꿈동</option>
-      <option value="미래동">미래동</option>
-    </select>
-    <div id="dormError" class="error"></div>
-
-    <!-- 봇 방지를 위한 허니팟 필드 -->
-    <input type="text" name="honeypot_field" style="display:none !important; visibility:hidden !important; opacity:0 !important; width:0 !important; height:0 !important; border:none !important; padding:0 !important; margin:0 !important;" tabindex="-1" autocomplete="off" />
-
-    <button type="submit">다음</button>
-  </form>
-  <nav>
-    <button id="adminLoginBtn" type="button">관리자 로그인</button>
-  </nav>
-</div>
-
-<!-- 층 선택 페이지 -->
-<div class="container hidden" id="floorSelectPage">
-  <h2><span id="welcomeText"></span>님, 층을 선택해주세요</h2>
-  <select id="floorSelect" aria-label="층 선택"></select>
-  <div class="button-group">
-    <button id="backToLoginBtn" type="button">뒤로가기</button>
-    <button id="floorNextBtn" type="button">좌석 선택으로</button>
-  </div>
-</div>
-
-<!-- 좌석 선택 페이지 -->
-<div class="container hidden" id="seatMapPage">
-  <h2>좌석 배치도 - <span id="selectedDorm"></span> <span id="selectedFloor"></span>층</h2>
-  <div id="seatMapWrapper">
-    <div id="seatMap"></div>
-  </div>
-  <div id="reservationAvailabilityMessage"></div>
-  <div class="button-group">
-    <button id="cancelSeatBtn" type="button">취소 및 뒤로가기</button>
-    <button id="confirmBtn" type="button" disabled>예약 확정</button>
-  </div>
-  <div class="color-legend">
-    <div class="legend-item"><div class="legend-box empty"></div>빈자리</div>
-    <div class="legend-item"><div class="legend-box booked"></div>예약됨</div>
-    <div class="legend-item"><div class="legend-box mine"></div>내 자리</div>
-  </div>
-</div>
-
-<!-- 관리자 로그인 페이지 -->
-<div class="container hidden" id="adminLoginPage">
-  <h1>관리자 로그인</h1>
-  <form id="adminLoginForm" autocomplete="off" novalidate>
-    <label for="adminPassword">비밀번호:</label>
-    <input type="password" id="adminPassword" name="adminPassword" required />
-    <div id="adminError" class="error"></div>
-    <div class="button-group">
-      <button id="adminLoginBackBtn" type="button">로그인페이지로 돌아가기</button>
-      <button type="submit">로그인</button>
-    </div>
-  </form>
-</div>
-
-<!-- 관리자 페이지 -->
-<div class="container hidden" id="adminPage">
-  <h1>관리자 페이지</h1>
-  <button id="adminLogoutBtn" type="button">로그아웃</button>
-
-  <h2>예약 가능 시간 설정</h2>
-  <form id="reservationTimeForm" novalidate>
-    <label for="resStartTime">예약 시작 시간:</label>
-    <input type="datetime-local" id="resStartTime" required />
-    <label for="resEndTime">예약 종료 시간:</label>
-    <input type="datetime-local" id="resEndTime" required />
-    <button type="submit">시간 설정 저장</button>
-    <div id="timeSettingMessage"></div>
-  </form>
-
-  <hr style="margin: 2em 0;">
-
-  <h2>공지사항 설정</h2>
-  <form id="announcementForm" novalidate>
-    <label for="announcementMessageInput">공지 내용:</label>
-    <textarea id="announcementMessageInput" placeholder="모든 사용자에게 표시될 공지 내용을 입력하세요." rows="4"></textarea>
-    <div>
-      <input type="checkbox" id="announcementActiveCheckbox" />
-      <label for="announcementActiveCheckbox" style="display: inline-block; margin-top: 0; font-weight: normal;">공지 활성화</label>
-    </div>
-    <button type="submit">공지 저장</button>
-    <div id="announcementMessageStatus" class="error"></div>
-  </form>
-
-  <hr style="margin: 2em 0;">
-
-  <h2>예약 현황</h2>
-  <table>
-    <thead>
-      <tr><th>이름</th><th>룸 번호</th><th>기숙사</th><th>층</th><th>자리 번호</th><th>예약 취소</th></tr>
-    </thead>
-    <tbody id="reservationListBody"></tbody>
-  </table>
-
-  <button id="clearAllReservationsBtn" type="button" style="background-color: #dc2626; color: white; float: right; margin-top: 15px;">모든 예약 취소</button>
-</div>
-
-<!-- 공지사항 팝업 오버레이 -->
-<div class="announcement-overlay hidden" id="announcementOverlay">
-  <div class="announcement-popup">
-    <h3>공지사항</h3>
-    <p id="announcementMessage"></p>
-    <button class="close-btn" type="button">닫기</button>
-  </div>
-</div>
-
-
-   const BACKEND_URL = "https://seat-reservation-backend-ygl9.onrender.com";
-  let socket = null;
-
-
-  let allReservations = {};
-  let adminSettings = {};
-  let availabilityCheckInterval = null;
-  let prevAllowedState = null;
-  let currentAnnouncement = null;
-
-  // DOM 요소 참조 변수 선언 (DOMContentLoaded에서 할당)
-  let loginPage, loginForm, roomNoInput, userNameInput, dormitorySelect, roomError, nameError, dormError, adminLoginBtn;
-  let floorSelectPage, floorSelect, floorNextBtn, backToLoginBtn, welcomeText;
-  let seatMapPage, seatMapContainer, confirmBtn, cancelSeatBtn, selectedDormTitle, selectedFloorTitle, reservationAvailabilityMessage;
-  let adminLoginPage, adminLoginForm, adminPasswordInput, adminError;
-  let adminPage, adminLogoutBtn, reservationListBody, clearAllReservationsBtn;
-  let reservationTimeForm, resStartTimeInput, resEndTimeInput, timeSettingMessage;
-  let announcementOverlay, announcementPopupMessage, announcementCloseBtn, announcementForm, announcementMessageInput, announcementActiveCheckbox, announcementMessageStatus;
-
-  let currentUser = null;
-  let currentFloor = null;
-  let selectedSeat = null;
-
-  const roomNoPattern = /^\d{3}호$/;
-  const koreanNamePattern = /^[가-힣]{2,4}$/;
-
-  // 좌석 배치도 데이터
-  const seatLayouts = {
-    "꿈동": {
-      "2": [
-        [null,4,null,5,6,7,8,9,10,null,null,null,null],
-        [null,3,null,null,null,null,null,null,null,11,null,null,null],
-        [null,2,null,null,null,null,null,null,null,12,null,null,null],
-        [null,1,null,null,null,null,null,null,null,null,null,null,null]
-      ],
-      "3": [
-        [null,4,null,5,6,7,8,9,10,null,11,null,null,null],
-        [null,3,null,null,null,null,null,null,null,null,12,null,null,null],
-        [null,2,null,null,null,null,null,null,null,null,13,null,null,null],
-        [null,1,null,null,null,null,null,null,null,null,14,null,null,null]
-      ],
-      "4": [
-        [null,4,null,null,null,null,null,null,null,null],
-        [null,3,null,null,5,7,null,null,null,null],
-        [null,2,null,null,6,8,null,null,null,null],
-        [null,1,null,null,null,null,null,null,null,null]
-      ],
-      "5": [
-        [null,4,null,null,null,5,8,null,null,null],
-        [null,3,null,null,null,6,9,null,null,null],
-        [null,2,null,null,null,7,10,null,null,null],
-        [null,1,null,null,null,null,null,null,null,null]
-      ],
-      "8": [
-        [null,4,null,5,6,7,8,null,null,null,null,null,null],
-        [null,3,null,null,null,null,null,null,null,null,null,null,null],
-        [null,2,null,null,null,null,null,null,null,null,null,null,null],
-        [null,1,null,null,null,null,null,null,null,null,null,null,null]
-      ]
-    },
-    "미래동": {
-      "2": [
-        [null,null,null,null,null,5,6,7,8,9,10,11,12,null,null,null,null,null],
-        [null,null,null,null,4,null,null,null,null,null,null,null,null,13,null,null,null,null],
-        [null,null,null,null,3,null,null,null,null,null,null,null,null,14,null,null,null,null],
-        [null,null,1,2,null,null,null,null,null,null,null,null,null,null,15,16,null,null],
-        [null,17,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]
-      ],
-      "4-1": [
-        [null,3,null,4,5,null,6,null,null],
-        [null,2,null,null,null,null,7,null,null],
-        [null,1,null,null,null,null,8,null,null]
-      ],
-      "4-2": [
-        [null,4,null,5,6,7,8,9,10,11,12,null,13,null],
-        [null,3,null,null,null,null,null,null,null,null,null,null,14,null],
-        [null,2,null,null,null,null,null,null,null,null,null,null,null,null],
-        [null,1,null,null,null,null,null,null,null,null,null,null,null,null]
-      ]
-    }
-  };
-
-  // --- API 통신 함수 ---
-  async function fetchAllReservations() {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/reservations`);
-      if (!res.ok) throw new Error('예약 데이터 불러오기 실패: ' + res.statusText);
-      const data = await res.json();
-      allReservations = {};
-      data.forEach(r => allReservations[r._id] = r);
-    } catch (e) {
-      alert('예약 데이터를 가져오는 데 문제가 발생했습니다. 백엔드 서버 상태를 확인하세요.');
-      console.error('API 호출 에러: fetchAllReservations', e);
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureException(e);
-      }
-      return {};
-    }
-  }
-
-  async function fetchAdminSettings() {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/admin-settings`);
-      if (!res.ok) throw new Error('관리자 설정 불러오기 실패: ' + res.statusText);
-      adminSettings = await res.json();
-    } catch (e) {
-      alert('관리자 설정을 가져오는 데 문제가 발생했습니다. 백엔드 서버 상태를 확인하세요.');
-      console.error('API 호출 에러: fetchAdminSettings', e);
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureException(e);
-      }
-      return { reservationStartTime: null, reservationEndTime: null };
-    }
-  }
-
-  async function fetchAnnouncement() {
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/announcement`);
-      if (!res.ok) throw new Error('공지사항 불러오기 실패: ' + res.statusText);
-      const data = await res.json();
-      currentAnnouncement = data;
-      if (currentAnnouncement.active && currentAnnouncement.message) {
-        showAnnouncement(currentAnnouncement.message);
-      } else {
-        hideAnnouncement();
-      }
-    } catch (e) {
-      console.error('API 호출 에러: fetchAnnouncement', e);
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureException(e);
-      }
-      hideAnnouncement();
-    }
-  }
-
-  // --- Socket.IO 이벤트 리스너 설정 ---
-  function setupSocketListeners() {
-    if (!socket) {
-      console.error("Critical Error: Socket.IO client is not initialized.");
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureMessage("Socket.IO client not initialized.");
-      }
-      return;
-    }
-    socket.on('reservationsUpdated', async updated => {
-      allReservations = {};
-      updated.forEach(r => allReservations[r._id] = r);
-      if (seatMapPage && !seatMapPage.classList.contains("hidden") && currentUser && currentFloor) {
-        renderSeatMap(currentUser.dormitory, currentFloor);
-      }
-      if (adminPage && !adminPage.classList.contains("hidden")) {
-        await loadAdminPage();
-      }
-    });
-
-    socket.on('settingsUpdated', updated => {
-      adminSettings = updated;
-      updateReservationAvailability(); 
-      if (seatMapPage && !seatMapPage.classList.contains("hidden") && currentUser && currentFloor) {
-        renderSeatMap(currentUser.dormitory, currentFloor);
-      }
-    });
-
-    socket.on('announcementUpdated', updated => {
-      currentAnnouncement = updated;
-      if (currentAnnouncement.active && currentAnnouncement.message) {
-        showAnnouncement(currentAnnouncement.message);
-      } else {
-        hideAnnouncement();
-      }
-      if (adminPage && !adminPage.classList.contains("hidden")) {
-        if (announcementMessageInput) announcementMessageInput.value = currentAnnouncement.message || '';
-        if (announcementActiveCheckbox) announcementActiveCheckbox.checked = currentAnnouncement.active || false;
-        if (announcementMessageStatus) {
-          announcementMessageStatus.textContent = "공지사항이 업데이트되었습니다.";
-          announcementMessageStatus.style.color = "green";
-        }
-      }
-    });
-  }
-
-  // 예약 가능 시간 체크
-  function isReservationTimeAllowed() {
-    if (!adminSettings.reservationStartTime || !adminSettings.reservationEndTime) {
-      return { allowed: false, message: '관리자가 예약 가능 시간을 설정하지 않았습니다.' };
-    }
-    const now = new Date();
-    const startTime = new Date(adminSettings.reservationStartTime);
-    const endTime = new Date(adminSettings.reservationEndTime);
-
-    return now >= startTime && now <= endTime
-      ? { allowed: true, message: `예약 가능 시간입니다. (${formatDate(startTime)} ~ ${formatDate(endTime)})` }
-      : { allowed: false, message: `현재 예약 가능 시간이 아닙니다. (${formatDate(startTime)} ~ ${formatDate(endTime)})` };
-  }
-
-  function formatDate(date) {
-    const pad = n => (n < 10 ? '0' + n : n);
-    return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  }
-
-  // 페이지 전환 처리
-  function showSection(section) {
-    [loginPage, floorSelectPage, seatMapPage, adminLoginPage, adminPage].forEach(el => {
-      if(el) el.classList.add('hidden');
-    });
-    if(section) section.classList.remove('hidden');
-
-    if (section === seatMapPage) {
-      if (availabilityCheckInterval) clearInterval(availabilityCheckInterval);
-      updateReservationAvailability();
-      availabilityCheckInterval = setInterval(updateReservationAvailability, 1000);
-    } else {
-      if (availabilityCheckInterval) {
-        clearInterval(availabilityCheckInterval);
-        availabilityCheckInterval = null;
-      }
-    }
-  }
-
-  function clearErrors() {
-    if (roomError) roomError.textContent = "";
-    if (nameError) nameError.textContent = "";
-    if (dormError) dormError.textContent = "";
-  }
-
-  // 층 선택 옵션 셋업
-  function setFloorOptions(dorm) {
-    if (!floorSelect) {
-      console.error('Critical Error: floorSelect is null when trying to setFloorOptions. Check HTML ID "floorSelect" and DOM loading.');
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureMessage('floorSelect element not found when setting floor options');
-      }
-      alert('오류: 층 선택 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
-      return;
-    }
-    floorSelect.innerHTML = '<option value="" disabled selected>층 선택</option>';
-    if (!seatLayouts[dorm]) {
-      floorSelect.innerHTML = '<option value="" disabled selected>해당 기숙사의 층 정보가 없습니다.</option>';
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureMessage(`seatLayouts for dormitory ${dorm} is undefined or null.`);
-      }
-      return;
-    }
-    const floors = Object.keys(seatLayouts[dorm]).sort((a,b) => {
-      const parseFloor = (f) => parseFloat(f.replace('-', '.'));
-      return parseFloor(a) - parseFloor(b);
-    });
-    floors.forEach(floor => {
-      const option = document.createElement('option');
-      option.value = floor;
-      option.textContent = floor.includes('-') ? floor.replace('-', '층-') : floor + '층';
-      floorSelect.appendChild(option);
-    });
-  }
-
-  // 좌석 배치도 그리기
-  function renderSeatMap(dorm, floor) {
-    if (!seatMapContainer) {
-      console.error('Critical Error: seatMapContainer is null when trying to renderSeatMap. Check HTML ID "seatMap" and DOM loading.');
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureMessage('seatMapContainer element not found when rendering seat map');
-      }
-      alert('오류: 좌석 배치도 컨테이너를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
-      return;
-    }
-    seatMapContainer.innerHTML = '';
-
-    const layout = seatLayouts[dorm]?.[floor];
-    if (!layout) {
-      seatMapContainer.textContent = '해당 층 좌석 배치도가 없습니다.';
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureMessage(`Layout for dormitory ${dorm}, floor ${floor} is undefined or null.`);
-      }
-      return;
-    }
-    const maxCols = Math.max(...layout.map(row => row.length));
-    seatMapContainer.style.gridTemplateColumns = `repeat(${maxCols}, 1fr)`;
-
-    const allowed = isReservationTimeAllowed().allowed;
-
-    layout.forEach(row => {
-      row.forEach(seatNum => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-
-        if (seatNum === null) {
-          btn.classList.add('seat-btn', 'empty');
-          btn.textContent = '';
-        } else {
-          btn.classList.add('seat-btn');
-          btn.textContent = seatNum;
-
-          const booked = Object.values(allReservations).find(r =>
-            r.dormitory === dorm &&
-            r.floor === floor &&
-            r.seat === seatNum
-          );
-
-          if (booked) {
-            btn.classList.add('booked');
-            btn.disabled = true;
-
-            if (currentUser &&
-                currentUser.roomNo === booked.roomNo &&
-                currentUser.name === booked.name) {
-              btn.classList.add('mine');
-              btn.disabled = false;
-              btn.title = `내 예약 (${booked.name}님)`;
-            } else {
-              btn.title = `예약된 좌석`;
-            }
-          } else {
-            btn.disabled = !allowed;
-            btn.title = allowed ? '예약 가능 자리' : '예약 가능 시간이 아닙니다.';
-            btn.onclick = () => {
-              if (allowed) {
-                selectedSeat = seatNum;
-                if (confirmBtn) confirmBtn.disabled = false;
-                highlightSelectedSeat();
-              }
-            };
-          }
-        }
-        seatMapContainer.appendChild(btn);
-      });
-    });
-    highlightSelectedSeat();
-  }
-
-  // 선택 좌석 강조 표시
-  function highlightSelectedSeat() {
-    if(!seatMapContainer) return;
-    seatMapContainer.querySelectorAll("button.seat-btn").forEach(btn => {
-      btn.classList.remove('mine');
-
-      if (parseInt(btn.textContent) === selectedSeat) {
-        btn.classList.add('mine');
-      }
-      else if (currentUser &&
-               selectedDormTitle && currentUser.dormitory === selectedDormTitle.textContent &&
-               selectedFloorTitle && currentUser.floor === selectedFloorTitle.textContent &&
-               currentUser.seat === parseInt(btn.textContent)) {
-        btn.classList.add('mine');
-      }
-    });
-  }
-
-  // 예약 가능 시간 메시지 및 버튼 상태 갱신
-  function updateReservationAvailability() {
-    const status = isReservationTimeAllowed();
-    if(reservationAvailabilityMessage) reservationAvailabilityMessage.textContent = status.message;
-
-    const currentAllowedState = status.allowed;
-    const hasAllowedStateChanged = (prevAllowedState !== null && prevAllowedState !== currentAllowedState);
-    prevAllowedState = currentAllowedState;
-
-    if (currentAllowedState) {
-      if(reservationAvailabilityMessage) reservationAvailabilityMessage.classList.add("available");
-      if(confirmBtn) confirmBtn.disabled = (selectedSeat === null);
-    } else {
-      if(reservationAvailabilityMessage) reservationAvailabilityMessage.classList.remove("available");
-      if(confirmBtn) confirmBtn.disabled = true;
-    }
-
-    if (hasAllowedStateChanged && seatMapPage && !seatMapPage.classList.contains("hidden") && currentUser && currentFloor) {
-      renderSeatMap(currentUser.dormitory, currentFloor);
-    }
-  }
-
-  // 로그인 폼 제출 처리
-  async function handleSubmitLoginForm(e) {
-    e.preventDefault();
-    clearErrors();
-
-    const roomNo = roomNoInput.value.trim();
-    const name = userNameInput.value.trim();
-    const selectedDorm = dormitorySelect.value;
-    const honeypotField = loginForm.querySelector('input[name="honeypot_field"]').value;
-
-    let valid = true;
-    if (!roomNoPattern.test(roomNo)) {
-      roomError.textContent = '룸 번호는 000호 형식으로 입력하세요.';
-      valid = false;
-    }
-    if (!koreanNamePattern.test(name)) {
-      nameError.textContent = '이름은 한글 2~4자여야 합니다.';
-      valid = false;
-    }
-    if (!selectedDorm) {
-      dormError.textContent = '기숙사를 선택하세요.';
-      valid = false;
-    }
-    if (honeypotField) {
-      alert('비정상적인 요청이 감지되었습니다. (Honeypot)');
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureMessage('Honeypot field filled by bot on login form.');
-      }
-      valid = false;
-    }
-    if (!valid) return;
-
-    const hasReservation = Object.values(allReservations).some(r => r.roomNo === roomNo && r.name === name);
-
-    if (hasReservation) {
-      const existing = Object.values(allReservations).find(r => r.roomNo === roomNo && r.name === name);
-      currentUser = {roomNo, name, dormitory: selectedDorm};
-      currentFloor = existing.floor;
-      selectedSeat = existing.seat;
-
-      setFloorOptions(selectedDorm);
-      if (floorSelect) floorSelect.value = currentFloor;
-      if (welcomeText) welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`;
-      if (selectedDormTitle) selectedDormTitle.textContent = selectedDorm;
-      if (selectedFloorTitle) selectedFloorTitle.textContent = currentFloor;
-      renderSeatMap(selectedDorm, currentFloor);
-      updateReservationAvailability();
-      showSection(seatMapPage);
-    } else {
-      currentUser = {roomNo, name, dormitory: selectedDorm};
-      setFloorOptions(selectedDorm);
-      if (welcomeText) welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`;
-      showSection(floorSelectPage);
-    }
-    // Sentry에 사용자 정보 설정 (로그인 성공 시)
-    if (typeof window.Sentry !== 'undefined' && currentUser) {
-        window.Sentry.setUser({
-            id: currentUser.roomNo,
-            username: currentUser.name,
-            dormitory: currentUser.dormitory
-        });
-    }
-  }
-
-  // 뒤로가기 버튼 클릭 처리
-  function handleClickBackToLoginBtn() {
-    currentUser = null;
-    currentFloor = null;
-    selectedSeat = null;
-    if (loginForm) loginForm.reset();
-    showSection(loginPage);
-    // Sentry 사용자 정보 초기화
-    if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.setUser(null);
-    }
-  }
-
-  // 층 선택 다음 버튼 클릭 처리
-  function handleClickFloorNextBtn() {
-    if (!floorSelect) {
-      alert('오류: 층 선택 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureMessage('floorSelect element not found on floor next button click');
-      }
-      return;
-    }
-    if (!floorSelect.value) {
-      alert('층을 선택하세요.');
-      return;
-    }
-    currentFloor = floorSelect.value;
-    if (selectedDormTitle) selectedDormTitle.textContent = currentUser.dormitory;
-    if (selectedFloorTitle) selectedFloorTitle.textContent = currentFloor;
-    selectedSeat = null;
-    if (confirmBtn) confirmBtn.disabled = true;
-    renderSeatMap(currentUser.dormitory, currentFloor);
-    updateReservationAvailability();
-    showSection(seatMapPage);
-  }
-
-  // 좌석 취소 버튼 클릭 처리
-  function handleClickCancelSeatBtn() {
-    selectedSeat = null;
-    if (confirmBtn) confirmBtn.disabled = true;
-    showSection(floorSelectPage);
-  }
-
-  // 관리자 로그인 버튼 클릭 처리
-  function handleClickAdminLoginBtn() {
-    if (adminLoginForm) adminLoginForm.reset();
-    if (adminError) adminError.textContent = '';
-    showSection(adminLoginPage);
-  }
-
-  // 관리자 로그인 뒤로가기 버튼 클릭 처리
-  function handleClickAdminLoginBackBtn() {
-    showSection(loginPage);
-  }
-
-  // 관리자 로그인 폼 제출 처리
-  async function handleSubmitAdminLoginForm(e) {
-    e.preventDefault();
-    const pw = adminPasswordInput.value.trim();
-
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/admin-login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: pw }),
-      });
-      const result = await response.json();
-
-      if (result.success) {
-        await loadAdminPage();
-        if (currentAnnouncement) {
-          if (announcementMessageInput) announcementMessageInput.value = currentAnnouncement.message || '';
-          if (announcementActiveCheckbox) announcementActiveCheckbox.checked = currentAnnouncement.active || false;
-        }
-        showSection(adminPage);
-        // Sentry에 관리자 정보 설정
-        if (typeof window.Sentry !== 'undefined') {
-          window.Sentry.setUser({
-              id: 'admin',
-              username: 'Administrator'
-          });
-        }
-      } else {
-        if (adminError) adminError.textContent = result.message || '로그인 실패: 알 수 없는 오류';
-        if (typeof window.Sentry !== 'undefined') {
-          window.Sentry.captureMessage(`Admin login failed: ${result.message || 'Unknown error'}`);
-        }
-      }
-    } catch (error) {
-      if (adminError) adminError.textContent = '로그인 요청 중 오류 발생. 서버를 확인하세요.';
-      console.error('Admin login fetch error:', error);
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureException(error);
-      }
-    }
-  }
-
-  // 관리자 로그아웃 버튼 클릭 처리
-  function handleClickAdminLogoutBtn() {
-    showSection(loginPage);
-    // Sentry 사용자 정보 초기화
-    if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.setUser(null);
-    }
-  }
-
-  // 좌석 예약 확정 처리 (예약 성공 시 홈 화면으로 이동)
-  async function handleSubmitConfirmBtn() {
-    if (!selectedSeat) {
-      alert("좌석을 선택해주세요.");
-      return;
-    }
-    if (!isReservationTimeAllowed().allowed) {
-      alert("예약 가능 시간이 아닙니다.");
-      updateReservationAvailability();
-      return;
-    }
-    try {
-      const reservationData = {
-        roomNo: currentUser.roomNo,
-        name: currentUser.name,
-        dormitory: currentUser.dormitory,
-        floor: currentFloor,
-        seat: selectedSeat,
-        honeypot_field: '',
-      };
-      const response = await fetch(`${BACKEND_URL}/api/reservations`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(reservationData),
-      });
-      const result = await response.json();
-
-      if (response.ok) {
-        alert(`${result.newReservation.dormitory} ${result.newReservation.floor}층 ${result.newReservation.seat}번 자리 예약 완료!`);
-        handleClickBackToLoginBtn(); // 사용자 정보 초기화 및 로그인 페이지로 이동
-      } else {
-        alert("예약 실패: " + (result.message || "알 수 없는 오류"));
-        // 실패 시에는 현재 좌석 상태를 다시 로드
-        if (currentUser && currentFloor) {
-          await fetchAllReservations();
-          renderSeatMap(currentUser.dormitory, currentFloor);
-        }
-        if (typeof window.Sentry !== 'undefined') {
-          window.Sentry.captureMessage(`Reservation failed: ${result.message || 'Unknown error'}`);
-        }
-      }
-    } catch (e) {
-      alert("예약 처리 중 오류가 발생했습니다. 서버 상태를 확인하세요.");
-      console.error(e);
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureException(e);
-      }
-    }
-  }
-
-  // 관리자 페이지 로드
-  async function loadAdminPage() {
-    if (reservationListBody) reservationListBody.innerHTML = "";
-    let resArr = Object.values(allReservations);
-
-    resArr.sort((a, b) => {
-      if (a.dormitory !== b.dormitory) {
-        return a.dormitory.localeCompare(b.dormitory);
-      }
-      const parseFloor = (f) => parseFloat(f.replace('-', '.'));
-      if (parseFloor(a.floor) !== parseFloor(b.floor)) {
-        return parseFloor(a.floor) - parseFloor(b.floor);
-      }
-      return a.seat - b.seat;
-    });
-
-    if (resArr.length === 0) {
-      if (reservationListBody) reservationListBody.innerHTML = '<tr><td colspan="6">등록된 예약이 없습니다.</td></tr>';
-      return;
-    }
-    resArr.forEach((resv) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${resv.name}</td>
-        <td>${resv.roomNo}</td>
-        <td>${resv.dormitory}</td>
-        <td>${resv.floor}</td>
-        <td>${resv.seat}</td>
-        <td><button type="button" class="cancel-btn" data-id="${resv._id}">취소</button></td>`;
-      if (reservationListBody) reservationListBody.appendChild(tr);
-    });
-    if (reservationListBody) {
-      reservationListBody.querySelectorAll(".cancel-btn").forEach((btn) => {
-        btn.onclick = async () => {
-          if (confirm("정말 예약을 취소하시겠습니까?")) {
-            try {
-              const id = btn.dataset.id;
-              const res = await fetch(`${BACKEND_URL}/api/reservations/${id}`, { method: "DELETE" });
-              if (res.ok) alert("예약이 취소되었습니다.");
-              else {
-                const errorResult = await res.json();
-                alert(`예약 취소 실패: ${errorResult.message || '알 수 없는 오류'}`);
-                if (typeof window.Sentry !== 'undefined') {
-                  window.Sentry.captureMessage(`Admin cancel reservation failed: ${errorResult.message || 'Unknown error'}`);
-                }
-              }
-            } catch (e) {
-              alert("예약 취소 처리 중 오류가 발생했습니다. 서버 상태를 확인하세요.");
-              console.error(e);
-              if (typeof window.Sentry !== 'undefined') {
-                window.Sentry.captureException(e);
-              }
-            }
-          }
-        };
-      });
-    }
-    if (resStartTimeInput) resStartTimeInput.value = adminSettings.reservationStartTime ? new Date(adminSettings.reservationStartTime).toISOString().slice(0, 16) : "";
-    if (resEndTimeInput) resEndTimeInput.value = adminSettings.reservationEndTime ? new Date(adminSettings.reservationEndTime).toISOString().slice(0, 16) : "";
-    if (timeSettingMessage) timeSettingMessage.textContent = "";
-
-    if (currentAnnouncement) {
-      if (announcementMessageInput) announcementMessageInput.value = currentAnnouncement.message || '';
-      if (announcementActiveCheckbox) announcementActiveCheckbox.checked = currentAnnouncement.active || false;
-      if (announcementMessageStatus) announcementMessageStatus.textContent = '';
-    }
-  }
-
-  // 모든 예약 취소 처리
-  async function handleClickClearAllReservationsBtn() {
-    if (!confirm('정말 모든 예약을 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다!')) {
-      return;
-    }
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/reservations/all`, {
-        method: 'DELETE'
-      });
-      if (response.ok) {
-        alert('모든 예약이 성공적으로 취소되었습니다.');
-        await fetchAllReservations();
-        await loadAdminPage();
-      } else {
-        const errorResult = await response.json();
-        alert(`모든 예약 취소 실패: ${errorResult.message || '알 수 없는 오류'}`);
-        if (typeof window.Sentry !== 'undefined') {
-          window.Sentry.captureMessage(`Clear all reservations failed: ${errorResult.message || 'Unknown error'}`);
-        }
-      }
-    } catch (e) {
-      alert('모든 예약 취소 중 통신 오류가 발생했습니다. 백엔드 서버를 확인하세요.');
-      console.error(e);
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureException(e);
-      }
-    }
-  }
-
-  // 예약 가능 시간 설정 제출 처리
-  async function handleSubmitReservationTimeForm(e) {
-    e.preventDefault();
-
-    if (!resStartTimeInput.value || !resEndTimeInput.value) {
-      if (timeSettingMessage) {
-        timeSettingMessage.textContent = "시작과 종료 시간을 모두 입력하세요.";
-        timeSettingMessage.style.color = "red";
-      }
-      return;
-    }
-
-    if (new Date(resEndTimeInput.value) <= new Date(resStartTimeInput.value)) {
-      if (timeSettingMessage) {
-        timeSettingMessage.textContent = "종료 시간은 시작 시간보다 늦어야 합니다.";
-        timeSettingMessage.style.color = "red";
-      }
-      return;
-    }
-
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/admin-settings`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reservationStartTime: new Date(resStartTimeInput.value).toISOString(),
-          reservationEndTime: new Date(resEndTimeInput.value).toISOString(),
-        }),
-      });
-
-      if (res.ok) {
-        if (timeSettingMessage) {
-          timeSettingMessage.textContent = "예약 가능 시간이 설정되었습니다.";
-          timeSettingMessage.style.color = "green";
-        }
-        await loadAdminPage();
-      } else {
-        if (timeSettingMessage) {
-          timeSettingMessage.textContent = "설정 실패";
-          timeSettingMessage.style.color = "red";
-        }
-        if (typeof window.Sentry !== 'undefined') {
-          window.Sentry.captureMessage(`Set reservation time failed.`);
-        }
-      }
-    } catch (e) {
-      if (timeSettingMessage) {
-        timeSettingMessage.textContent = "서버 오류 발생";
-        timeSettingMessage.style.color = "red";
-      }
-      console.error(e);
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureException(e);
-      }
-    }
-  }
-
-  // 공지사항 설정 제출 처리
-  async function handleSubmitAnnouncementForm(e) {
-    e.preventDefault();
-    const message = announcementMessageInput.value.trim();
-    const active = announcementActiveCheckbox.checked;
-
-    if (!message && active) {
-      if (announcementMessageStatus) {
-        announcementMessageStatus.textContent = '활성화하려면 공지 내용을 입력하세요.';
-        announcementMessageStatus.style.color = "red";
-      }
-      return;
-    }
-
-    if (!message && !active) { // 공지 내용이 없고 비활성화하는 경우
-      if (announcementMessageStatus) {
-        announcementMessageStatus.textContent = '공지 비활성화 및 내용 삭제 완료.';
-        announcementMessageStatus.style.color = "green";
-      }
-    }
-
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/announcement`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, active })
-      });
-      if (response.ok) {
-        if (announcementMessageStatus) {
-          announcementMessageStatus.textContent = active ? '공지사항이 저장되고 활성화되었습니다.' : '공지사항이 저장되고 비활성화되었습니다.';
-          announcementMessageStatus.style.color = "green";
-        }
-      } else {
-        if (announcementMessageStatus) {
-          announcementMessageStatus.textContent = '공지 저장 실패';
-          announcementMessageStatus.style.color = "red";
-        }
-        if (typeof window.Sentry !== 'undefined') {
-          window.Sentry.captureMessage(`Save announcement failed.`);
-        }
-      }
-    } catch (e) {
-      if (announcementMessageStatus) {
-        announcementMessageStatus.textContent = '공지 저장 중 서버 오류 발생';
-        announcementMessageStatus.style.color = "red";
-      }
-      console.error('공지 저장 중 오류:', e);
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureException(e);
-      }
-    }
-  }
-
-  // 공지 팝업 표시
-  function showAnnouncement(message) {
-    if (announcementOverlay && announcementPopupMessage) {
-      announcementPopupMessage.textContent = message;
-      announcementOverlay.classList.remove('hidden');
-    } else {
-      console.error("공지 팝업 요소를 찾을 수 없습니다.");
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureMessage('Announcement popup elements not found.');
-      }
-    }
-  }
-
-  // 공지 팝업 숨기기
-  function hideAnnouncement() {
-    if (announcementOverlay) {
-      announcementOverlay.classList.add('hidden');
-    } else {
-      console.error("announcementOverlay not found during hideAnnouncement.");
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureMessage('Announcement overlay element not found for hiding.');
-      }
-    }
-  }
-
-  // DOMContentLoaded 이벤트 처리 (스크립트의 시작점)
-  document.addEventListener('DOMContentLoaded', async () => {
-    // DOM 요소 참조 (DOM이 완전히 로드된 후에 할당)
-    loginPage = document.getElementById('loginPage');
-    loginForm = document.getElementById('loginForm');
-    roomNoInput = document.getElementById('roomNo');
-    userNameInput = document.getElementById('userName');
-    dormitorySelect = document.getElementById('dormitory');
-    roomError = document.getElementById('roomError');
-    nameError = document.getElementById('nameError');
-    dormError = document.getElementById('dormError');
-    adminLoginBtn = document.getElementById('adminLoginBtn');
-
-    floorSelectPage = document.getElementById('floorSelectPage');
-    floorSelect = document.getElementById('floorSelect');
-    floorNextBtn = document.getElementById('floorNextBtn');
-    backToLoginBtn = document.getElementById('backToLoginBtn');
-    welcomeText = document.getElementById('welcomeText');
-
-    seatMapPage = document.getElementById('seatMapPage');
-    seatMapContainer = document.getElementById('seatMap');
-    confirmBtn = document.getElementById('confirmBtn');
-    cancelSeatBtn = document.getElementById('cancelSeatBtn');
-    selectedDormTitle = document.getElementById('selectedDorm');
-    selectedFloorTitle = document.getElementById('selectedFloor');
-    reservationAvailabilityMessage = document.getElementById('reservationAvailabilityMessage');
-
-    adminLoginPage = document.getElementById('adminLoginPage');
-    adminLoginForm = document.getElementById('adminLoginForm');
-    adminPasswordInput = document.getElementById('adminPassword');
-    adminError = document.getElementById('adminError');
-
-    adminPage = document.getElementById('adminPage');
-    adminLogoutBtn = document.getElementById('adminLogoutBtn');
-    reservationListBody = document.getElementById('reservationListBody');
-    clearAllReservationsBtn = document.getElementById('clearAllReservationsBtn');
-
-    reservationTimeForm = document.getElementById('reservationTimeForm');
-    resStartTimeInput = document.getElementById('resStartTime');
-    resEndTimeInput = document.getElementById('resEndTime');
-    timeSettingMessage = document.getElementById('timeSettingMessage');
-
-    announcementOverlay = document.getElementById('announcementOverlay');
-    announcementPopupMessage = document.getElementById('announcementMessage');
-    announcementCloseBtn = announcementOverlay ? announcementOverlay.querySelector('.close-btn') : null;
-    announcementForm = document.getElementById('announcementForm');
-    announcementMessageInput = document.getElementById('announcementMessageInput');
-    announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
-    announcementMessageStatus = document.getElementById('announcementMessageStatus');
-
-    // Socket.IO 연결 초기화
-    try {
-      if (typeof io !== 'undefined') {
-        socket = io(BACKEND_URL);
-        setupSocketListeners();
-      } else {
-        alert("오류: Socket.IO 라이브러리가 로드되지 않았습니다. 페이지를 새로고침해주세요.");
-        if (typeof window.Sentry !== 'undefined') {
-          window.Sentry.captureMessage('Socket.IO library not loaded.');
-        }
-        return;
-      }
-    } catch(e) {
-      alert("웹사이트 초기화 중 오류가 발생했습니다. 개발자 콘솔을 확인해주세요.");
-      console.error("Error during Socket.IO initialization or listener setup:", e);
-      if (typeof window.Sentry !== 'undefined') {
-        window.Sentry.captureException(e);
-      }
-      return;
-    }
-
-    // 모든 이벤트 리스너 등록
-    if (loginForm) loginForm.addEventListener('submit', handleSubmitLoginForm);
-    if (backToLoginBtn) backToLoginBtn.addEventListener('click'<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>랜선석 예약 시스템</title>
-<style>
-  /* 기본 스타일 */
-  body {
-    font-family: 'Malgun Gothic', Arial, sans-serif;
-    margin: 0; padding: 10px 0;
-    background: #fafafc;
-    color: #2c3e50;
-  }
-  h1, h2 {
-    text-align: center;
-    margin: 1em 0;
-    color: #334155;
-  }
-  .container {
-    max-width: 960px;
-    margin: 10px auto 40px;
-    background: white;
-    padding: 15px 20px;
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.06);
-  }
-  .hidden { display: none !important; } /* 다른 스타일에 의해 덮어쓰기 방지 */
-
-  /* 폼 요소 */
-  form {
-    max-width: 400px;
-    margin: 0 auto;
-  }
-  label {
-    font-weight: 700;
-    margin-top: 12px;
-    display: block;
-    color: #475569;
-  }
-  input[type=text], input[type=password], input[type=datetime-local], select, textarea {
-    width: 100%;
-    padding: 10px 12px;
-    margin-top: 6px;
-    font-size: 1rem;
-    border: 2px solid #cbd5e1;
-    border-radius: 8px;
-    box-sizing: border-box;
-    transition: border-color 0.3s;
-  }
-  input[type=text]:focus, input[type=password]:focus, input[type=datetime-local]:focus,
-  select:focus, textarea:focus {
-    border-color: #fbbf24;
-    outline: none;
-  }
-  .error {
-    color: #dc2626;
-    font-size: 0.9rem;
-    height: 20px;
-    margin-top: 4px;
-  }
-
-  /* 버튼 스타일 */
-  button {
-    background-color: #fbbf24;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 25px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #92400e;
-    cursor: pointer;
-    margin-top: 20px;
-    box-shadow: 1px 3px 6px rgba(251,191,36,0.5);
-    transition: background-color 0.3s;
-    display: inline-block;
-    min-width: 120px;
-  }
-  button:hover:not(:disabled) {
-    background-color: #f59e0b;
-  }
-  button:disabled {
-    background-color: #fde68a;
-    cursor: not-allowed;
-  }
-  nav {
-    text-align: center;
-    margin-top: 20px;
-  }
-  nav button {
-    background: transparent;
-    color: #b45309;
-    font-weight: 600;
-    padding: 8px 16px;
-    border: 2px solid #fbbf24;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  nav button:hover {
-    background-color: #fbbf24;
-    color: #92400e;
-  }
-
-  /* 좌석 배치도 */
-  #seatMapWrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 10px;
-  }
-  #seatMap {
-    margin: 20px auto 40px;
-    display: grid;
-    gap: 8px;
-    justify-content: center;
-    min-width: fit-content;
-  }
-  .seat-btn {
-    background: #CCFFCC;
-    border: 2px solid #88CC88;
-    font-weight: 700;
-    color: #336633;
-    cursor: pointer;
-    user-select: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.1rem;
-    min-width: 44px;
-    aspect-ratio: 1 / 1;
-    border-radius: 6px;
-    transition: background-color 0.3s, border-color 0.3s;
-  }
-  .seat-btn:hover:not(.booked) {
-    background-color: #AACC88;
-    border-color: #669944;
-  }
-  .seat-btn.booked {
-    background: #FFCCCC;
-    border: 2px solid #CC8888;
-    color: #663333;
-    cursor: not-allowed;
-  }
-  .seat-btn.mine {
-    background: #FFCCFF;
-    border: 2px solid #CC88CC;
-    color: #663366;
-  }
-  .seat-btn.empty {
-    visibility: hidden;
-    pointer-events: none;
-  }
-
-  /* 관리자 예약 현황 테이블 */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    font-size: 1rem;
-  }
-  th, td {
-    border: 1px solid #cbd5e1;
-    padding: 10px 12px;
-    text-align: center;
-  }
-  th {
-    background-color: #fbbf24;
-    color: #92400e;
-  }
-  td button {
-    background: #ef4444;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  td button:hover {
-    background: #b91c1c;
-  }
-
-  /* 예약 안내 메시지 */
-  #reservationAvailabilityMessage {
-    margin-top: 10px;
-    font-weight: 700;
-    padding: 0.5em;
-    border-radius: 5px;
-    text-align: center;
-    color: #ef4444;
-    background-color: #fee2e2;
-  }
-  #reservationAvailabilityMessage.available {
-    color: #10b981;
-    background-color: #d1fae5;
-  }
-
-  #timeSettingMessage {
-    margin-top: 12px;
-    text-align: center;
-    font-size: 0.9rem;
-    min-height: 1.5em;
-  }
-
-  /* 반응형 */
-  @media (max-width: 768px) {
-    .container {
-      margin: 10px auto 30px;
-      padding: 10px;
-    }
-    .seat-btn {
-      min-width: 38px;
-      font-size: 1rem;
-    }
-    h1, h2 { font-size: 1.5rem; }
-  }
-
-  @media (max-width: 480px) {
-    body { padding: 5px; }
-    .container {
-      margin: 5px auto 20px;
-      padding: 8px;
-      border-radius: 8px;
-    }
-    h1, h2 { font-size: 1.4rem; margin: 0.8em 0; }
-    label, input, select, textarea { font-size: 0.9rem; }
-    button { padding: 8px 12px; font-size: 0.95rem; margin-top: 15px; min-width: auto; }
-    nav button { padding: 5px 8px; font-size: 0.85rem; }
     .seat-btn {
       min-width: 26px;
       font-size: 0.85rem;
@@ -1766,7 +402,7 @@
   <div class="container hidden" id="adminLoginPage">
     <h1>관리자 로그인</h1>
     <form id="adminLoginForm" autocomplete="off" novalidate>
-      <label for="adminPassword">비밀번호:</label>
+      <label for="adminPasswordInput">비밀번호:</label> <!-- ID 변경: adminPassword -> adminPasswordInput -->
       <input type="password" id="adminPasswordInput" name="adminPassword" required />
       <div id="adminError" class="error"></div>
       <div class="button-group">
@@ -1783,9 +419,9 @@
 
     <h2>예약 가능 시간 설정</h2>
     <form id="reservationTimeForm" novalidate>
-      <label for="resStartTime">예약 시작 시간:</label>
+      <label for="resStartTimeInput">예약 시작 시간:</label> <!-- ID 변경: resStartTime -> resStartTimeInput -->
       <input type="datetime-local" id="resStartTimeInput" required />
-      <label for="resEndTime">예약 종료 시간:</label>
+      <label for="resEndTimeInput">예약 종료 시간:</label> <!-- ID 변경: resEndTime -> resEndTimeInput -->
       <input type="datetime-local" id="resEndTimeInput" required />
       <button type="submit">시간 설정 저장</button>
       <div id="timeSettingMessage"></div>
@@ -1839,11 +475,11 @@
       const BACKEND_URL = "https://seat-reservation-backend-ygl9.onrender.com";
       let socket = null;
 
-      let allReservations = {};
-      let adminSettings = {};
-      let availabilityCheckInterval = null;
-      let prevAllowedState = null;
-      let currentAnnouncement = null;
+      let allReservations = {}; // 현재 모든 예약 정보를 저장하는 객체 (id: 예약객체)
+      let adminSettings = {}; // 관리자 설정 정보
+      let availabilityCheckInterval = null; // 예약 가능 시간 체크를 위한 인터벌 ID
+      let prevAllowedState = null; // 이전 예약 가능 시간 상태
+      let currentAnnouncement = null; // 현재 공지사항 정보
 
       // DOM 요소 참조 변수 선언 (DOMContentLoaded에서 할당) - 초기값은 null로 지정
       let loginPage, loginForm, roomNoInput, userNameInput, dormitorySelect, roomError, nameError, dormError, adminLoginBtn;
@@ -1852,14 +488,14 @@
       let adminLoginPage, adminLoginForm, adminPasswordInput, adminError;
       let adminPage, adminLogoutBtn, reservationListBody, clearAllReservationsBtn;
       let reservationTimeForm, resStartTimeInput, resEndTimeInput, timeSettingMessage;
-      let announcementOverlay, announcementPopupMessage, announcementCloseBtn, announcementForm, announcementMessageInput, announcementActiveCheckbox, announcementMessageStatus, announcementDeleteBtn;
+      let announcementOverlay, announcementPopupMessage, announcementCloseBtn, announcementForm, announcementMessageInput, announcementActiveCheckbox, announcementMessageStatus; // announcementDeleteBtn 제거됨
 
       let currentUser = null; // 현재 로그인한 사용자 정보 {roomNo, name, dormitory}
       let currentFloor = null; // 현재 선택된 층
       let selectedSeat = null; // 사용자가 좌석 선택 페이지에서 선택한 좌석 번호
 
       // 정규 표현식 패턴
-      const roomNoPattern = /^\d{3}호$/; // 000호 형식
+      const roomNoPattern = /^\d{3}호$/; // 000호 형식 (예: 101호)
       const koreanNamePattern = /^[가-힣]{2,4}$/; // 한글 2~4자
 
       // 좌석 배치도 데이터 (객체 리터럴로 직접 정의)
@@ -2059,14 +695,9 @@
       }
 
       async function deleteAnnouncement() {
-        // 서버에서 직접 공지사항을 삭제하는 API가 없다면 (메시지를 빈값으로 업데이트하는 방식만 있다면)
-        // 이 함수는 단순히 updateAnnouncement(null, false)를 호출하도록 구현
-        // 현재 백엔드에는 delete API가 없으므로 update 로직으로 처리
+        // 백엔드에 delete API가 없으므로, 메시지를 비우고 비활성화하는 방식으로 공지사항 '삭제' 구현
         return updateAnnouncement("", false);
       }
-
-      // --- Socket.IO 이벤트 리스너 설정 ---
-      // (setupSocketListeners 함수는 이제 더 이상 호출하지 않으며, 이 부분에 통합됨)
 
       // 예약 가능 시간 체크 및 관련 UI 업데이트
       function isReservationTimeAllowed() {
@@ -2082,19 +713,20 @@
           : { allowed: false, message: `현재 예약 가능 시간이 아닙니다. (${formatDate(startTime)} ~ ${formatDate(endTime)})` };
       }
 
-      // 날짜 포맷 함수
+      // 날짜 포맷 함수 (YYYY-MM-DD HH:MM 형식)
       function formatDate(date) {
         const pad = n => (n < 10 ? '0' + n : n);
-        return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        const d = new Date(date);
+        return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
       }
 
-      // 페이지 전환 처리
+      // --- 페이지 전환 및 UI 관련 함수 ---
       function showSection(section) {
-        // 모든 페이지 숨기기
+        // 모든 섹션을 숨김 처리
         [loginPage, floorSelectPage, seatMapPage, adminLoginPage, adminPage].forEach(el => {
           if(el) el.classList.add('hidden'); // DOM 요소가 null이 아닌 경우에만 접근
         });
-        // 원하는 페이지 보여주기
+        // 원하는 섹션만 보이게 함
         if(section) section.classList.remove('hidden');
 
         // 좌석 배치도 페이지일 때만 예약 가능 시간 자동 체크 인터벌 시작/중지
@@ -2124,13 +756,13 @@
           return;
         }
         floorSelect.innerHTML = '<option value="" disabled selected>층 선택</option>'; // 초기화
-        if (!seatLayouts[dorm]) {
+        if (!seatLayouts[dorm]) { // 해당 기숙사의 층 정보가 없다면
           floorSelect.innerHTML = '<option value="" disabled selected>해당 기숙사의 층 정보가 없습니다.</option>';
           return;
         }
-        // 층 정보를 정렬하여 옵션 추가
+        // 층 정보를 정렬하여 옵션 추가 (예: "4-1" 같은 층 이름도 숫자 기준으로 정렬)
         const floors = Object.keys(seatLayouts[dorm]).sort((a,b) => {
-          const parseFloor = (f) => parseFloat(f.replace('-', '.'));
+          const parseFloor = (f) => parseFloat(f.replace('-', '.')); // "4-1" -> 4.1
           return parseFloor(a) - parseFloor(b);
         });
         floors.forEach(floor => {
@@ -2232,7 +864,7 @@
         const currentAllowedState = status.allowed;
         // 예약 가능 상태 변경 시 알림
         const hasAllowedStateChanged = (prevAllowedState !== null && prevAllowedState !== currentAllowedState);
-        prevAllowedState = currentAllowedState;
+        prevAllowedState = currentAllowedState; // 상태 업데이트
 
         if (currentAllowedState) { // 예약 가능한 시간
           if(reservationAvailabilityMessage) reservationAvailabilityMessage.classList.add("available");
@@ -2246,12 +878,18 @@
 
         // 상태 변경 알림 (처음 로드될 때는 알림 안함)
         if (hasAllowedStateChanged && seatMapPage && !seatMapPage.classList.contains("hidden") && currentUser && currentFloor) {
-          renderSeatMap(currentUser.dormitory, currentFloor); // 좌석 맵도 다시 렌더링
+          renderSeatMap(currentUser.dormitory, currentFloor); // 좌석 맵 다시 렌더링
           alert(`현재 예약 ${currentAllowedState ? '가능' : '불가능'} 시간입니다.`);
         }
       }
 
-      // 관리자 페이지 진입 시 예약 목록 렌더링
+      // 현재 사용자의 예약 정보 가져오기 (Socket.IO 업데이트 후에도 정확히 파악)
+      function getMyReservation() {
+        if (!currentUser) return null;
+        return Object.values(allReservations).find(r => r.roomNo === currentUser.roomNo && r.name === currentUser.name);
+      }
+
+      // 관리자 페이지 진입 시 데이터 로드 및 UI 업데이트
       async function loadAdminPage() {
         await fetchAllReservations(); // 모든 예약 다시 불러오기
         renderReservationList(); // 테이블 업데이트
@@ -2264,16 +902,20 @@
           resEndTimeInput.value = formatDateTimeLocal(adminSettings.reservationEndTime);
         }
         // 공지사항 설정 UI 업데이트
-        await fetchAnnouncement();
-        if (currentAnnouncement) {
+        await fetchAnnouncement(); // 공지사항 최신 정보 가져오기 (내부적으로 updateAnnouncementDisplay 호출)
+        if (currentAnnouncement) { // 불러온 공지사항 정보로 폼 업데이트
           announcementMessageInput.value = currentAnnouncement.message || '';
           announcementActiveCheckbox.checked = currentAnnouncement.active || false;
+        } else { // 공지사항이 없다면 폼 비우기
+          announcementMessageInput.value = '';
+          announcementActiveCheckbox.checked = false;
         }
-        showSection(adminPage);
+        showSection(adminPage); // 관리자 페이지 보여주기
       }
 
       // 예약 현황 테이블 렌더링 (관리자 페이지용)
       function renderReservationList() {
+        if (!reservationListBody) return; // 요소 없으면 종료
         reservationListBody.innerHTML = ''; // 기존 내용 지우기
         const reservationsArray = Object.values(allReservations).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)); // 생성일자 순 정렬
 
@@ -2294,7 +936,7 @@
               const result = await deleteReservation(e.target.dataset.id);
               if (result.success) {
                 alert(result.message);
-                // Socket.IO를 통해 'reservationsUpdated' 이벤트가 발생하여 UI 자동 업데이트
+                // Socket.IO를 통해 'reservationsUpdated' 이벤트가 발생하여 UI 자동 업데이트될 것임
               } else {
                 alert('취소 실패: ' + result.message);
               }
@@ -2306,37 +948,43 @@
 
       // 공지사항 팝업 표시/숨기기
       function updateAnnouncementDisplay() {
-        if (currentAnnouncement && currentAnnouncement.active && currentAnnouncement.message) {
-          if (announcementPopupMessage) announcementPopupMessage.textContent = currentAnnouncement.message;
-          if (announcementOverlay) announcementOverlay.classList.remove('hidden');
-        } else {
-          if (announcementOverlay) announcementOverlay.classList.add('hidden');
+        if (announcementOverlay && announcementPopupMessage) { // DOM 요소들이 존재하는지 확인
+          if (currentAnnouncement && currentAnnouncement.active && currentAnnouncement.message) {
+            announcementPopupMessage.textContent = currentAnnouncement.message;
+            announcementOverlay.classList.remove('hidden'); // 공지 활성화 시 팝업 보여주기
+          } else {
+            announcementOverlay.classList.add('hidden'); // 공지 비활성화 시 팝업 숨기기
+          }
         }
       }
 
-      // 공지사항 팝업 숨기기
+      // 공지사항 팝업 숨기기 (버튼 클릭 시)
       function hideAnnouncement() {
         if (announcementOverlay) announcementOverlay.classList.add('hidden');
       }
 
+      // datetime-local 입력 필드 포맷에 맞추기
       function formatDateTimeLocal(date) {
         if (!date) return '';
         const d = new Date(date);
+        // yyyy-MM-ddTHH:mm 형식으로 포맷 (로컬 시간대에 맞춤)
         return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
       }
 
-      // --- 이벤트 핸들러 함수 ---
-      // 로그인 폼 제출
+      // --- 이벤트 핸들러 함수 정의 ---
+
+      // 로그인 폼 제출 이벤트 핸들러
       async function handleSubmitLoginForm(e) {
-        e.preventDefault();
+        e.preventDefault(); // 기본 폼 제출 동작 방지
         clearErrors(); // 기존 에러 메시지 지우기
 
+        // 입력 값 가져오기
         const roomNo = roomNoInput.value.trim();
         const name = userNameInput.value.trim();
         const selectedDorm = dormitorySelect.value;
         const honeypotField = loginForm.querySelector('input[name="honeypot_field"]').value;
 
-        let valid = true;
+        let valid = true; // 유효성 검사 플래그
         if (!roomNoPattern.test(roomNo)) {
           roomError.textContent = '룸 번호는 000호 형식으로 입력하세요.';
           valid = false;
@@ -2354,35 +1002,34 @@
           alert('비정상적인 요청이 감지되었습니다. (Honeypot)');
           valid = false;
         }
-        if (!valid) return;
+        if (!valid) return; // 유효성 검사 실패 시 함수 종료
 
         // 모든 예약 정보에서 현재 사용자의 예약이 있는지 확인
-        const hasReservation = Object.values(allReservations).some(r => r.roomNo === roomNo && r.name === name);
+        const myReservation = getMyReservation();
 
-        if (hasReservation) { // 이미 예약이 있는 사용자
-          const existing = Object.values(allReservations).find(r => r.roomNo === roomNo && r.name === name);
-          currentUser = {roomNo, name, dormitory: selectedDorm};
-          currentFloor = existing.floor; // 기존 예약 정보로 층 설정
-          selectedSeat = existing.seat; // 기존 예약 정보로 좌석 설정
+        if (myReservation) { // 이미 예약이 있는 사용자 (예약 조회 및 관리)
+          currentUser = {roomNo, name, dormitory: selectedDorm}; // 현재 사용자 정보 설정
+          currentFloor = myReservation.floor; // 기존 예약 정보로 층 설정
+          selectedSeat = myReservation.seat; // 기존 예약 정보로 좌석 설정
 
           setFloorOptions(selectedDorm);
-          if (floorSelect) floorSelect.value = currentFloor;
-          if (welcomeText) welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`;
+          if (floorSelect) floorSelect.value = currentFloor; // 층 선택 드롭다운에 기존 층 선택
+          if (welcomeText) welcomeText.textContent = `${name}님 환영합니다! (${selectedDorm} 기숙사)`;
           if (selectedDormTitle) selectedDormTitle.textContent = selectedDorm;
           if (selectedFloorTitle) selectedFloorTitle.textContent = currentFloor;
           
           renderSeatMap(selectedDorm, currentFloor); // 좌석 맵 다시 그리기
           updateReservationAvailability(); // 예약 가능 여부 메시지 업데이트
           showSection(seatMapPage); // 좌석 맵 페이지로 이동
-        } else { // 새로운 사용자 (예약이 없는 사용자)
-          currentUser = {roomNo, name, dormitory: selectedDorm};
+        } else { // 새로운 사용자 (예약이 없는 사용자 - 예약 생성)
+          currentUser = {roomNo, name, dormitory: selectedDorm}; // 현재 사용자 정보 설정
           setFloorOptions(selectedDorm); // 층 선택 옵션 설정
-          if (welcomeText) welcomeText.textContent = `${name} (${selectedDorm} 기숙사)`;
+          if (welcomeText) welcomeText.textContent = `${name}님 환영합니다! (${selectedDorm} 기숙사)`;
           showSection(floorSelectPage); // 층 선택 페이지로 이동
         }
       }
 
-      // 뒤로가기 버튼 클릭 (층 선택 -> 로그인)
+      // 뒤로가기 버튼 클릭 (층 선택 -> 로그인 페이지)
       function handleClickBackToLoginBtn() {
         currentUser = null;
         currentFloor = null;
@@ -2401,7 +1048,7 @@
           alert('층을 선택하세요.');
           return;
         }
-        currentFloor = floorSelect.value;
+        currentFloor = floorSelect.value; // 현재 선택된 층 저장
         if (selectedDormTitle) selectedDormTitle.textContent = currentUser.dormitory;
         if (selectedFloorTitle) selectedFloorTitle.textContent = currentFloor;
         selectedSeat = null; // 좌석 초기화
@@ -2412,25 +1059,25 @@
       }
 
       // 좌석 취소 및 뒤로가기 버튼 클릭 (좌석 맵 -> 층 선택)
-      function handleClickCancelSeatBtn() {
-        selectedSeat = null;
+      async function handleClickCancelSeatBtn() { // async 함수로 변경
+        selectedSeat = null; // 선택된 좌석 초기화
         if (confirmBtn) confirmBtn.disabled = true; // 예약 확정 버튼 비활성화
+
         // 내 예약이 있을 경우 취소할지 물어보기
         const myReservation = getMyReservation();
         if (myReservation) {
           if (confirm(`현재 예약된 ${myReservation.seat}번 좌석을 취소하시겠습니까?`)) {
-            deleteReservation(myReservation._id).then(result => {
-              if (result.success) {
-                alert(result.message);
-                // Socket.IO가 알아서 reservationsUpdated를 보내므로 UI 업데이트는 그쪽에서 처리
-                showSection(floorSelectPage); // 취소 성공 시 층 선택 페이지로 이동
-              } else {
-                alert('취소 실패: ' + result.message);
-              }
-            });
+            const result = await deleteReservation(myReservation._id); // 비동기 호출 대기
+            if (result.success) {
+              alert(result.message);
+              // Socket.IO를 통해 'reservationsUpdated' 이벤트가 발생하여 UI 업데이트는 그쪽에서 처리
+              showSection(floorSelectPage); // 취소 성공 시 층 선택 페이지로 이동
+            } else {
+              alert('취소 실패: ' + result.message);
+            }
           }
         } else {
-          // 예약이 없으면 그냥 층 선택 페이지로
+          // 예약이 없으면 그냥 층 선택 페이지로 이동
           showSection(floorSelectPage);
         }
       }
@@ -2601,7 +1248,7 @@
 
         adminLoginPage = document.getElementById('adminLoginPage');
         adminLoginForm = document.getElementById('adminLoginForm');
-        adminPasswordInput = document.getElementById('adminPasswordInput');
+        adminPasswordInput = document.getElementById('adminPasswordInput'); // ID 수정 반영
         adminError = document.getElementById('adminError');
 
         adminPage = document.getElementById('adminPage');
@@ -2610,8 +1257,8 @@
         clearAllReservationsBtn = document.getElementById('clearAllReservationsBtn');
 
         reservationTimeForm = document.getElementById('reservationTimeForm');
-        resStartTimeInput = document.getElementById('resStartTimeInput');
-        resEndTimeInput = document.getElementById('resEndTimeInput');
+        resStartTimeInput = document.getElementById('resStartTimeInput'); // ID 수정 반영
+        resEndTimeInput = document.getElementById('resEndTimeInput');     // ID 수정 반영
         timeSettingMessage = document.getElementById('timeSettingMessage');
 
         announcementOverlay = document.getElementById('announcementOverlay');
@@ -2621,7 +1268,7 @@
         announcementMessageInput = document.getElementById('announcementMessageInput');
         announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
         announcementMessageStatus = document.getElementById('announcementMessageStatus');
-        // 'announcementDeleteBtn'은 HTML에 없어 제거하거나 추가해야 함 (지금은 버튼 클릭 시 비활성 처리하는 deleteAnnouncement 함수가 이를 대신)
+
 
         // --- Socket.IO 클라이언트 연결 및 이벤트 리스너 ---
         socket = io(); // Socket.IO 클라이언트 연결
@@ -2674,6 +1321,7 @@
 
 
         // --- 이벤트 핸들러 할당 ---
+        // 각 DOM 요소가 존재하는지 확인 후 이벤트 리스너 할당
         if (loginForm) loginForm.addEventListener('submit', handleSubmitLoginForm);
         if (backToLoginBtn) backToLoginBtn.addEventListener('click', handleClickBackToLoginBtn);
         if (floorNextBtn) floorNextBtn.addEventListener('click', handleClickFloorNextBtn);
