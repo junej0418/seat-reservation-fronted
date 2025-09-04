@@ -837,7 +837,7 @@
                 btn.classList.add('booked');
                 btn.disabled = true;
 
-                if (currentReservation &&
+                if (currentReservation && // 현재 로그인한 사용자의 예약이면 'mine'
                     currentReservation.roomNo === booked.roomNo &&
                     currentReservation.name === booked.name &&
                     currentReservation.dormitory === booked.dormitory &&
@@ -872,7 +872,7 @@
       function highlightSelectedSeat() {
         if(!seatMapContainer) return;
         seatMapContainer.querySelectorAll("button.seat-btn").forEach(btn => {
-          btn.classList.remove('selected');
+          btn.classList.remove('selected'); // 모든 선택 강조 제거
 
           if (btn.textContent && parseInt(btn.textContent) === selectedSeat) {
             btn.classList.add('selected');
@@ -935,7 +935,26 @@
       function renderReservationList() {
         if (!reservationListBody) return;
         reservationListBody.innerHTML = '';
-        const reservationsArray = Object.values(allReservations).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        
+        // 정렬 로직 변경: 기숙사 > 층 > 좌석 번호
+        const reservationsArray = Object.values(allReservations).sort((a, b) => {
+            // 1. 기숙사별 정렬
+            const dormCompare = a.dormitory.localeCompare(b.dormitory);
+            if (dormCompare !== 0) {
+                return dormCompare;
+            }
+
+            // 2. 층별 정렬
+            const parseFloor = (f) => parseFloat(f.replace('-', '.'));
+            const floorA = parseFloor(a.floor);
+            const floorB = parseFloor(b.floor);
+            if (floorA !== floorB) {
+                return floorA - floorB;
+            }
+
+            // 3. 좌석 번호별 정렬
+            return a.seat - b.seat;
+        });
 
         reservationsArray.forEach(res => {
           const row = reservationListBody.insertRow();
@@ -1017,7 +1036,7 @@
 
         if (currentUserReservation) { // 이미 예약이 있는 사용자
           currentFloor = currentUserReservation.floor;
-          selectedSeat = currentUserReservation.seat; // 내 좌석을 초기 선택으로
+          selectedSeat = null; // ✨ 로그인 시 selectedSeat를 초기화하여 'mine'과 'selected' 중첩을 방지 ✨
           
           setFloorOptions(selectedDorm);
           if (floorSelect) floorSelect.value = currentFloor;
@@ -1061,13 +1080,8 @@
         if (selectedDormTitle) selectedDormTitle.textContent = currentUser.dormitory;
         if (selectedFloorTitle) selectedFloorTitle.textContent = currentFloor;
 
-        // 사용자의 기존 예약이 이 층에 있으면 해당 좌석을 초기 선택으로, 아니면 null
-        if (currentUserReservation && currentUserReservation.floor === currentFloor) {
-            selectedSeat = currentUserReservation.seat;
-        } else {
-            selectedSeat = null;
-        }
-
+        selectedSeat = null; // ✨ 층을 변경할 때는 선택된 좌석도 초기화하여 'mine'이 'selected'로 변하는 것을 방지 ✨
+        
         if (confirmBtn) confirmBtn.disabled = true;
         renderSeatMap(currentUser.dormitory, currentFloor);
         updateReservationAvailability();
@@ -1098,11 +1112,10 @@
                 alert(result.message);
                 currentUserReservation = null;
                 selectedSeat = null;
-                // 예약 취소 후 층 선택 페이지로 이동 (refreshSeatMap 호출)
-                if (currentFloor) { // 현재 층 정보가 있으면 해당 층의 좌석 맵만 다시 그림
+                if (currentFloor) {
                     renderSeatMap(currentUser.dormitory, currentFloor);
                     updateReservationAvailability();
-                } else { // 층 정보가 없으면 (초기 상태이거나 오류 발생시) 층 선택 페이지로
+                } else {
                     showSection(floorSelectPage);
                 }
             } else {
@@ -1160,19 +1173,19 @@
 
         let result;
         if (myReservation) { // 이미 예약이 있는 경우 -> 예약 변경 시도
-            // 같은 좌석을 다시 선택한 경우
+            // 같은 좌석을 다시 선택한 경우 (변경할 필요 없음)
             if (myReservation.floor === currentFloor && myReservation.seat === selectedSeat) {
                 alert('선택하신 좌석은 이미 예약된 당신의 자리입니다. 변경할 좌석을 새로 선택해주세요.');
                 return;
             }
-            // 변경할 좌석이 이미 다른 사람에게 예약되어 있는지 확인
-            const isNewSeatBooked = Object.values(allReservations).some(r =>
+            // 변경할 좌석이 이미 다른 사람에게 예약되어 있는지 확인 (myReservation._id는 제외)
+            const isNewSeatBookedByOthers = Object.values(allReservations).some(r =>
                 r.dormitory === currentUser.dormitory &&
                 r.floor === currentFloor &&
                 r.seat === selectedSeat &&
-                r._id !== myReservation._id // 단, 자기 자신의 기존 예약은 제외
+                r._id !== myReservation._id // 자기 자신의 기존 예약은 검사 대상에서 제외
             );
-            if (isNewSeatBooked) {
+            if (isNewSeatBookedByOthers) {
                 alert('선택하신 좌석은 이미 다른 사람에게 예약되었습니다.');
                 return;
             }
@@ -1211,12 +1224,13 @@
         if (result.success) {
           alert(`${currentUser.dormitory} ${currentFloor}층 ${selectedSeat}번 자리 ${myReservation ? '변경' : '예약'}에 성공했습니다!`);
           
+          // 성공 후 모든 상태 초기화 및 로그인 페이지로 이동
           currentUser = null;
           currentUserReservation = null;
           currentFloor = null;
           selectedSeat = null;
           if (loginForm) loginForm.reset();
-          showSection(loginPage); // 예약/변경 성공 후 로그인 페이지로 이동
+          showSection(loginPage);
         } else {
           alert(`${myReservation ? '예약 변경' : '예약'} 실패: ` + result.message);
         }
@@ -1307,8 +1321,8 @@
         seatMapPage = document.getElementById('seatMapPage');
         seatMapContainer = document.getElementById('seatMap');
         confirmBtn = document.getElementById('confirmBtn');
-        cancelMyReservationBtn = document.getElementById('cancelMyReservationBtn'); // 새로운 ID로 할당
-        backToFloorBtn = document.getElementById('backToFloorBtn'); // 새로운 ID로 할당
+        cancelMyReservationBtn = document.getElementById('cancelMyReservationBtn');
+        backToFloorBtn = document.getElementById('backToFloorBtn');
         selectedDormTitle = document.getElementById('selectedDorm');
         selectedFloorTitle = document.getElementById('selectedFloor');
         reservationAvailabilityMessage = document.getElementById('reservationAvailabilityMessage');
@@ -1336,8 +1350,6 @@
         announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
         announcementMessageStatus = document.getElementById('announcementMessageStatus');
 
-        // **Socket.IO 연결 초기화 (중요 수정)**
-        // 현재 로드된 페이지 주소 대신, 백엔드 서버 주소를 명시적으로 사용
         socket = io(BACKEND_URL); 
 
         socket.on('connect', () => {
@@ -1364,7 +1376,7 @@
           if (adminPage && !adminPage.classList.contains("hidden")) {
             renderReservationList();
           }
-          updateSeatPageButtonsVisibility(); // 소켓 업데이트 시 버튼 상태도 갱신
+          updateSeatPageButtonsVisibility();
         });
 
         socket.on('settingsUpdated', (updatedSettings) => {
@@ -1389,12 +1401,11 @@
           }
         });
 
-        // 이벤트 리스너 연결
+
         if (loginForm) loginForm.addEventListener('submit', handleSubmitLoginForm);
         if (backToLoginBtn) backToLoginBtn.addEventListener('click', handleClickBackToLoginBtn);
         if (floorNextBtn) floorNextBtn.addEventListener('click', handleClickFloorNextBtn);
         
-        // 새로 분리된 버튼 이벤트
         if (backToFloorBtn) backToFloorBtn.addEventListener('click', handleClickBackToFloorBtn);
         if (cancelMyReservationBtn) cancelMyReservationBtn.addEventListener('click', handleClickCancelMyReservationBtn);
         
@@ -1409,7 +1420,6 @@
         if (announcementForm) announcementForm.addEventListener('submit', handleSubmitAnnouncementForm);
         if (announcementCloseBtn) announcementCloseBtn.addEventListener('click', hideAnnouncement);
 
-        // 초기 데이터 로드 및 로그인 페이지 표시
         await fetchAllReservations();
         await fetchAdminSettings();
         await fetchAnnouncement();
