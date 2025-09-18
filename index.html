@@ -311,14 +311,31 @@
   }
   .button-group {
     display: flex;
-    justify-content: space-between;
+    /* ⭐ 수정 2: 버튼 간 간격 및 정렬을 조정합니다. ⭐ */
+    justify-content: space-between; 
     align-items: center;
     width: 100%;
     margin-top: 20px;
+    /* ⭐ 추가 3: 좌측 정렬 홈버튼을 위한 추가 스타일링 ⭐ */
+    flex-wrap: wrap; /* 작은 화면에서 버튼들이 겹치지 않도록 */
   }
   .button-group button {
     margin-top: 0;
+    /* ⭐ 추가 4: 좌측 정렬 홈버튼을 위한 추가 스타일링 ⭐ */
+    flex-grow: 1; /* flex item이 공간을 채우도록 */
+    margin: 5px; /* 버튼 간의 간격 */
+    min-width: 100px; /* 버튼 최소 너비 */
   }
+  /* ⭐ 추가 5: 홈으로 버튼을 좌측에 두기 위한 스타일 ⭐ */
+  #homeButton {
+    background-color: #3498db; /* 홈버튼 색상 */
+    color: white;
+    box-shadow: 1px 3px 6px rgba(52, 152, 219, 0.5);
+  }
+  #homeButton:hover {
+    background-color: #2980b9;
+  }
+
   .color-legend {
     text-align: center;
     margin-top: 30px;
@@ -392,9 +409,10 @@
     </div>
     <div id="reservationAvailabilityMessage"></div>
     <div class="button-group">
-      <!-- 기존 cancelSeatBtn 대신 2개의 버튼으로 분리 -->
-      <button id="backToFloorBtn" type="button">뒤로가기</button> <!-- 뒤로가기 버튼 -->
-      <button id="cancelMyReservationBtn" type="button" class="hidden">내 예약 취소</button> <!-- 내 예약 취소 버튼 (처음엔 숨김) -->
+      <!-- ⭐ 추가 6: 홈으로 버튼을 추가합니다. ⭐ -->
+      <button id="homeButton" type="button">홈으로</button> 
+      <button id="backToFloorBtn" type="button">뒤로가기</button> 
+      <button id="cancelMyReservationBtn" type="button" class="hidden">내 예약 취소</button>
       <button id="confirmBtn" type="button" disabled>예약 확정</button>
     </div>
     <div class="color-legend">
@@ -450,7 +468,7 @@
     <h2>예약 현황</h2>
     <table>
       <thead>
-        <tr><th>이름</th><th>룸 번호</th><th>기숙사</th><th>층</th><th>자리 번호</th><th>예약 취소</th></tr>
+        <tr><th>이름</th><th>룸 번호</th><th>기숙사</th><th>층</th><th>자리 번호</th><th>예약 시간</th><th>취소</th></tr>
       </thead>
       <tbody id="reservationListBody"></tbody>
     </table>
@@ -478,7 +496,7 @@
       let availabilityCheckInterval = null;
       let prevAllowedState = null;
       let currentAnnouncement = null;
-      // ⭐ 추가 2: 관리자 로그인 상태 유지를 위한 변수 ⭐
+      // ⭐ 추가 7: 관리자 로그인 상태 유지를 위한 변수 ⭐
       // (local Storage에 adminPassword가 있으면 로그인된 상태로 간주)
       let isAdminLoggedIn = !!localStorage.getItem('adminPassword');
 
@@ -486,13 +504,19 @@
       let loginPage, loginForm, roomNoInput, userNameInput, dormitorySelect, roomError, nameError, dormError, adminLoginBtn;
       let floorSelectPage, floorSelect, floorNextBtn, backToLoginBtn, welcomeText;
       let seatMapPage, seatMapContainer, confirmBtn, cancelMyReservationBtn, backToFloorBtn, selectedDormTitle, selectedFloorTitle, reservationAvailabilityMessage;
+      // ⭐ 추가 8: 홈 버튼 요소 변수 추가 ⭐
+      let homeButton;
       let adminLoginPage, adminLoginForm, adminPasswordInput, adminError;
       let adminPage, adminLogoutBtn, reservationListBody, clearAllReservationsBtn;
       let reservationTimeForm, resStartTimeInput, resEndTimeInput, timeSettingMessage;
       let announcementOverlay, announcementPopupMessage, announcementCloseBtn, announcementForm, announcementMessageInput, announcementActiveCheckbox, announcementMessageStatus;
 
-      // ⭐ 수정 3: `currentUser` 초기값 복원 로직 추가 (LocalStorage에서 가져옴) ⭐
+      // ⭐ 수정 9: `currentUser` 초기값 복원 로직 추가 (LocalStorage에서 가져옴) ⭐
       let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null; // { roomNo, name, dormitory }
+      // ⭐ 추가 10: 예약 시 사용한 기기를 식별하는 고유 ID. localStorage에 저장 및 페이지 로드 시 복원. ⭐
+      let deviceIdentifier = localStorage.getItem('deviceIdentifier') || generateUniqueId();
+      localStorage.setItem('deviceIdentifier', deviceIdentifier);
+
       let currentUserReservation = null; // null or { _id, roomNo, name, dormitory, floor, seat, createdAt }
       let currentFloor = null;
       let selectedSeat = null;
@@ -555,6 +579,15 @@
         }
       };
 
+      // ⭐ 추가 11: 고유 ID를 생성하는 함수 ⭐
+      function generateUniqueId() {
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+              const r = Math.random() * 16 | 0,
+                  v = c == 'x' ? r : (r & 0x3 | 0x8);
+              return v.toString(16);
+          });
+      }
+
       async function fetchAllReservations() {
         try {
           const res = await fetch(`${BACKEND_URL}/api/reservations`);
@@ -569,12 +602,11 @@
         }
       }
 
-      // ⭐ 수정 4: 관리자 설정 불러오기 시 비밀번호를 Authorization 헤더에 전송 ⭐
+      // ⭐ 수정 12: 관리자 설정 불러오기 시 비밀번호를 Authorization 헤더에 전송 ⭐
       async function fetchAdminSettings() {
         try {
           const adminPass = localStorage.getItem('adminPassword');
           // 관리자 비밀번호가 없으면 이 요청은 실패해야 합니다 (백엔드 인증 미들웨어 때문).
-          // 하지만 초기 로딩 시 관리자 로그인 상태가 아닐 수도 있으므로, 이 경우엔 에러를 처리만 합니다.
           
           const headers = { 'Content-Type': 'application/json' };
           if (adminPass) {
@@ -590,7 +622,6 @@
           // HTTP 상태 코드가 401(Unauthorized) 또는 403(Forbidden)일 경우 관리자 로그인 필요
           if (!res.ok) {
               if (res.status === 401 || res.status === 403) {
-                  // alert('관리자 권한이 없습니다. 다시 로그인해주세요.'); // 불필요한 alert 제거
                   isAdminLoggedIn = false; // 로그인 상태 해제
                   localStorage.removeItem('adminPassword'); // 비밀번호 제거
               }
@@ -604,7 +635,7 @@
         }
       }
 
-      // ⭐ 수정 5: 공지사항 불러오기 시 비밀번호를 Authorization 헤더에 전송 ⭐
+      // ⭐ 수정 13: 공지사항 불러오기 시 비밀번호를 Authorization 헤더에 전송 ⭐
       async function fetchAnnouncement() {
         try {
           const adminPass = localStorage.getItem('adminPassword');
@@ -622,7 +653,6 @@
           
           if (!res.ok) {
               if (res.status === 401 || res.status === 403) {
-                  // alert('관리자 권한이 없습니다. 다시 로그인해주세요.'); // 불필요한 alert 제거
                   isAdminLoggedIn = false; // 로그인 상태 해제
                   localStorage.removeItem('adminPassword'); // 비밀번호 제거
               }
@@ -648,7 +678,7 @@
           const data = await res.json();
           if (data.success) {
             adminError.textContent = '';
-            // ⭐ 추가 6: 관리자 로그인 성공 시 비밀번호를 localStorage에 저장 ⭐
+            // ⭐ 추가 14: 관리자 로그인 성공 시 비밀번호를 localStorage에 저장 ⭐
             localStorage.setItem('adminPassword', password);
             isAdminLoggedIn = true; // ⭐ 관리자 로그인 상태 플래그 설정 ⭐
             return true;
@@ -667,12 +697,15 @@
         }
       }
 
+      // ⭐ 수정 15: 예약 생성 시 요청 본문에 deviceIdentifier를 추가합니다. ⭐
       async function sendReservation(reservationData) {
         try {
+          // ⭐ 추가: deviceIdentifier 포함 ⭐
+          const payload = { ...reservationData, deviceIdentifier };
           const res = await fetch(`${BACKEND_URL}/api/reservations`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(reservationData)
+            body: JSON.stringify(payload)
           });
           const data = await res.json();
           if (!res.ok) {
@@ -686,17 +719,18 @@
         }
       }
 
-      // ⭐ 수정 7: 예약 변경 시 요청 본문에 사용자 식별 정보 추가 ⭐
+      // ⭐ 수정 16: 예약 변경 시 요청 본문에 사용자 식별 정보와 deviceIdentifier를 추가합니다. ⭐
       async function updateReservation(reservationId, updatedData) {
           try {
               if (!currentUser) throw new Error('로그인된 사용자 정보가 없습니다. 다시 로그인해주세요.');
 
-              // ⭐ 추가: 요청 본문에 현재 로그인된 사용자 정보 포함 ⭐
+              // ⭐ 추가: 요청 본문에 현재 로그인된 사용자 정보와 deviceIdentifier 포함 ⭐
               const payload = {
                   ...updatedData,
                   requestingUserRoomNo: currentUser.roomNo,
                   requestingUserName: currentUser.name,
-                  requestingUserDormitory: currentUser.dormitory
+                  requestingUserDormitory: currentUser.dormitory,
+                  deviceIdentifier // ⭐ deviceIdentifier 포함 ⭐
               };
 
               const res = await fetch(`${BACKEND_URL}/api/reservations/update/${reservationId}`, {
@@ -716,7 +750,7 @@
           }
       }
 
-      // ⭐ 수정 8: 개별 예약 취소 시 요청 본문에 사용자 식별 정보와 관리자 여부, 관리자 비밀번호 추가 ⭐
+      // ⭐ 수정 17: 개별 예약 취소 시 요청 본문에 사용자 식별 정보, 관리자 여부, 비밀번호, deviceIdentifier 추가 ⭐
       async function deleteReservation(id, isFromAdminPage = false) {
         try {
           const payload = {};
@@ -727,6 +761,7 @@
             payload.requestingUserRoomNo = currentUser.roomNo;
             payload.requestingUserName = currentUser.name;
             payload.requestingUserDormitory = currentUser.dormitory;
+            payload.deviceIdentifier = deviceIdentifier; // ⭐ deviceIdentifier 포함 ⭐
           } else {
             throw new Error('예약 취소를 위한 사용자 정보가 없습니다. 다시 로그인해주세요.');
           }
@@ -745,7 +780,7 @@
         }
       }
 
-      // ⭐ 수정 9: 모든 예약 삭제 시 관리자 비밀번호를 포함하여 요청 ⭐
+      // ⭐ 수정 18: 모든 예약 삭제 시 관리자 비밀번호를 포함하여 요청 ⭐
       async function deleteAllReservations() {
         try {
           if (!isAdminLoggedIn) {
@@ -766,7 +801,7 @@
         }
       }
 
-      // ⭐ 수정 10: 관리자 설정 업데이트 시 관리자 비밀번호를 Authorization 헤더에 포함하여 요청 ⭐
+      // ⭐ 수정 19: 관리자 설정 업데이트 시 관리자 비밀번호를 Authorization 헤더에 포함하여 요청 ⭐
       async function updateAdminSettings(startTime, endTime) {
         try {
           if (!isAdminLoggedIn) {
@@ -790,7 +825,7 @@
         }
       }
 
-      // ⭐ 수정 11: 공지사항 업데이트 시 관리자 비밀번호를 Authorization 헤더에 포함하여 요청 ⭐
+      // ⭐ 수정 20: 공지사항 업데이트 시 관리자 비밀번호를 Authorization 헤더에 포함하여 요청 ⭐
       async function updateAnnouncement(message, active) {
         try {
           if (!isAdminLoggedIn) {
@@ -830,10 +865,22 @@
           ? { allowed: true, message: `예약 가능 시간입니다. (${formatDate(startTime)} ~ ${formatDate(endTime)})` }
           : { allowed: false, message: `현재 예약 가능 시간이 아닙니다. (${formatDate(startTime)} ~ ${formatDate(endTime)})` };
       }
-function formatDate(date) {
-        const pad = n => (n < 10 ? '0' + n : n);
+// ⭐ 수정 21: 밀리초까지 포함하는 날짜 포맷 함수 ⭐
+function formatDate(date, includeMilliseconds = true) {
         const d = new Date(date);
-        return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        const seconds = String(d.getSeconds()).padStart(2, '0');
+        const milliseconds = String(d.getMilliseconds()).padStart(3, '0');
+
+        if (includeMilliseconds) {
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+        } else {
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
       }
 
       function showSection(section) {
@@ -842,7 +889,7 @@ function formatDate(date) {
         });
         if(section) section.classList.remove('hidden');
 
-        // ⭐ 추가 12: 관리자 페이지로 이동할 때 localStorage의 adminPassword 확인 ⭐
+        // ⭐ 추가 22: 관리자 페이지로 이동할 때 localStorage의 adminPassword 확인 ⭐
         if (section === adminPage) {
             // isAdminLoggedIn 플래그는 페이지 로딩 시 초기화되지만, 중간에 변경될 수 있으므로
             // 실제 페이지 이동 시점에서는 localStorage 값을 다시 확인하는 것이 더 안전합니다.
@@ -869,7 +916,7 @@ function formatDate(date) {
       }
  function updateSeatPageButtonsVisibility() {
           const myReservation = getMyReservation();
-          // ⭐ 수정 13: 내 예약 취소 버튼은 내 예약이 있을 때만 표시 ⭐
+          // ⭐ 수정 23: 내 예약 취소 버튼은 내 예약이 있을 때만 표시 ⭐
           if (cancelMyReservationBtn) {
               if (myReservation) {
                   cancelMyReservationBtn.classList.remove('hidden');
@@ -1032,7 +1079,7 @@ function updateReservationAvailability() {
       }
 
       async function loadAdminPage() {
-        // ⭐ 수정 14: 관리자 로그인 상태 플래그를 localStorage에서 확인 후 `fetchAdminSettings` 호출 ⭐
+        // ⭐ 수정 24: 관리자 로그인 상태 플래그를 localStorage에서 확인 후 `fetchAdminSettings` 호출 ⭐
         // 페이지 로드 시 또는 관리자 로그인 시 localStorage의 'adminPassword' 존재 여부를 바탕으로 상태를 확인합니다.
         // 이 로직은 `showSection`에서 관리자 페이지로 진입하기 전에 호출되므로, 중복 검증의 의미가 있습니다.
         isAdminLoggedIn = !!localStorage.getItem('adminPassword'); 
@@ -1091,11 +1138,13 @@ function updateReservationAvailability() {
           row.insertCell(2).textContent = res.dormitory;
           row.insertCell(3).textContent = res.floor;
           row.insertCell(4).textContent = res.seat;
-          const cancelCell = row.insertCell(5);
+          // ⭐ 수정 25: 예약 시간 (밀리초 단위)을 추가합니다. ⭐
+          row.insertCell(5).textContent = formatDate(res.createdAt);
+          const cancelCell = row.insertCell(6); // 셀 인덱스 변경: "예약 시간" 열 추가로 인해 5 -> 6
           const cancelButton = document.createElement('button');
           cancelButton.textContent = '취소';
           cancelButton.dataset.id = res._id;
-          // ⭐ 수정 15: 관리자 예약 취소 버튼에 isFromAdminPage 플래그를 true로 전달합니다. ⭐
+          // ⭐ 수정 26: 관리자 예약 취소 버튼에 isFromAdminPage 플래그를 true로 전달합니다. ⭐
           cancelButton.addEventListener('click', async (e) => {
             if (confirm('이 예약을 취소하시겠습니까? (관리자 권한)')) { // 관리자에게는 관리자 권한으로 취소함을 명시
               const result = await deleteReservation(e.target.dataset.id, true); // true: 관리자 페이지에서 호출됨
@@ -1159,7 +1208,7 @@ function updateReservationAvailability() {
         }
         if (!valid) return;
 
-        // ⭐ 수정 16: 로그인 정보 localStorage에 저장 ⭐
+        // ⭐ 수정 27: 로그인 정보 localStorage에 저장 ⭐
         currentUser = {roomNo, name, dormitory: selectedDorm};
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
@@ -1189,16 +1238,28 @@ function updateReservationAvailability() {
         updateSeatPageButtonsVisibility();
       }
 
-      function handleClickBackToLoginBtn() {
-        // ⭐ 수정 17: 로그아웃 시 currentUser 및 localStorage 정보 초기화 ⭐
+      // ⭐ 추가 28: 모든 사용자 상태를 초기화하고 로그인 페이지로 돌아가는 함수 ⭐
+      function navigateToHome() {
         currentUser = null;
         localStorage.removeItem('currentUser'); // currentUser 정보 삭제
         currentUserReservation = null;
         currentFloor = null;
         selectedSeat = null;
-        if (loginForm) loginForm.reset();
+        // 관리자 관련 상태도 함께 초기화합니다.
+        isAdminLoggedIn = false;
+        localStorage.removeItem('adminPassword');
+        // ⭐ 추가: deviceIdentifier도 초기화할지 여부는 정책에 따라 다름 ⭐
+        // 여기서는 deviceIdentifier는 유지하여 해당 기기에서 재로그인 시 사용자가 계속 동일 기기로 인식되도록 합니다.
+        // localStorage.removeItem('deviceIdentifier'); // 만약 기기 식별자를 매번 새로 만들고 싶다면 활성화
+
+        if (loginForm) loginForm.reset(); // 로그인 폼 필드 초기화
+        if (adminLoginForm) adminLoginForm.reset(); // 관리자 로그인 폼 필드 초기화
         showSection(loginPage);
-        updateSeatPageButtonsVisibility();
+        updateSeatPageButtonsVisibility(); // 버튼 상태도 초기화
+      }
+
+      function handleClickBackToLoginBtn() {
+        navigateToHome(); // ⭐ 수정 29: navigateToHome 함수를 호출하여 상태를 초기화합니다. ⭐
       }
 
       function handleClickFloorNextBtn() {
@@ -1241,8 +1302,7 @@ function updateReservationAvailability() {
         }
 
         if (confirm(`현재 예약된 ${myReservation.dormitory} ${myReservation.floor}층 ${myReservation.seat}번 좌석을 취소하시겠습니까?`)) {
-            // ⭐ 수정 18: 일반 사용자 예약 취소 시 deleteReservation에 isFromAdminPage 플래그 미포함 ⭐
-            // deleteReservation 함수에서 currentUser 정보를 payload에 포함시켜 보냅니다.
+            // ⭐ 수정 30: 일반 사용자 예약 취소 시 deleteReservation에 isFromAdminPage 플래그 미포함 ⭐
             const result = await deleteReservation(myReservation._id); 
             if (result.success) {
                 alert(result.message);
@@ -1256,7 +1316,7 @@ function updateReservationAvailability() {
                     if (currentUser) {
                         showSection(floorSelectPage);
                     } else {
-                        showSection(loginPage);
+                        navigateToHome(); // ⭐ 수정 31: currentUser가 없을 경우 navigateToHome 호출 ⭐
                     }
                 }
             } else {
@@ -1272,12 +1332,9 @@ function updateReservationAvailability() {
         showSection(adminLoginPage);
       }
 
-      // ⭐ 수정 19: 관리자 로그인 후 뒤로가기 버튼 클릭 시 관리자 비밀번호 localStorage에서 삭제 ⭐
+      // ⭐ 수정 32: 관리자 로그인 후 뒤로가기 버튼 클릭 시 navigateToHome 함수를 호출하여 상태를 초기화합니다. ⭐
       function handleClickAdminLoginBackBtn() {
-        isAdminLoggedIn = false;
-        localStorage.removeItem('adminPassword');
-        if (adminPasswordInput) adminPasswordInput.value = ''; // 입력 필드 초기화
-        showSection(loginPage);
+        navigateToHome(); 
       }
 
       async function handleSubmitAdminLoginForm(e) {
@@ -1289,18 +1346,16 @@ function updateReservationAvailability() {
         }
       }
 
-      // ⭐ 수정 20: 관리자 로그아웃 시 localStorage의 adminPassword 정보 삭제 ⭐
+      // ⭐ 수정 33: 관리자 로그아웃 시 navigateToHome 함수를 호출하여 상태를 초기화합니다. ⭐
       function handleClickAdminLogoutBtn() {
         if (confirm('관리자 페이지에서 로그아웃하시겠습니까?')) {
-          isAdminLoggedIn = false;
-          localStorage.removeItem('adminPassword');
-          showSection(loginPage);
+          navigateToHome(); 
         }
       }
 
       async function handleClickClearAllReservationsBtn() {
         if (confirm('경고: 모든 예약을 정말로 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다. (관리자 권한)')) {
-          // ⭐ 수정 21: 모든 예약 취소 시 관리자 비밀번호를 포함하여 요청 ⭐
+          // ⭐ 수정 34: 모든 예약 취소 시 관리자 비밀번호를 포함하여 요청 ⭐
           const result = await deleteAllReservations();
           if (result.success) {
             alert(result.message);
@@ -1371,35 +1426,8 @@ function updateReservationAvailability() {
         if (result.success) {
           alert(`${currentUser.dormitory} ${currentFloor}층 ${selectedSeat}번 자리 ${myReservation ? '변경' : '예약'}에 성공했습니다!`);
           
-          // ⭐ 수정 22: 예약 성공 후 currentUser 상태를 유지하고 내 예약 정보 갱신 후 좌석 선택 페이지로 이동 ⭐
-          await fetchAllReservations(); // 모든 예약을 다시 가져와 allReservations 갱신
-          currentUserReservation = getMyReservation(); // 갱신된 allReservations에서 내 예약 정보 재확인
-
-          // 사용자의 이전 폼 입력 값을 복원합니다.
-          if (roomNoInput && currentUser) roomNoInput.value = currentUser.roomNo;
-          if (userNameInput && currentUser) userNameInput.value = currentUser.name;
-          if (dormitorySelect && currentUser) dormitorySelect.value = currentUser.dormitory;
-
-          // ⭐ 변경된 좌석으로 이동하는 로직 추가
-          if (currentUserReservation) {
-            currentFloor = currentUserReservation.floor; // 내 예약의 층으로 이동
-            selectedSeat = null; // 새롭게 로그인했을 때와 동일하게 좌석은 초기화
-            if (welcomeText) welcomeText.textContent = `${currentUser.name}님 환영합니다! (${currentUser.dormitory} 기숙사)`;
-            if (selectedDormTitle) selectedDormTitle.textContent = currentUser.dormitory;
-            if (selectedFloorTitle) selectedFloorTitle.textContent = currentFloor;
-            setFloorOptions(currentUser.dormitory);
-            if (floorSelect) floorSelect.value = currentFloor;
-
-            renderSeatMap(currentUser.dormitory, currentFloor);
-            updateReservationAvailability();
-            showSection(seatMapPage); // 예약 성공 후 좌석 배치도로 바로 이동
-          } else { // 어떠한 이유로 예약은 없고 로그인 정보만 있는 경우 (가능성은 낮지만) 층 선택 페이지로 이동
-              currentFloor = null;
-              selectedSeat = null;
-              setFloorOptions(currentUser.dormitory);
-              if (welcomeText) welcomeText.textContent = `${currentUser.name}님 환영합니다! (${currentUser.dormitory} 기숙사)`;
-              showSection(floorSelectPage);
-          }
+          // ⭐ 수정 35: 예약 성공 후 모든 사용자 상태를 초기화하고 로그인 페이지로 이동합니다. ⭐
+          navigateToHome(); 
         } else {
           alert(`${myReservation ? '예약 변경' : '예약'} 실패: ` + result.message);
         }
@@ -1425,7 +1453,7 @@ async function handleSubmitReservationTimeForm(e) {
           return;
         }
 
-        // ⭐ 수정 23: 관리자 설정 저장 시 관리자 비밀번호를 Authorization 헤더에 포함하여 요청 ⭐
+        // ⭐ 수정 36: 관리자 설정 저장 시 관리자 비밀번호를 Authorization 헤더에 포함하여 요청 ⭐
         const result = await updateAdminSettings(startDateTime, endDateTime);
         if (result.success) {
           timeSettingMessage.textContent = result.message;
@@ -1442,7 +1470,7 @@ async function handleSubmitReservationTimeForm(e) {
         const active = announcementActiveCheckbox.checked;
 
         if (!active && !message) {
-          // ⭐ 수정 24: 공지사항 비활성화 시에도 관리자 비밀번호를 포함하여 요청 ⭐
+          // ⭐ 수정 37: 공지사항 비활성화 시에도 관리자 비밀번호를 포함하여 요청 ⭐
           const result = await updateAnnouncement("", false);
           if (result.success) {
             announcementMessageStatus.textContent = '공지사항이 비활성화되었습니다.';
@@ -1460,7 +1488,7 @@ async function handleSubmitReservationTimeForm(e) {
           return;
         }
 
-        // ⭐ 수정 25: 공지사항 저장 시 관리자 비밀번호를 Authorization 헤더에 포함하여 요청 ⭐
+        // ⭐ 수정 38: 공지사항 저장 시 관리자 비밀번호를 Authorization 헤더에 포함하여 요청 ⭐
         const result = await updateAnnouncement(message, active);
         if (result.success) {
           announcementMessageStatus.textContent = result.message;
@@ -1471,7 +1499,7 @@ async function handleSubmitReservationTimeForm(e) {
         }
       }
 
-      // ⭐ 수정 26: 페이지 로드 시 기존 로그인 정보 복원 및 초기 페이지 이동 로직 추가 (initializePage 함수로 분리) ⭐
+      // ⭐ 수정 39: 페이지 로드 시 기존 로그인 정보 복원 및 초기 페이지 이동 로직 추가 (initializePage 함수로 분리) ⭐
       async function initializePage() {
         loginPage = document.getElementById('loginPage');
         loginForm = document.getElementById('loginForm');
@@ -1497,6 +1525,8 @@ async function handleSubmitReservationTimeForm(e) {
         selectedDormTitle = document.getElementById('selectedDorm');
         selectedFloorTitle = document.getElementById('selectedFloor');
         reservationAvailabilityMessage = document.getElementById('reservationAvailabilityMessage');
+        // ⭐ 추가 40: 홈 버튼 요소 참조 ⭐
+        homeButton = document.getElementById('homeButton');
 
         adminLoginPage = document.getElementById('adminLoginPage');
         adminLoginForm = document.getElementById('adminLoginForm');
@@ -1590,9 +1620,11 @@ async function handleSubmitReservationTimeForm(e) {
         if (reservationTimeForm) reservationTimeForm.addEventListener('submit', handleSubmitReservationTimeForm);
         if (announcementForm) announcementForm.addEventListener('submit', handleSubmitAnnouncementForm);
         if (announcementCloseBtn) announcementCloseBtn.addEventListener('click', hideAnnouncement);
+        // ⭐ 추가 41: 홈 버튼 이벤트 리스너 추가 ⭐
+        if (homeButton) homeButton.addEventListener('click', navigateToHome);
 
         await fetchAllReservations();
-        // ⭐ 수정 27: initializePage에서 관리자 로그인 상태 확인 및 데이터 페칭 로직 개선 ⭐
+        // ⭐ 수정 42: initializePage에서 관리자 로그인 상태 확인 및 데이터 페칭 로직 개선 ⭐
         isAdminLoggedIn = !!localStorage.getItem('adminPassword'); // local Storage를 기반으로 관리자 로그인 상태 다시 확인
         if (isAdminLoggedIn) {
             // 관리자로 로그인된 상태라면, adminSettings와 announcement를 가져올 수 있도록 시도
@@ -1625,7 +1657,7 @@ async function handleSubmitReservationTimeForm(e) {
                 renderSeatMap(currentUser.dormitory, currentFloor);
                 updateReservationAvailability();
                 showSection(seatMapPage); // 좌석 배치도 페이지로 바로 이동
-            } else { // 예약은 없지만 로그인 정보가 남아 있다면 층 선택 페이지로 이동
+            } else { // 예약은 없고 로그인 정보만 있는 경우 (가능성은 낮지만) 층 선택 페이지로 이동
                 currentFloor = null;
                 selectedSeat = null;
                 setFloorOptions(currentUser.dormitory);
