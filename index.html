@@ -4,361 +4,56 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <title>랜선석 예약 시스템</title>
-<!-- ⭐ 추가 1: favicon.ico 404 에러 방지 ⭐ -->
 <link rel="icon" href="data:;base64,iVBORw0KGgo="> 
-<!-- 또는 <link rel="shortcut icon" href="#"> -->
 <style>
-  /* 기본 스타일 */
-  body {
-    font-family: 'Malgun Gothic', Arial, sans-serif;
-    margin: 0; padding: 10px 0;
-    background: #fafafc;
-    color: #2c3e50;
-  }
-  h1, h2 {
-    text-align: center;
-    margin: 1em 0;
-    color: #334155;
-  }
-  .container {
-    max-width: 960px;
-    margin: 10px auto 40px;
-    background: white;
-    padding: 15px 20px;
-    border-radius: 12px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.06);
-  }
-  .hidden { display: none !important; } /* 다른 스타일에 의해 덮어쓰기 방지 */
-
-  /* 폼 요소 */
-  form {
-    max-width: 400px;
-    margin: 0 auto;
-  }
-  label {
-    font-weight: 700;
-    margin-top: 12px;
-    display: block;
-    color: #475569;
-  }
-  input[type=text], input[type=password], input[type=datetime-local], select, textarea {
-    width: 100%;
-    padding: 10px 12px;
-    margin-top: 6px;
-    font-size: 1rem;
-    border: 2px solid #cbd5e1;
-    border-radius: 8px;
-    box-sizing: border-box;
-    transition: border-color 0.3s;
-  }
-  input[type=text]:focus, input[type=password]:focus, input[type=datetime-local]:focus,
-  select:focus, textarea:focus {
-    border-color: #fbbf24;
-    outline: none;
-  }
-  .error {
-    color: #dc2626;
-    font-size: 0.9rem;
-    height: 20px;
-    margin-top: 4px;
-  }
-
-  /* 버튼 스타일 */
-  button {
-    background-color: #fbbf24;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 25px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #92400e;
-    cursor: pointer;
-    margin-top: 20px;
-    box-shadow: 1px 3px 6px rgba(251,191,36,0.5);
-    transition: background-color 0.3s;
-    display: inline-block;
-    min-width: 120px;
-  }
-  button:hover:not(:disabled) {
-    background-color: #f59e0b;
-  }
-  button:disabled {
-    background-color: #fde68a;
-    cursor: not-allowed;
-  }
-  nav {
-    text-align: center;
-    margin-top: 20px;
-  }
-  nav button {
-    background: transparent;
-    color: #b45309;
-    font-weight: 600;
-    padding: 8px 16px;
-    border: 2px solid #fbbf24;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  nav button:hover {
-    background-color: #fbbf24;
-    color: #92400e;
-  }
-
-  /* 좌석 배치도 */
-  #seatMapWrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 10px;
-  }
-  #seatMap {
-    margin: 20px auto 40px;
-    display: grid;
-    gap: 8px;
-    justify-content: center;
-    min-width: fit-content;
-  }
-  .seat-btn {
-    background: #CCFFCC;
-    border: 2px solid #88CC88;
-    font-weight: 700;
-    color: #336633;
-    cursor: pointer;
-    user-select: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.1rem;
-    min-width: 44px;
-    aspect-ratio: 1 / 1;
-    border-radius: 6px;
-    transition: background-color 0.3s, border-color 0.3s;
-  }
-  .seat-btn:hover:not(.booked) {
-    background-color: #AACC88;
-    border-color: #669944;
-  }
-  .seat-btn.booked {
-    background: #FFCCCC;
-    border: 2px solid #CC8888;
-    color: #663333;
-    cursor: not-allowed;
-  }
-  .seat-btn.mine {
-    background: #FFCCFF;
-    border: 2px solid #CC88CC;
-    color: #663366;
-  }
-  .seat-btn.selected {
-    background: #ffcc99;
-    border: 2px solid #ff9933;
-    color: #663300;
-  }
-  .seat-btn.empty {
-    visibility: hidden;
-    pointer-events: none;
-  }
-
-  /* 관리자 예약 현황 테이블 */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 15px;
-    font-size: 1rem;
-  }
-  th, td {
-    border: 1px solid #cbd5e1;
-    padding: 10px 12px;
-    text-align: center;
-  }
-  th {
-    background-color: #fbbf24;
-    color: #92400e;
-  }
-  td button {
-    background: #ef4444;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-  td button:hover {
-    background: #b91c1c;
-  }
-
-  /* 예약 안내 메시지 */
-  #reservationAvailabilityMessage {
-    margin-top: 10px;
-    font-weight: 700;
-    padding: 0.5em;
-    border-radius: 5px;
-    text-align: center;
-    color: #ef4444;
-    background-color: #fee2e2;
-  }
-  #reservationAvailabilityMessage.available {
-    color: #10b981;
-    background-color: #d1fae5;
-  }
-
-  #timeSettingMessage {
-    margin-top: 12px;
-    text-align: center;
-    font-size: 0.9rem;
-    min-height: 1.5em;
-  }
-
-  /* 반응형 */
-  @media (max-width: 768px) {
-    .container {
-      margin: 10px auto 30px;
-      padding: 10px;
-    }
-    .seat-btn {
-      min-width: 38px;
-      font-size: 1rem;
-    }
-    h1, h2 { font-size: 1.5rem; }
-  }
-
-  @media (max-width: 480px) {
-    body { padding: 5px; }
-    .container {
-      margin: 5px auto 20px;
-      padding: 8px;
-      border-radius: 8px;
-    }
-    h1, h2 { font-size: 1.4rem; margin: 0.8em 0; }
-    label, input, select, textarea { font-size: 0.9rem; }
-    button { padding: 8px 12px; font-size: 0.95rem; margin-top: 15px; min-width: auto; }
-    nav button { padding: 5px 8px; font-size: 0.85rem; }
-    .seat-btn {
-      min-width: 26px;
-      font-size: 0.85rem;
-      padding: 0;
-    }
-    table { font-size: 0.8rem; }
-    th, td { padding: 6px 4px; }
-    td button { padding: 3px 6px; font-size: 0.75rem; }
-  }
-
-  /* 공지 팝업 스타일 */
-  .announcement-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-  .announcement-popup {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 0 25px rgba(0,0,0,0.5);
-    max-width: 500px;
-    width: 90%;
-    text-align: left;
-    position: relative;
-    font-size: 1.1rem;
-    line-height: 1.5;
-  }
-  .announcement-popup h3 {
-    margin-top: 0;
-    color: #b45309;
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  .announcement-popup p {
-    margin-bottom: 20px;
-    color: #333;
-    white-space: pre-wrap;
-  }
-  .announcement-popup button.close-btn {
-    background: #b45309;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 10px 20px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background 0.3s;
-    margin: 0 auto;
-    display: block;
-  }
-  .announcement-popup button.close-btn:hover {
-    background: #8e420b;
-  }
-  #announcementMessageInput {
-    width: calc(100% - 20px);
-    height: 80px;
-    padding: 10px;
-    margin-top: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    resize: vertical;
-    font-size: 1rem;
-  }
-  #announcementActiveCheckbox {
-    margin-top: 15px;
-    margin-right: 8px;
-  }
-  .button-group {
-    display: flex;
-    /* ⭐ 수정 2: 버튼 간 간격 및 정렬을 조정합니다. ⭐ */
-    justify-content: space-between; 
-    align-items: center;
-    width: 100%;
-    margin-top: 20px;
-    /* ⭐ 추가 3: 좌측 정렬 홈버튼을 위한 추가 스타일링 ⭐ */
-    flex-wrap: wrap; /* 작은 화면에서 버튼들이 겹치지 않도록 */
-  }
-  .button-group button {
-    margin-top: 0;
-    /* ⭐ 추가 4: 좌측 정렬 홈버튼을 위한 추가 스타일링 ⭐ */
-    flex-grow: 1; /* flex item이 공간을 채우도록 */
-    margin: 5px; /* 버튼 간의 간격 */
-    min-width: 100px; /* 버튼 최소 너비 */
-  }
-  /* ⭐ 추가 5: 홈으로 버튼을 좌측에 두기 위한 스타일 ⭐ */
-  #homeButton {
-    background-color: #3498db; /* 홈버튼 색상 */
-    color: white;
-    box-shadow: 1px 3px 6px rgba(52, 152, 219, 0.5);
-  }
-  #homeButton:hover {
-    background-color: #2980b9;
-  }
-
-  .color-legend {
-    text-align: center;
-    margin-top: 30px;
-    padding: 15px;
-    border-top: 1px solid #eee;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-    font-size: 0.9rem;
-    color: #555;
-  }
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .legend-box {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-  }
+  body { font-family: 'Malgun Gothic', Arial, sans-serif; margin: 0; padding: 10px 0; background: #fafafc; color: #2c3e50; }
+  h1, h2 { text-align: center; margin: 1em 0; color: #334155; }
+  .container { max-width: 960px; margin: 10px auto 40px; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.06); }
+  .hidden { display: none !important; }
+  form { max-width: 400px; margin: 0 auto; }
+  label { font-weight: 700; margin-top: 12px; display: block; color: #475569; }
+  input[type=text], input[type=password], input[type=datetime-local], select, textarea { width: 100%; padding: 10px 12px; margin-top: 6px; font-size: 1rem; border: 2px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; transition: border-color 0.3s; }
+  input[type=text]:focus, input[type=password]:focus, input[type=datetime-local]:focus, select:focus, textarea:focus { border-color: #fbbf24; outline: none; }
+  .error { color: #dc2626; font-size: 0.9rem; height: 20px; margin-top: 4px; }
+  button { background-color: #fbbf24; border: none; border-radius: 8px; padding: 12px 25px; font-size: 1.1rem; font-weight: 700; color: #92400e; cursor: pointer; margin-top: 20px; box-shadow: 1px 3px 6px rgba(251,191,36,0.5); transition: background-color 0.3s; display: inline-block; min-width: 120px; }
+  button:hover:not(:disabled) { background-color: #f59e0b; }
+  button:disabled { background-color: #fde68a; cursor: not-allowed; }
+  nav { text-align: center; margin-top: 20px; }
+  nav button { background: transparent; color: #b45309; font-weight: 600; padding: 8px 16px; border: 2px solid #fbbf24; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
+  nav button:hover { background-color: #fbbf24; color: #92400e; }
+  #seatMapWrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 10px; }
+  #seatMap { margin: 20px auto 40px; display: grid; gap: 8px; justify-content: center; min-width: fit-content; }
+  .seat-btn { background: #CCFFCC; border: 2px solid #88CC88; font-weight: 700; color: #336633; cursor: pointer; user-select: none; display: flex; justify-content: center; align-items: center; font-size: 1.1rem; min-width: 44px; aspect-ratio: 1 / 1; border-radius: 6px; transition: background-color 0.3s, border-color 0.3s; }
+  .seat-btn:hover:not(.booked) { background-color: #AACC88; border-color: #669944; }
+  .seat-btn.booked { background: #FFCCCC; border: 2px solid #CC8888; color: #663333; cursor: not-allowed; }
+  .seat-btn.mine { background: #FFCCFF; border: 2px solid #CC88CC; color: #663366; }
+  .seat-btn.selected { background: #ffcc99; border: 2px solid #ff9933; color: #663300; }
+  .seat-btn.empty { visibility: hidden; pointer-events: none; }
+  table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 1rem; }
+  th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: center; }
+  th { background-color: #fbbf24; color: #92400e; }
+  td button { background: #ef4444; color: white; border: none; border-radius: 6px; padding: 6px 12px; font-weight: 600; cursor: pointer; transition: background-color 0.3s; }
+  td button:hover { background: #b91c1c; }
+  #reservationAvailabilityMessage { margin-top: 10px; font-weight: 700; padding: 0.5em; border-radius: 5px; text-align: center; color: #ef4444; background-color: #fee2e2; }
+  #reservationAvailabilityMessage.available { color: #10b981; background-color: #d1fae5; }
+  #timeSettingMessage { margin-top: 12px; text-align: center; font-size: 0.9rem; min-height: 1.5em; }
+  @media (max-width: 768px) { .container { margin: 10px auto 30px; padding: 10px; } .seat-btn { min-width: 38px; font-size: 1rem; } h1, h2 { font-size: 1.5rem; } }
+  @media (max-width: 480px) { body { padding: 5px; } .container { margin: 5px auto 20px; padding: 8px; border-radius: 8px; } h1, h2 { font-size: 1.4rem; margin: 0.8em 0; } label, input, select, textarea { font-size: 0.9rem; } button { padding: 8px 12px; font-size: 0.95rem; margin-top: 15px; min-width: auto; } nav button { padding: 5px 8px; font-size: 0.85rem; } .seat-btn { min-width: 26px; font-size: 0.85rem; padding: 0; } table { font-size: 0.8rem; } th, td { padding: 6px 4px; } td button { padding: 3px 6px; font-size: 0.75rem; } }
+  .announcement-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+  .announcement-popup { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 25px rgba(0,0,0,0.5); max-width: 500px; width: 90%; text-align: left; position: relative; font-size: 1.1rem; line-height: 1.5; }
+  .announcement-popup h3 { margin-top: 0; color: #b45309; font-size: 1.5rem; margin-bottom: 20px; text-align: center; }
+  .announcement-popup p { margin-bottom: 20px; color: #333; white-space: pre-wrap; }
+  .announcement-popup button.close-btn { background: #b45309; color: white; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; font-size: 1rem; transition: background 0.3s; margin: 0 auto; display: block; }
+  .announcement-popup button.close-btn:hover { background: #8e420b; }
+  #announcementMessageInput { width: calc(100% - 20px); height: 80px; padding: 10px; margin-top: 10px; border: 1px solid #ccc; border-radius: 5px; resize: vertical; font-size: 1rem; }
+  #announcementActiveCheckbox { margin-top: 15px; margin-right: 8px; }
+  .button-group { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 20px; flex-wrap: wrap; }
+  .button-group button { margin-top: 0; flex-grow: 1; margin: 5px; min-width: 100px; }
+  #homeButton { background-color: #3498db; color: white; box-shadow: 1px 3px 6px rgba(52, 152, 219, 0.5); }
+  #homeButton:hover { background-color: #2980b9; }
+  .color-legend { text-align: center; margin-top: 30px; padding: 15px; border-top: 1px solid #eee; display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; font-size: 0.9rem; color: #555; }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .legend-box { width: 20px; height: 20px; border-radius: 4px; border: 1px solid #ccc; }
   .legend-box.empty { background-color: #CCFFCC; border-color: #88CC88; }
   .legend-box.booked { background-color: #FFCCCC; border-color: #CC8888; }
   .legend-box.mine { background-color: #FFCCFF; border-color: #CC88CC; }
@@ -409,7 +104,6 @@
     </div>
     <div id="reservationAvailabilityMessage"></div>
     <div class="button-group">
-      <!-- ⭐ 추가 6: 홈으로 버튼을 추가합니다. ⭐ -->
       <button id="homeButton" type="button">홈으로</button> 
       <button id="backToFloorBtn" type="button">뒤로가기</button> 
       <button id="cancelMyReservationBtn" type="button" class="hidden">내 예약 취소</button>
@@ -449,7 +143,7 @@
       <div id="timeSettingMessage"></div>
     </form>
 
-    <hr style="margin: 2em 0;">
+    <hr>
 
     <h2>공지사항 설정</h2>
     <form id="announcementForm" novalidate>
@@ -463,7 +157,7 @@
       <div id="announcementMessageStatus" class="error"></div>
     </form>
 
-    <hr style="margin: 2em 0;">
+    <hr>
 
     <h2>예약 현황</h2>
     <table>
@@ -496,28 +190,22 @@
       let availabilityCheckInterval = null;
       let prevAllowedState = null;
       let currentAnnouncement = null;
-      // ⭐ 추가 7: 관리자 로그인 상태 유지를 위한 변수 ⭐
-      // (local Storage에 adminPassword가 있으면 로그인된 상태로 간주)
       let isAdminLoggedIn = !!localStorage.getItem('adminPassword');
-
 
       let loginPage, loginForm, roomNoInput, userNameInput, dormitorySelect, roomError, nameError, dormError, adminLoginBtn;
       let floorSelectPage, floorSelect, floorNextBtn, backToLoginBtn, welcomeText;
       let seatMapPage, seatMapContainer, confirmBtn, cancelMyReservationBtn, backToFloorBtn, selectedDormTitle, selectedFloorTitle, reservationAvailabilityMessage;
-      // ⭐ 추가 8: 홈 버튼 요소 변수 추가 ⭐
       let homeButton;
       let adminLoginPage, adminLoginForm, adminPasswordInput, adminError;
       let adminPage, adminLogoutBtn, reservationListBody, clearAllReservationsBtn;
       let reservationTimeForm, resStartTimeInput, resEndTimeInput, timeSettingMessage;
       let announcementOverlay, announcementPopupMessage, announcementCloseBtn, announcementForm, announcementMessageInput, announcementActiveCheckbox, announcementMessageStatus;
 
-      // ⭐ 수정 9: `currentUser` 초기값 복원 로직 추가 (LocalStorage에서 가져옴) ⭐
-      let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null; // { roomNo, name, dormitory }
-      // ⭐ 추가 10: 예약 시 사용한 기기를 식별하는 고유 ID. localStorage에 저장 및 페이지 로드 시 복원. ⭐
+      let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
       let deviceIdentifier = localStorage.getItem('deviceIdentifier') || generateUniqueId();
       localStorage.setItem('deviceIdentifier', deviceIdentifier);
 
-      let currentUserReservation = null; // null or { _id, roomNo, name, dormitory, floor, seat, createdAt }
+      let currentUserReservation = null;
       let currentFloor = null;
       let selectedSeat = null;
 
@@ -579,7 +267,6 @@
         }
       };
 
-      // ⭐ 추가 11: 고유 ID를 생성하는 함수 ⭐
       function generateUniqueId() {
           return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
               const r = Math.random() * 16 | 0,
@@ -602,12 +289,9 @@
         }
       }
 
-      // ⭐ 수정 12: 관리자 설정 불러오기 시 비밀번호를 Authorization 헤더에 전송 ⭐
       async function fetchAdminSettings() {
         try {
           const adminPass = localStorage.getItem('adminPassword');
-          // 관리자 비밀번호가 없으면 이 요청은 실패해야 합니다 (백엔드 인증 미들웨어 때문).
-          
           const headers = { 'Content-Type': 'application/json' };
           if (adminPass) {
               headers['Authorization'] = `Bearer ${adminPass}`;
@@ -616,30 +300,34 @@
           const res = await fetch(`${BACKEND_URL}/api/admin-settings`, {
               method: 'GET',
               headers: headers,
-              // GET 요청은 body를 포함할 수 없습니다.
           });
 
-          // HTTP 상태 코드가 401(Unauthorized) 또는 403(Forbidden)일 경우 관리자 로그인 필요
           if (!res.ok) {
               if (res.status === 401 || res.status === 403) {
-                  isAdminLoggedIn = false; // 로그인 상태 해제
-                  localStorage.removeItem('adminPassword'); // 비밀번호 제거
+                  isAdminLoggedIn = false;
+                  localStorage.removeItem('adminPassword');
               }
               throw new Error('관리자 설정 불러오기 실패: ' + res.statusText);
           }
           adminSettings = await res.json();
+          if (adminSettings.reservationStartTime) {
+            resStartTimeInput.value = formatDateTimeLocal(adminSettings.reservationStartTime);
+          }
+          if (adminSettings.reservationEndTime) {
+            resEndTimeInput.value = formatDateTimeLocal(adminSettings.reservationEndTime);
+          }
         } catch (e) {
           console.error('API 호출 에러: fetchAdminSettings', e);
-          // 관리자 로그인 상태가 아닐 때 발생하는 에러는 콘솔에만 찍고 UI에 방해되지 않도록 처리
-          return { reservationStartTime: null, reservationEndTime: null };
+          adminSettings = { reservationStartTime: null, reservationEndTime: null }; // 오류 발생 시 빈 값으로 초기화
+          if (resStartTimeInput) resStartTimeInput.value = '';
+          if (resEndTimeInput) resEndTimeInput.value = '';
+          return adminSettings; // 에러 발생 시에도 빈 설정 객체 반환
         }
       }
 
-      // ⭐ 수정 13: 공지사항 불러오기 시 비밀번호를 Authorization 헤더에 전송 ⭐
       async function fetchAnnouncement() {
         try {
           const adminPass = localStorage.getItem('adminPassword');
-          
           const headers = { 'Content-Type': 'application/json' };
           if (adminPass) {
               headers['Authorization'] = `Bearer ${adminPass}`;
@@ -648,13 +336,12 @@
           const res = await fetch(`${BACKEND_URL}/api/announcement`, {
             method: 'GET',
             headers: headers,
-            // GET 요청은 body를 포함할 수 없습니다.
           });
           
           if (!res.ok) {
               if (res.status === 401 || res.status === 403) {
-                  isAdminLoggedIn = false; // 로그인 상태 해제
-                  localStorage.removeItem('adminPassword'); // 비밀번호 제거
+                  isAdminLoggedIn = false;
+                  localStorage.removeItem('adminPassword');
               }
               throw new Error('공지사항 불러오기 실패: ' + res.statusText);
           }
@@ -662,11 +349,10 @@
           updateAnnouncementDisplay();
         } catch (e) {
           console.error('API 호출 에러: fetchAnnouncement', e);
-          hideAnnouncement(); // 공지사항 불러오기 실패 시 팝업을 숨김
-          return null; // 실패 시 null 반환
+          hideAnnouncement();
+          return null;
         }
       }
-
 
       async function adminLogin(password) {
         try {
@@ -678,29 +364,26 @@
           const data = await res.json();
           if (data.success) {
             adminError.textContent = '';
-            // ⭐ 추가 14: 관리자 로그인 성공 시 비밀번호를 localStorage에 저장 ⭐
             localStorage.setItem('adminPassword', password);
-            isAdminLoggedIn = true; // ⭐ 관리자 로그인 상태 플래그 설정 ⭐
+            isAdminLoggedIn = true;
             return true;
           } else {
             adminError.textContent = data.message;
-            isAdminLoggedIn = false; // ⭐ 관리자 로그인 상태 플래그 해제 ⭐
-            localStorage.removeItem('adminPassword'); // 실패 시 localStorage에서도 제거
+            isAdminLoggedIn = false;
+            localStorage.removeItem('adminPassword');
             return false;
           }
         } catch (e) {
           console.error('API 호출 에러: adminLogin', e);
           adminError.textContent = '로그인 중 오류가 발생했습니다.';
-          isAdminLoggedIn = false; // ⭐ 관리자 로그인 상태 플래그 해제 ⭐
-          localStorage.removeItem('adminPassword'); // 실패 시 localStorage에서도 제거
+          isAdminLoggedIn = false;
+          localStorage.removeItem('adminPassword');
           return false;
         }
       }
 
-      // ⭐ 수정 15: 예약 생성 시 요청 본문에 deviceIdentifier를 추가합니다. ⭐
       async function sendReservation(reservationData) {
         try {
-          // ⭐ 추가: deviceIdentifier 포함 ⭐
           const payload = { ...reservationData, deviceIdentifier };
           const res = await fetch(`${BACKEND_URL}/api/reservations`, {
             method: 'POST',
@@ -719,18 +402,16 @@
         }
       }
 
-      // ⭐ 수정 16: 예약 변경 시 요청 본문에 사용자 식별 정보와 deviceIdentifier를 추가합니다. ⭐
       async function updateReservation(reservationId, updatedData) {
           try {
               if (!currentUser) throw new Error('로그인된 사용자 정보가 없습니다. 다시 로그인해주세요.');
 
-              // ⭐ 추가: 요청 본문에 현재 로그인된 사용자 정보와 deviceIdentifier 포함 ⭐
               const payload = {
                   ...updatedData,
                   requestingUserRoomNo: currentUser.roomNo,
                   requestingUserName: currentUser.name,
                   requestingUserDormitory: currentUser.dormitory,
-                  deviceIdentifier // ⭐ deviceIdentifier 포함 ⭐
+                  deviceIdentifier
               };
 
               const res = await fetch(`${BACKEND_URL}/api/reservations/update/${reservationId}`, {
@@ -750,18 +431,17 @@
           }
       }
 
-      // ⭐ 수정 17: 개별 예약 취소 시 요청 본문에 사용자 식별 정보, 관리자 여부, 비밀번호, deviceIdentifier 추가 ⭐
       async function deleteReservation(id, isFromAdminPage = false) {
         try {
           const payload = {};
-          if (isFromAdminPage && isAdminLoggedIn) { // 관리자 페이지에서 호출하고 관리자가 로그인된 경우
+          if (isFromAdminPage && isAdminLoggedIn) {
             payload.isAdmin = true;
             payload.adminPassword = localStorage.getItem('adminPassword');
-          } else if (currentUser) { // 일반 사용자 요청인 경우 (내 예약 취소)
+          } else if (currentUser) {
             payload.requestingUserRoomNo = currentUser.roomNo;
             payload.requestingUserName = currentUser.name;
             payload.requestingUserDormitory = currentUser.dormitory;
-            payload.deviceIdentifier = deviceIdentifier; // ⭐ deviceIdentifier 포함 ⭐
+            payload.deviceIdentifier = deviceIdentifier;
           } else {
             throw new Error('예약 취소를 위한 사용자 정보가 없습니다. 다시 로그인해주세요.');
           }
@@ -780,7 +460,6 @@
         }
       }
 
-      // ⭐ 수정 18: 모든 예약 삭제 시 관리자 비밀번호를 포함하여 요청 ⭐
       async function deleteAllReservations() {
         try {
           if (!isAdminLoggedIn) {
@@ -801,7 +480,6 @@
         }
       }
 
-      // ⭐ 수정 19: 관리자 설정 업데이트 시 관리자 비밀번호를 Authorization 헤더에 포함하여 요청 ⭐
       async function updateAdminSettings(startTime, endTime) {
         try {
           if (!isAdminLoggedIn) {
@@ -812,12 +490,12 @@
             method: 'PUT',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${adminPass}` // ⭐ 수정: Authorization 헤더 사용 ⭐
+                'Authorization': `Bearer ${adminPass}`
             },
             body: JSON.stringify({ reservationStartTime: startTime, reservationEndTime: endTime })
           });
-          const data = await res.json();
           if (!res.ok) throw new Error(data.message || '설정 저장 실패');
+          const data = await res.json();
           return { success: true, message: '설정이 성공적으로 저장되었습니다.' };
         } catch (e) {
           console.error('API 호출 에러: updateAdminSettings', e);
@@ -825,7 +503,6 @@
         }
       }
 
-      // ⭐ 수정 20: 공지사항 업데이트 시 관리자 비밀번호를 Authorization 헤더에 포함하여 요청 ⭐
       async function updateAnnouncement(message, active) {
         try {
           if (!isAdminLoggedIn) {
@@ -836,12 +513,12 @@
             method: 'PUT',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${adminPass}` // ⭐ 수정: Authorization 헤더 사용 ⭐
+                'Authorization': `Bearer ${adminPass}` 
             },
             body: JSON.stringify({ message, active })
           });
-          const data = await res.json();
           if (!res.ok) throw new Error(data.message || '공지사항 저장 실패');
+          const data = await res.json();
           return { success: true, message: '공지사항이 저장되었습니다.' };
         } catch (e) {
           console.error('API 호출 에러: updateAnnouncement', e);
@@ -862,11 +539,11 @@
         const endTime = new Date(adminSettings.reservationEndTime);
 
         return now >= startTime && now <= endTime
-          ? { allowed: true, message: `예약 가능 시간입니다. (${formatDate(startTime)} ~ ${formatDate(endTime)})` }
-          : { allowed: false, message: `현재 예약 가능 시간이 아닙니다. (${formatDate(startTime)} ~ ${formatDate(endTime)})` };
+          ? { allowed: true, message: `예약 가능 시간입니다. (${formatDate(startTime, false)} ~ ${formatDate(endTime, false)})` }
+          : { allowed: false, message: `현재 예약 가능 시간이 아닙니다. (${formatDate(startTime, false)} ~ ${formatDate(endTime, false)})` };
       }
-// ⭐ 수정 21: 밀리초까지 포함하는 날짜 포맷 함수 ⭐
-function formatDate(date, includeMilliseconds = true) {
+
+      function formatDate(date, includeMilliseconds = true) {
         const d = new Date(date);
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -889,12 +566,8 @@ function formatDate(date, includeMilliseconds = true) {
         });
         if(section) section.classList.remove('hidden');
 
-        // ⭐ 추가 22: 관리자 페이지로 이동할 때 localStorage의 adminPassword 확인 ⭐
         if (section === adminPage) {
-            // isAdminLoggedIn 플래그는 페이지 로딩 시 초기화되지만, 중간에 변경될 수 있으므로
-            // 실제 페이지 이동 시점에서는 localStorage 값을 다시 확인하는 것이 더 안전합니다.
             if (!localStorage.getItem('adminPassword')) {
-                // localStorage에 adminPassword가 없으면 adminPage로 바로 접근 불가능하게 함
                 showSection(adminLoginPage);
                 alert('관리자 로그인이 필요합니다.');
                 return;
@@ -914,9 +587,9 @@ function formatDate(date, includeMilliseconds = true) {
           }
         }
       }
- function updateSeatPageButtonsVisibility() {
+
+      function updateSeatPageButtonsVisibility() {
           const myReservation = getMyReservation();
-          // ⭐ 수정 23: 내 예약 취소 버튼은 내 예약이 있을 때만 표시 ⭐
           if (cancelMyReservationBtn) {
               if (myReservation) {
                   cancelMyReservationBtn.classList.remove('hidden');
@@ -926,16 +599,14 @@ function formatDate(date, includeMilliseconds = true) {
           }
 
           if (confirmBtn) {
-// 내 예약이 있고, 새로운 좌석을 선택했거나 현재 내 좌석을 다시 선택한 경우 '예약 변경'
               if (myReservation && selectedSeat !== null &&
                  (myReservation.floor !== currentFloor || myReservation.seat !== selectedSeat)) {
                   confirmBtn.textContent = '예약 변경';
               } else {
-                  confirmBtn.textContent = '예약 확정'; // 기본은 '예약 확정'
+                  confirmBtn.textContent = '예약 확정';
               }
           }
       }
-
 
       function clearErrors() {
         if (roomError) roomError.textContent = "";
@@ -948,7 +619,7 @@ function formatDate(date, includeMilliseconds = true) {
           alert('오류: 층 선택 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
           return;
         }
-        floorSelect.innerHTML = '<option value="" disabled selected>선택하세요</option>'; 
+        floorSelect.innerHTML = '<option value="" disabled selected>선택하세요</option>';
         if (!seatLayouts[dorm]) {
           floorSelect.innerHTML = '<option value="" disabled selected>해당 기숙사의 층 정보가 없습니다.</option>';
           return;
@@ -1002,23 +673,23 @@ function formatDate(date, includeMilliseconds = true) {
                 r.seat === seatNum
               );
 
-              if (booked) { // 예약된 좌석
+              if (booked) {
                 btn.classList.add('booked');
                 btn.disabled = true;
 
-                if (currentReservation && // 현재 로그인한 사용자의 예약이면 'mine'
+                if (currentReservation &&
                     currentReservation.roomNo === booked.roomNo &&
                     currentReservation.name === booked.name &&
                     currentReservation.dormitory === booked.dormitory &&
                     currentReservation.floor === booked.floor &&
                     currentReservation.seat === booked.seat) {
                   btn.classList.add('mine');
-                  btn.disabled = false; // 내 예약은 선택(클릭) 가능
+                  btn.disabled = false;
                   btn.title = `내 예약 (${booked.name}님)`;
-                } else { // 다른 사람의 예약 (선택 불가)
+                } else {
                   btn.title = `예약된 좌석`;
                 }
-              } else { // 빈자리
+              } else {
                 btn.title = allowed ? '예약 가능 자리' : '예약 가능 시간이 아닙니다.';
                 btn.disabled = !allowed;
                 btn.onclick = () => {
@@ -1034,13 +705,13 @@ function formatDate(date, includeMilliseconds = true) {
             seatMapContainer.appendChild(btn);
           });
         });
-        highlightSelectedSeat(); // 최종적으로 현재 선택된 좌석 강조
-        updateSeatPageButtonsVisibility(); // 렌더링 후 버튼 상태 재확인
+        highlightSelectedSeat();
+        updateSeatPageButtonsVisibility();
       }
       function highlightSelectedSeat() {
         if(!seatMapContainer) return;
         seatMapContainer.querySelectorAll("button.seat-btn").forEach(btn => {
-          btn.classList.remove('selected'); // 모든 선택 강조 제거
+          btn.classList.remove('selected');
 
           if (btn.textContent && parseInt(btn.textContent) === selectedSeat) {
             btn.classList.add('selected');
@@ -1074,31 +745,22 @@ function updateReservationAvailability() {
 
       function getMyReservation() {
         if (!currentUser) return null;
-        // currentUser의 roomNo, name, dormitory로 현재 allReservations에서 자신의 예약을 찾음
         return Object.values(allReservations).find(r => r.roomNo === currentUser.roomNo && r.name === currentUser.name && r.dormitory === currentUser.dormitory);
       }
 
       async function loadAdminPage() {
-        // ⭐ 수정 24: 관리자 로그인 상태 플래그를 localStorage에서 확인 후 `fetchAdminSettings` 호출 ⭐
-        // 페이지 로드 시 또는 관리자 로그인 시 localStorage의 'adminPassword' 존재 여부를 바탕으로 상태를 확인합니다.
-        // 이 로직은 `showSection`에서 관리자 페이지로 진입하기 전에 호출되므로, 중복 검증의 의미가 있습니다.
-        isAdminLoggedIn = !!localStorage.getItem('adminPassword'); 
+        isAdminLoggedIn = !!localStorage.getItem('adminPassword');
         if (!isAdminLoggedIn) {
             alert('관리자 로그인이 필요합니다.');
-            showSection(adminLoginPage); // 관리자 로그인이 되어 있지 않으면 로그인 페이지로 이동
+            showSection(adminLoginPage);
             return;
         }
 
         await fetchAllReservations();
         renderReservationList();
-        await fetchAdminSettings(); // 이제 이 함수는 Authorization 헤더를 통해 비밀번호를 보냅니다.
-        if (adminSettings.reservationStartTime) {
-          resStartTimeInput.value = formatDateTimeLocal(adminSettings.reservationStartTime);
-        }
-        if (adminSettings.reservationEndTime) {
-          resEndTimeInput.value = formatDateTimeLocal(adminSettings.reservationEndTime);
-        }
-        await fetchAnnouncement(); // 이제 이 함수는 Authorization 헤더를 통해 비밀번호를 보냅니다.
+        await fetchAdminSettings();
+        await fetchAnnouncement();
+
         if (currentAnnouncement) {
           announcementMessageInput.value = currentAnnouncement.message || '';
           announcementActiveCheckbox.checked = currentAnnouncement.active || false;
@@ -1113,21 +775,13 @@ function updateReservationAvailability() {
         if (!reservationListBody) return;
         reservationListBody.innerHTML = '';
         
-        // 정렬 로직 변경: 기숙사 > 층 > 좌석 번호
         const reservationsArray = Object.values(allReservations).sort((a, b) => {
-            // 1. 기숙사별 정렬
             const dormCompare = a.dormitory.localeCompare(b.dormitory);
-            if (dormCompare !== 0) {
-                return dormCompare;
-            } // 2. 층별 정렬
+            if (dormCompare !== 0) { return dormCompare; }
             const parseFloor = (f) => parseFloat(f.replace('-', '.'));
             const floorA = parseFloor(a.floor);
             const floorB = parseFloor(b.floor);
-            if (floorA !== floorB) {
-                return floorA - floorB;
-            }
-
-            // 3. 좌석 번호별 정렬
+            if (floorA !== floorB) { return floorA - floorB; }
             return a.seat - b.seat;
         });
 
@@ -1138,16 +792,14 @@ function updateReservationAvailability() {
           row.insertCell(2).textContent = res.dormitory;
           row.insertCell(3).textContent = res.floor;
           row.insertCell(4).textContent = res.seat;
-          // ⭐ 수정 25: 예약 시간 (밀리초 단위)을 추가합니다. ⭐
           row.insertCell(5).textContent = formatDate(res.createdAt);
-          const cancelCell = row.insertCell(6); // 셀 인덱스 변경: "예약 시간" 열 추가로 인해 5 -> 6
+          const cancelCell = row.insertCell(6);
           const cancelButton = document.createElement('button');
           cancelButton.textContent = '취소';
           cancelButton.dataset.id = res._id;
-          // ⭐ 수정 26: 관리자 예약 취소 버튼에 isFromAdminPage 플래그를 true로 전달합니다. ⭐
           cancelButton.addEventListener('click', async (e) => {
-            if (confirm('이 예약을 취소하시겠습니까? (관리자 권한)')) { // 관리자에게는 관리자 권한으로 취소함을 명시
-              const result = await deleteReservation(e.target.dataset.id, true); // true: 관리자 페이지에서 호출됨
+            if (confirm('이 예약을 취소하시겠습니까? (관리자 권한)')) {
+              const result = await deleteReservation(e.target.dataset.id, true);
               if (result.success) {
                 alert(result.message);
               } else {
@@ -1208,16 +860,15 @@ function updateReservationAvailability() {
         }
         if (!valid) return;
 
-        // ⭐ 수정 27: 로그인 정보 localStorage에 저장 ⭐
         currentUser = {roomNo, name, dormitory: selectedDorm};
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
 
-        currentUserReservation = getMyReservation(); // 현재 사용자의 예약을 확인
+        currentUserReservation = getMyReservation();
 
-        if (currentUserReservation) { // 이미 예약이 있는 사용자
+        if (currentUserReservation) {
           currentFloor = currentUserReservation.floor;
-          selectedSeat = null; // ✨ 로그인 시 selectedSeat를 초기화하여 'mine'과 'selected' 중첩을 방지 ✨
+          selectedSeat = null;
           
           setFloorOptions(selectedDorm);
           if (floorSelect) floorSelect.value = currentFloor;
@@ -1228,9 +879,9 @@ function updateReservationAvailability() {
           renderSeatMap(selectedDorm, currentFloor);
           updateReservationAvailability();
           showSection(seatMapPage);
-        } else { // 예약이 없는 사용자
+        } else {
           currentFloor = null;
-          selectedSeat = null; // 초기화
+          selectedSeat = null;
           setFloorOptions(selectedDorm);
           if (welcomeText) welcomeText.textContent = `${name}님 환영합니다! (${selectedDorm} 기숙사)`;
           showSection(floorSelectPage);
@@ -1238,28 +889,23 @@ function updateReservationAvailability() {
         updateSeatPageButtonsVisibility();
       }
 
-      // ⭐ 추가 28: 모든 사용자 상태를 초기화하고 로그인 페이지로 돌아가는 함수 ⭐
       function navigateToHome() {
         currentUser = null;
-        localStorage.removeItem('currentUser'); // currentUser 정보 삭제
+        localStorage.removeItem('currentUser');
         currentUserReservation = null;
         currentFloor = null;
         selectedSeat = null;
-        // 관리자 관련 상태도 함께 초기화합니다.
         isAdminLoggedIn = false;
         localStorage.removeItem('adminPassword');
-        // ⭐ 추가: deviceIdentifier도 초기화할지 여부는 정책에 따라 다름 ⭐
-        // 여기서는 deviceIdentifier는 유지하여 해당 기기에서 재로그인 시 사용자가 계속 동일 기기로 인식되도록 합니다.
-        // localStorage.removeItem('deviceIdentifier'); // 만약 기기 식별자를 매번 새로 만들고 싶다면 활성화
 
-        if (loginForm) loginForm.reset(); // 로그인 폼 필드 초기화
-        if (adminLoginForm) adminLoginForm.reset(); // 관리자 로그인 폼 필드 초기화
+        if (loginForm) loginForm.reset();
+        if (adminLoginForm) adminLoginForm.reset();
         showSection(loginPage);
-        updateSeatPageButtonsVisibility(); // 버튼 상태도 초기화
+        updateSeatPageButtonsVisibility();
       }
 
       function handleClickBackToLoginBtn() {
-        navigateToHome(); // ⭐ 수정 29: navigateToHome 함수를 호출하여 상태를 초기화합니다. ⭐
+        navigateToHome();
       }
 
       function handleClickFloorNextBtn() {
@@ -1275,7 +921,7 @@ function updateReservationAvailability() {
         if (selectedDormTitle) selectedDormTitle.textContent = currentUser.dormitory;
         if (selectedFloorTitle) selectedFloorTitle.textContent = currentFloor;
 
-        selectedSeat = null; // ✨ 층을 변경할 때는 선택된 좌석도 초기화하여 'mine'이 'selected'로 변하는 것을 방지 ✨
+        selectedSeat = null;
         
         if (confirmBtn) confirmBtn.disabled = true;
         renderSeatMap(currentUser.dormitory, currentFloor);
@@ -1302,8 +948,7 @@ function updateReservationAvailability() {
         }
 
         if (confirm(`현재 예약된 ${myReservation.dormitory} ${myReservation.floor}층 ${myReservation.seat}번 좌석을 취소하시겠습니까?`)) {
-            // ⭐ 수정 30: 일반 사용자 예약 취소 시 deleteReservation에 isFromAdminPage 플래그 미포함 ⭐
-            const result = await deleteReservation(myReservation._id); 
+            const result = await deleteReservation(myReservation._id);
             if (result.success) {
                 alert(result.message);
                 currentUserReservation = null;
@@ -1312,11 +957,10 @@ function updateReservationAvailability() {
                     renderSeatMap(currentUser.dormitory, currentFloor);
                     updateReservationAvailability();
                 } else {
-                    // ⭐ 수정: 예약 취소 후 currentUser가 여전히 유효할 때 floorSelectPage로 이동 (currentUser가 없으면 loginPage)
                     if (currentUser) {
                         showSection(floorSelectPage);
                     } else {
-                        navigateToHome(); // ⭐ 수정 31: currentUser가 없을 경우 navigateToHome 호출 ⭐
+                        navigateToHome();
                     }
                 }
             } else {
@@ -1332,9 +976,8 @@ function updateReservationAvailability() {
         showSection(adminLoginPage);
       }
 
-      // ⭐ 수정 32: 관리자 로그인 후 뒤로가기 버튼 클릭 시 navigateToHome 함수를 호출하여 상태를 초기화합니다. ⭐
       function handleClickAdminLoginBackBtn() {
-        navigateToHome(); 
+        navigateToHome();
       }
 
       async function handleSubmitAdminLoginForm(e) {
@@ -1346,16 +989,14 @@ function updateReservationAvailability() {
         }
       }
 
-      // ⭐ 수정 33: 관리자 로그아웃 시 navigateToHome 함수를 호출하여 상태를 초기화합니다. ⭐
       function handleClickAdminLogoutBtn() {
         if (confirm('관리자 페이지에서 로그아웃하시겠습니까?')) {
-          navigateToHome(); 
+          navigateToHome();
         }
       }
 
       async function handleClickClearAllReservationsBtn() {
         if (confirm('경고: 모든 예약을 정말로 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다. (관리자 권한)')) {
-          // ⭐ 수정 34: 모든 예약 취소 시 관리자 비밀번호를 포함하여 요청 ⭐
           const result = await deleteAllReservations();
           if (result.success) {
             alert(result.message);
@@ -1375,25 +1016,22 @@ function updateReservationAvailability() {
         const myReservation = getMyReservation();
 
         let result;
-        if (myReservation) { // 이미 예약이 있는 경우 -> 예약 변경 시도
-            // 같은 좌석을 다시 선택한 경우 (변경할 필요 없음)
+        if (myReservation) {
             if (myReservation.floor === currentFloor && myReservation.seat === selectedSeat) {
                 alert('선택하신 좌석은 이미 예약된 당신의 자리입니다. 변경할 좌석을 새로 선택해주세요.');
                 return;
             }
-            // 변경할 좌석이 이미 다른 사람에게 예약되어 있는지 확인 (myReservation._id는 제외)
             const isNewSeatBookedByOthers = Object.values(allReservations).some(r =>
                 r.dormitory === currentUser.dormitory &&
                 r.floor === currentFloor &&
                 r.seat === selectedSeat &&
-                r._id !== myReservation._id // 자기 자신의 기존 예약은 검사 대상에서 제외
+                r._id !== myReservation._id
             );
             if (isNewSeatBookedByOthers) {
-                alert('선택하신 좌석은 이미 다른 사람에게 예약되었습니다.');
+                alert('선택하신 좌석은 이미 예약되었습니다.');
                 return;
             }
 
-            // 예약 변경 API 호출
             const updatedData = {
                 roomNo: currentUser.roomNo,
                 name: currentUser.name,
@@ -1402,8 +1040,7 @@ function updateReservationAvailability() {
                 seat: selectedSeat
             };
             result = await updateReservation(myReservation._id, updatedData);
-        } else { // 예약이 없는 경우 -> 신규 예약
-            // 신규 예약할 좌석이 이미 예약되어 있는지 확인
+        } else {
             const isNewSeatBooked = Object.values(allReservations).some(r =>
                 r.dormitory === currentUser.dormitory &&
                 r.floor === currentFloor &&
@@ -1425,15 +1062,14 @@ function updateReservationAvailability() {
         
         if (result.success) {
           alert(`${currentUser.dormitory} ${currentFloor}층 ${selectedSeat}번 자리 ${myReservation ? '변경' : '예약'}에 성공했습니다!`);
-          
-          // ⭐ 수정 35: 예약 성공 후 모든 사용자 상태를 초기화하고 로그인 페이지로 이동합니다. ⭐
-          navigateToHome(); 
+          navigateToHome();
         } else {
           alert(`${myReservation ? '예약 변경' : '예약'} 실패: ` + result.message);
         }
         updateSeatPageButtonsVisibility();
       }
-async function handleSubmitReservationTimeForm(e) {
+
+      async function handleSubmitReservationTimeForm(e) {
         e.preventDefault();
         const startTime = resStartTimeInput.value;
         const endTime = resEndTimeInput.value;
@@ -1453,7 +1089,6 @@ async function handleSubmitReservationTimeForm(e) {
           return;
         }
 
-        // ⭐ 수정 36: 관리자 설정 저장 시 관리자 비밀번호를 Authorization 헤더에 포함하여 요청 ⭐
         const result = await updateAdminSettings(startDateTime, endDateTime);
         if (result.success) {
           timeSettingMessage.textContent = result.message;
@@ -1470,7 +1105,6 @@ async function handleSubmitReservationTimeForm(e) {
         const active = announcementActiveCheckbox.checked;
 
         if (!active && !message) {
-          // ⭐ 수정 37: 공지사항 비활성화 시에도 관리자 비밀번호를 포함하여 요청 ⭐
           const result = await updateAnnouncement("", false);
           if (result.success) {
             announcementMessageStatus.textContent = '공지사항이 비활성화되었습니다.';
@@ -1488,7 +1122,6 @@ async function handleSubmitReservationTimeForm(e) {
           return;
         }
 
-        // ⭐ 수정 38: 공지사항 저장 시 관리자 비밀번호를 Authorization 헤더에 포함하여 요청 ⭐
         const result = await updateAnnouncement(message, active);
         if (result.success) {
           announcementMessageStatus.textContent = result.message;
@@ -1499,7 +1132,6 @@ async function handleSubmitReservationTimeForm(e) {
         }
       }
 
-      // ⭐ 수정 39: 페이지 로드 시 기존 로그인 정보 복원 및 초기 페이지 이동 로직 추가 (initializePage 함수로 분리) ⭐
       async function initializePage() {
         loginPage = document.getElementById('loginPage');
         loginForm = document.getElementById('loginForm');
@@ -1525,7 +1157,6 @@ async function handleSubmitReservationTimeForm(e) {
         selectedDormTitle = document.getElementById('selectedDorm');
         selectedFloorTitle = document.getElementById('selectedFloor');
         reservationAvailabilityMessage = document.getElementById('reservationAvailabilityMessage');
-        // ⭐ 추가 40: 홈 버튼 요소 참조 ⭐
         homeButton = document.getElementById('homeButton');
 
         adminLoginPage = document.getElementById('adminLoginPage');
@@ -1551,7 +1182,7 @@ async function handleSubmitReservationTimeForm(e) {
         announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
         announcementMessageStatus = document.getElementById('announcementMessageStatus');
 
-        socket = io(BACKEND_URL); 
+        socket = io(BACKEND_URL);
 
         socket.on('connect', () => {
           console.log('Socket.IO 연결 성공!', socket.id);
@@ -1620,33 +1251,24 @@ async function handleSubmitReservationTimeForm(e) {
         if (reservationTimeForm) reservationTimeForm.addEventListener('submit', handleSubmitReservationTimeForm);
         if (announcementForm) announcementForm.addEventListener('submit', handleSubmitAnnouncementForm);
         if (announcementCloseBtn) announcementCloseBtn.addEventListener('click', hideAnnouncement);
-        // ⭐ 추가 41: 홈 버튼 이벤트 리스너 추가 ⭐
         if (homeButton) homeButton.addEventListener('click', navigateToHome);
 
         await fetchAllReservations();
-        // ⭐ 수정 42: initializePage에서 관리자 로그인 상태 확인 및 데이터 페칭 로직 개선 ⭐
-        isAdminLoggedIn = !!localStorage.getItem('adminPassword'); // local Storage를 기반으로 관리자 로그인 상태 다시 확인
+        isAdminLoggedIn = !!localStorage.getItem('adminPassword');
         if (isAdminLoggedIn) {
-            // 관리자로 로그인된 상태라면, adminSettings와 announcement를 가져올 수 있도록 시도
             await fetchAdminSettings();
             await fetchAnnouncement();
-        } else {
-            // 일반 사용자 상태라면, adminSettings와 announcement는 인증 문제로 가져올 수 없으므로 시도하지 않습니다.
-            // fetchAnnouncement()는 fetchAdminSettings()와 함께 호출되는 경우가 많으므로,
-            // 이 시점에서는 이미 관리자 권한으로 페칭 시도가 되었을 것으로 가정하고 오류 처리는 각 함수 내부에서 이뤄집니다.
         }
 
-        // ⭐ 추가된 초기 페이지 로딩 로직 ⭐
-        if (currentUser) { // currentUser가 localStorage에서 복원되었다면
-            // ⭐ 수정: 로그인 폼 필드를 먼저 채웁니다. ⭐
+        if (currentUser) {
             if (roomNoInput) roomNoInput.value = currentUser.roomNo;
             if (userNameInput) userNameInput.value = currentUser.name;
             if (dormitorySelect) dormitorySelect.value = currentUser.dormitory;
 
             currentUserReservation = getMyReservation();
-            if (currentUserReservation) { // 로그인한 사용자의 예약이 있다면
+            if (currentUserReservation) {
                 currentFloor = currentUserReservation.floor;
-                selectedSeat = null; // 내 자리 강조를 위해 selectedSeat 초기화
+                selectedSeat = null;
                 
                 setFloorOptions(currentUser.dormitory);
                 if (floorSelect) floorSelect.value = currentFloor;
@@ -1656,20 +1278,20 @@ async function handleSubmitReservationTimeForm(e) {
 
                 renderSeatMap(currentUser.dormitory, currentFloor);
                 updateReservationAvailability();
-                showSection(seatMapPage); // 좌석 배치도 페이지로 바로 이동
-            } else { // 예약은 없고 로그인 정보만 있는 경우 (가능성은 낮지만) 층 선택 페이지로 이동
+                showSection(seatMapPage);
+            } else {
                 currentFloor = null;
                 selectedSeat = null;
                 setFloorOptions(currentUser.dormitory);
                 if (welcomeText) welcomeText.textContent = `${currentUser.name}님 환영합니다! (${currentUser.dormitory} 기숙사)`;
                 showSection(floorSelectPage);
             }
-        } else { // 로그인 정보가 없으면 로그인 페이지로 이동
+        } else {
             showSection(loginPage);
         }
       }
 
-      document.addEventListener('DOMContentLoaded', initializePage); // ⭐ initializePage 함수 호출 ⭐
+      document.addEventListener('DOMContentLoaded', initializePage);
     })();
   </script>
 </body>
