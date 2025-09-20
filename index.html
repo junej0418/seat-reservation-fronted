@@ -6,54 +6,343 @@
 <title>랜선석 예약 시스템</title>
 <link rel="icon" href="data:;base64,iVBORw0KGgo="> 
 <style>
-  body { font-family: 'Malgun Gothic', Arial, sans-serif; margin: 0; padding: 10px 0; background: #fafafc; color: #2c3e50; }
-  h1, h2 { text-align: center; margin: 1em 0; color: #334155; }
-  .container { max-width: 960px; margin: 10px auto 40px; background: white; padding: 15px 20px; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.06); }
+  /* 기본 스타일 */
+  body {
+    font-family: 'Malgun Gothic', Arial, sans-serif;
+    margin: 0; padding: 10px 0;
+    background: #fafafc;
+    color: #2c3e50;
+  }
+  h1, h2 {
+    text-align: center;
+    margin: 1em 0;
+    color: #334155;
+  }
+  .container {
+    max-width: 960px;
+    margin: 10px auto 40px;
+    background: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.06);
+  }
   .hidden { display: none !important; }
-  form { max-width: 400px; margin: 0 auto; }
-  label { font-weight: 700; margin-top: 12px; display: block; color: #475569; }
-  input[type=text], input[type=password], input[type=datetime-local], select, textarea { width: 100%; padding: 10px 12px; margin-top: 6px; font-size: 1rem; border: 2px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; transition: border-color 0.3s; }
-  input[type=text]:focus, input[type=password]:focus, input[type=datetime-local]:focus, select:focus, textarea:focus { border-color: #fbbf24; outline: none; }
-  .error { color: #dc2626; font-size: 0.9rem; height: 20px; margin-top: 4px; }
-  button { background-color: #fbbf24; border: none; border-radius: 8px; padding: 12px 25px; font-size: 1.1rem; font-weight: 700; color: #92400e; cursor: pointer; margin-top: 20px; box-shadow: 1px 3px 6px rgba(251,191,36,0.5); transition: background-color 0.3s; display: inline-block; min-width: 120px; }
-  button:hover:not(:disabled) { background-color: #f59e0b; }
-  button:disabled { background-color: #fde68a; cursor: not-allowed; }
-  nav { text-align: center; margin-top: 20px; }
-  nav button { background: transparent; color: #b45309; font-weight: 600; padding: 8px 16px; border: 2px solid #fbbf24; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
-  nav button:hover { background-color: #fbbf24; color: #92400e; }
-  #seatMapWrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 10px; }
-  #seatMap { margin: 20px auto 40px; display: grid; gap: 8px; justify-content: center; min-width: fit-content; }
-  .seat-btn { background: #CCFFCC; border: 2px solid #88CC88; font-weight: 700; color: #336633; cursor: pointer; user-select: none; display: flex; justify-content: center; align-items: center; font-size: 1.1rem; min-width: 44px; aspect-ratio: 1 / 1; border-radius: 6px; transition: background-color 0.3s, border-color 0.3s; }
-  .seat-btn:hover:not(.booked) { background-color: #AACC88; border-color: #669944; }
-  .seat-btn.booked { background: #FFCCCC; border: 2px solid #CC8888; color: #663333; cursor: not-allowed; }
-  .seat-btn.mine { background: #FFCCFF; border: 2px solid #CC88CC; color: #663366; }
-  .seat-btn.selected { background: #ffcc99; border: 2px solid #ff9933; color: #663300; }
-  .seat-btn.empty { visibility: hidden; pointer-events: none; }
-  table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 1rem; }
-  th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: center; }
-  th { background-color: #fbbf24; color: #92400e; }
-  td button { background: #ef4444; color: white; border: none; border-radius: 6px; padding: 6px 12px; font-weight: 600; cursor: pointer; transition: background-color 0.3s; }
-  td button:hover { background: #b91c1c; }
-  #reservationAvailabilityMessage { margin-top: 10px; font-weight: 700; padding: 0.5em; border-radius: 5px; text-align: center; color: #ef4444; background-color: #fee2e2; }
-  #reservationAvailabilityMessage.available { color: #10b981; background-color: #d1fae5; }
-  #timeSettingMessage { margin-top: 12px; text-align: center; font-size: 0.9rem; min-height: 1.5em; }
-  @media (max-width: 768px) { .container { margin: 10px auto 30px; padding: 10px; } .seat-btn { min-width: 38px; font-size: 1rem; } h1, h2 { font-size: 1.5rem; } }
-  @media (max-width: 480px) { body { padding: 5px; } .container { margin: 5px auto 20px; padding: 8px; border-radius: 8px; } h1, h2 { font-size: 1.4rem; margin: 0.8em 0; } label, input, select, textarea { font-size: 0.9rem; } button { padding: 8px 12px; font-size: 0.95rem; margin-top: 15px; min-width: auto; } nav button { padding: 5px 8px; font-size: 0.85rem; } .seat-btn { min-width: 26px; font-size: 0.85rem; padding: 0; } table { font-size: 0.8rem; } th, td { padding: 6px 4px; } td button { padding: 3px 6px; font-size: 0.75rem; } }
-  .announcement-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-  .announcement-popup { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 25px rgba(0,0,0,0.5); max-width: 500px; width: 90%; text-align: left; position: relative; font-size: 1.1rem; line-height: 1.5; }
-  .announcement-popup h3 { margin-top: 0; color: #b45309; font-size: 1.5rem; margin-bottom: 20px; text-align: center; }
-  .announcement-popup p { margin-bottom: 20px; color: #333; white-space: pre-wrap; }
-  .announcement-popup button.close-btn { background: #b45309; color: white; border: none; border-radius: 5px; padding: 10px 20px; cursor: pointer; font-size: 1rem; transition: background 0.3s; margin: 0 auto; display: block; }
-  .announcement-popup button.close-btn:hover { background: #8e420b; }
-  #announcementMessageInput { width: calc(100% - 20px); height: 80px; padding: 10px; margin-top: 10px; border: 1px solid #ccc; border-radius: 5px; resize: vertical; font-size: 1rem; }
-  #announcementActiveCheckbox { margin-top: 15px; margin-right: 8px; }
-  .button-group { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 20px; flex-wrap: wrap; }
-  .button-group button { margin-top: 0; flex-grow: 1; margin: 5px; min-width: 100px; }
-  #homeButton { background-color: #3498db; color: white; box-shadow: 1px 3px 6px rgba(52, 152, 219, 0.5); }
-  #homeButton:hover { background-color: #2980b9; }
-  .color-legend { text-align: center; margin-top: 30px; padding: 15px; border-top: 1px solid #eee; display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; font-size: 0.9rem; color: #555; }
-  .legend-item { display: flex; align-items: center; gap: 8px; }
-  .legend-box { width: 20px; height: 20px; border-radius: 4px; border: 1px solid #ccc; }
+  /* 폼 요소 */
+  form {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  label {
+    font-weight: 700;
+    margin-top: 12px;
+    display: block;
+    color: #475569;
+  }
+  input[type=text], input[type=password], input[type=datetime-local], select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    margin-top: 6px;
+    font-size: 1rem;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+  }
+  input[type=text]:focus, input[type=password]:focus, input[type=datetime-local]:focus,
+  select:focus, textarea:focus {
+    border-color: #fbbf24;
+    outline: none;
+  }
+  .error {
+    color: #dc2626;
+    font-size: 0.9rem;
+    height: 20px;
+    margin-top: 4px;
+  }
+  /* 버튼 스타일 */
+  button {
+    background-color: #fbbf24;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 25px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #92400e;
+    cursor: pointer;
+    margin-top: 20px;
+    box-shadow: 1px 3px 6px rgba(251,191,36,0.5);
+    transition: background-color 0.3s;
+    display: inline-block;
+    min-width: 120px;
+  }
+  button:hover:not(:disabled) {
+    background-color: #f59e0b;
+  }
+  button:disabled {
+    background-color: #fde68a;
+    cursor: not-allowed;
+  }
+  nav {
+    text-align: center;
+    margin-top: 20px;
+  }
+  nav button {
+    background: transparent;
+    color: #b45309;
+    font-weight: 600;
+    padding: 8px 16px;
+    border: 2px solid #fbbf24;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  nav button:hover {
+    background-color: #fbbf24;
+    color: #92400e;
+  }
+  /* 좌석 배치도 */
+  #seatMapWrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 10px;
+  }
+  #seatMap {
+    margin: 20px auto 40px;
+    display: grid;
+    gap: 8px;
+    justify-content: center;
+    min-width: fit-content;
+  }
+  .seat-btn {
+    background: #CCFFCC;
+    border: 2px solid #88CC88;
+    font-weight: 700;
+    color: #336633;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.1rem;
+    min-width: 44px;
+    aspect-ratio: 1 / 1;
+    border-radius: 6px;
+    transition: background-color 0.3s, border-color 0.3s;
+  }
+  .seat-btn:hover:not(.booked) {
+    background-color: #AACC88;
+    border-color: #669944;
+  }
+  .seat-btn.booked {
+    background: #FFCCCC;
+    border: 2px solid #CC8888;
+    color: #663333;
+    cursor: not-allowed;
+  }
+  .seat-btn.mine {
+    background: #FFCCFF;
+    border: 2px solid #CC88CC;
+    color: #663366;
+  }
+  .seat-btn.selected {
+    background: #ffcc99;
+    border: 2px solid #ff9933;
+    color: #663300;
+  }
+  .seat-btn.empty {
+    visibility: hidden;
+    pointer-events: none;
+  }
+  /* 관리자 예약 현황 테이블 */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 1rem;
+  }
+  th, td {
+    border: 1px solid #cbd5e1;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  th {
+    background-color: #fbbf24;
+    color: #92400e;
+  }
+  td button {
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  td button:hover {
+    background: #b91c1c;
+  }
+  /* 예약 안내 메시지 */
+  #reservationAvailabilityMessage {
+    margin-top: 10px;
+    font-weight: 700;
+    padding: 0.5em;
+    border-radius: 5px;
+    text-align: center;
+    color: #ef4444;
+    background-color: #fee2e2;
+  }
+  #reservationAvailabilityMessage.available {
+    color: #10b981;
+    background-color: #d1fae5;
+  }
+  #timeSettingMessage {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 0.9rem;
+    min-height: 1.5em;
+  }
+  /* 반응형 */
+  @media (max-width: 768px) {
+    .container {
+      margin: 10px auto 30px;
+      padding: 10px;
+    }
+    .seat-btn {
+      min-width: 38px;
+      font-size: 1rem;
+    }
+    h1, h2 { font-size: 1.5rem; }
+  }
+  @media (max-width: 480px) {
+    body { padding: 5px; }
+    .container {
+      margin: 5px auto 20px;
+      padding: 8px;
+      border-radius: 8px;
+    }
+    h1, h2 { font-size: 1.4rem; margin: 0.8em 0; }
+    label, input, select, textarea { font-size: 0.9rem; }
+    button { padding: 8px 12px; font-size: 0.95rem; margin-top: 15px; min-width: auto; }
+    nav button { padding: 5px 8px; font-size: 0.85rem; }
+    .seat-btn {
+      min-width: 26px;
+      font-size: 0.85rem;
+      padding: 0;
+    }
+    table { font-size: 0.8rem; }
+    th, td { padding: 6px 4px; }
+    td button { padding: 3px 6px; font-size: 0.75rem; }
+  }
+  /* 공지 팝업 스타일 */
+  .announcement-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  .announcement-popup {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.5);
+    max-width: 500px;
+    width: 90%;
+    text-align: left;
+    position: relative;
+    font-size: 1.1rem;
+    line-height: 1.5;
+  }
+  .announcement-popup h3 {
+    margin-top: 0;
+    color: #b45309;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  .announcement-popup p {
+    margin-bottom: 20px;
+    color: #333;
+    white-space: pre-wrap;
+  }
+  .announcement-popup button.close-btn {
+    background: #b45309;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+    margin: 0 auto;
+    display: block;
+  }
+  .announcement-popup button.close-btn:hover {
+    background: #8e420b;
+  }
+  #announcementMessageInput {
+    width: calc(100% - 20px);
+    height: 80px;
+    padding: 10px;
+    margin-top: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: vertical;
+    font-size: 1rem;
+  }
+  #announcementActiveCheckbox {
+    margin-top: 15px;
+    margin-right: 8px;
+  }
+  .button-group {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    width: 100%;
+    margin-top: 20px;
+    flex-wrap: wrap; 
+  }
+  .button-group button {
+    margin-top: 0;
+    flex-grow: 1; 
+    margin: 5px; 
+    min-width: 100px; 
+  }
+  #homeButton {
+    background-color: #3498db; 
+    color: white;
+    box-shadow: 1px 3px 6px rgba(52, 152, 219, 0.5);
+  }
+  #homeButton:hover {
+    background-color: #2980b9;
+  }
+  .color-legend {
+    text-align: center;
+    margin-top: 30px;
+    padding: 15px;
+    border-top: 1px solid #eee;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    font-size: 0.9rem;
+    color: #555;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .legend-box {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+  }
   .legend-box.empty { background-color: #CCFFCC; border-color: #88CC88; }
   .legend-box.booked { background-color: #FFCCCC; border-color: #CC8888; }
   .legend-box.mine { background-color: #FFCCFF; border-color: #CC88CC; }
@@ -192,6 +481,7 @@
       let currentAnnouncement = null;
       let isAdminLoggedIn = !!localStorage.getItem('adminPassword');
 
+
       let loginPage, loginForm, roomNoInput, userNameInput, dormitorySelect, roomError, nameError, dormError, adminLoginBtn;
       let floorSelectPage, floorSelect, floorNextBtn, backToLoginBtn, welcomeText;
       let seatMapPage, seatMapContainer, confirmBtn, cancelMyReservationBtn, backToFloorBtn, selectedDormTitle, selectedFloorTitle, reservationAvailabilityMessage;
@@ -318,10 +608,10 @@
           }
         } catch (e) {
           console.error('API 호출 에러: fetchAdminSettings', e);
-          adminSettings = { reservationStartTime: null, reservationEndTime: null }; // 오류 발생 시 빈 값으로 초기화
+          adminSettings = { reservationStartTime: null, reservationEndTime: null };
           if (resStartTimeInput) resStartTimeInput.value = '';
           if (resEndTimeInput) resEndTimeInput.value = '';
-          return adminSettings; // 에러 발생 시에도 빈 설정 객체 반환
+          return adminSettings;
         }
       }
 
@@ -490,7 +780,7 @@
             method: 'PUT',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${adminPass}`
+                'Authorization': `Bearer ${adminPass}` 
             },
             body: JSON.stringify({ reservationStartTime: startTime, reservationEndTime: endTime })
           });
@@ -1076,7 +1366,7 @@ function updateReservationAvailability() {
 
         if (!startTime || !endTime) {
           timeSettingMessage.textContent = '시작 시간과 종료 시간을 모두 입력하세요.';
-          timeSettingMessage.style.color = '#dc2626';
+          timeSettingMessage.style.color = 'red';
           return;
         }
 
@@ -1085,17 +1375,17 @@ function updateReservationAvailability() {
 
         if (startDateTime >= endDateTime) {
           timeSettingMessage.textContent = '시작 시간은 종료 시간보다 빨라야 합니다.';
-          timeSettingMessage.style.color = '#dc2626';
+          timeSettingMessage.style.color = 'red';
           return;
         }
 
         const result = await updateAdminSettings(startDateTime, endDateTime);
         if (result.success) {
           timeSettingMessage.textContent = result.message;
-          timeSettingMessage.style.color = '#10b981';
+          timeSettingMessage.style.color = 'green';
         } else {
           timeSettingMessage.textContent = '설정 저장 실패: ' + result.message;
-          timeSettingMessage.style.color = '#dc2626';
+          timeSettingMessage.style.color = 'red';
         }
       }
 
@@ -1108,27 +1398,27 @@ function updateReservationAvailability() {
           const result = await updateAnnouncement("", false);
           if (result.success) {
             announcementMessageStatus.textContent = '공지사항이 비활성화되었습니다.';
-            announcementMessageStatus.style.color = '#10b981';
+            announcementMessageStatus.style.color = 'green';
           } else {
             announcementMessageStatus.textContent = result.message;
-            announcementMessageStatus.style.color = '#dc2626';
+            announcementMessageStatus.style.color = 'red';
           }
           return;
         }
 
         if (active && !message) {
           announcementMessageStatus.textContent = '공지를 활성화하려면 내용을 입력해야 합니다.';
-          announcementMessageStatus.style.color = '#dc2626';
+          announcementMessageStatus.style.color = 'red';
           return;
         }
 
         const result = await updateAnnouncement(message, active);
         if (result.success) {
           announcementMessageStatus.textContent = result.message;
-          announcementMessageStatus.style.color = '#10b981';
+          announcementMessageStatus.style.color = 'green';
         } else {
           announcementMessageStatus.textContent = result.message;
-          announcementMessageStatus.style.color = '#dc2626';
+          announcementMessageStatus.style.color = 'red';
         }
       }
 
@@ -1229,7 +1519,7 @@ function updateReservationAvailability() {
             announcementMessageInput.value = currentAnnouncement ? currentAnnouncement.message : '';
             announcementActiveCheckbox.checked = currentAnnouncement ? currentAnnouncement.active : false;
             announcementMessageStatus.textContent = '공지사항이 업데이트되었습니다.';
-            announcementMessageStatus.style.color = '#10b981';
+            announcementMessageStatus.style.color = 'green';
           }
         });
 
