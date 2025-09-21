@@ -1057,6 +1057,7 @@
       }
 
       async function loadAdminPage() {
+        // console.log("loadAdminPage 실행됨"); // 디버깅용 로그
         isAdminLoggedIn = !!localStorage.getItem('adminPassword');
         if (!isAdminLoggedIn) {
             showSection(adminLoginPage); // 관리자 비밀번호가 로컬스토리지에 없으면 로그인 페이지로 이동
@@ -1166,6 +1167,7 @@
 
       // 로그인 폼 제출 핸들러
       async function handleSubmitLoginForm(e) {
+        // console.log("handleSubmitLoginForm 실행됨"); // 디버깅용 로그
         e.preventDefault(); // ★★★★ 이 부분이 핵심입니다. 폼의 기본 제출(새로고침) 방지 ★★★★
         clearErrors(); // 기존 에러 메시지 초기화
 
@@ -1197,7 +1199,10 @@
           valid = false;
         }
 
-        if (!valid) return; // 유효성 검사 실패 시 함수 종료
+        if (!valid) {
+            // console.log("로그인 폼 유효성 검사 실패."); // 디버깅용 로그
+            return; // 유효성 검사 실패 시 함수 종료
+        }
 
         // 유효성 검사 통과 시 사용자 정보 저장 및 페이지 전환
         currentUser = {roomNo, name, dormitory: selectedDorm, password: userPassword}; // 사용자 비밀번호도 currentUser에 저장
@@ -1226,9 +1231,11 @@
           showSection(floorSelectPage); // 층 선택 페이지로 전환
         }
         updateSeatPageButtonsVisibility(); // 버튼 가시성 업데이트
+        // console.log("로그인 폼 제출 성공, 페이지 전환 시도."); // 디버깅용 로그
       }
 
       function navigateToHome() {
+        // console.log("navigateToHome 실행됨"); // 디버깅용 로그
         // 모든 사용자 및 세션 정보 초기화
         currentUser = null;
         localStorage.removeItem('currentUser');
@@ -1248,10 +1255,12 @@
       }
 
       function handleClickBackToLoginBtn() {
+        // console.log("backToLoginBtn 클릭됨"); // 디버깅용 로그
         navigateToHome(); // 홈으로 이동 (로그인 페이지)
       }
 
       function handleClickFloorNextBtn() {
+        // console.log("floorNextBtn 클릭됨"); // 디버깅용 로그
         if (!floorSelect) {
           alert('오류: 층 선택 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
           return;
@@ -1273,6 +1282,7 @@
       }
 
       function handleClickBackToFloorBtn() {
+        // console.log("backToFloorBtn 클릭됨"); // 디버깅용 로그
           currentFloor = null;
           selectedSeat = null;
           if(confirmBtn) confirmBtn.disabled = true;
@@ -1282,6 +1292,7 @@
       }
 
       async function handleClickCancelMyReservationBtn() {
+        // console.log("cancelMyReservationBtn 클릭됨"); // 디버깅용 로그
         const myReservation = getMyReservation();
         if (!myReservation) {
             alert('현재 예약된 좌석이 없습니다.');
@@ -1321,17 +1332,19 @@
       }
 
       function handleClickAdminLoginBtn() {
-        // console.log("관리자 로그인 버튼 클릭됨"); // 디버깅용 로그 추가
+        // console.log("관리자 로그인 버튼 클릭됨"); // 디버깅용 로그 ★★★★ 이 로그가 콘솔에 뜨는지 확인 ★★★★
         if (adminPasswordInput) adminPasswordInput.value = ''; // 비밀번호 필드 초기화
         if (adminError) adminError.textContent = ''; // 에러 메시지 초기화
         showSection(adminLoginPage); // 관리자 로그인 페이지 표시
       }
 
       function handleClickAdminLoginBackBtn() {
+        // console.log("adminLoginBackBtn 클릭됨"); // 디버깅용 로그
         navigateToHome(); // 로그인 페이지로 돌아가기
       }
 
       async function handleSubmitAdminLoginForm(e) {
+        // console.log("handleSubmitAdminLoginForm 실행됨"); // 디버깅용 로그
         e.preventDefault(); // ★★★★ 이 부분이 핵심입니다. 폼의 기본 제출(새로고침) 방지 ★★★★
         const password = adminPasswordInput.value; // 입력된 관리자 비밀번호
         const success = await adminLogin(password); // 관리자 로그인 API 호출
@@ -1341,12 +1354,14 @@
       }
 
       function handleClickAdminLogoutBtn() {
+        // console.log("adminLogoutBtn 클릭됨"); // 디버깅용 로그
         if (confirm('관리자 페이지에서 로그아웃하시겠습니까?')) {
           navigateToHome(); // 로그아웃 후 홈으로 이동 (로그인 페이지)
         }
       }
 
       async function handleClickClearAllReservationsBtn() {
+        // console.log("clearAllReservationsBtn 클릭됨"); // 디버깅용 로그
         if (confirm('경고: 모든 예약을 정말로 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다. (관리자 권한)')) {
           const adminPass = localStorage.getItem('adminPassword'); // 관리자 비밀번호 로컬 스토리지에서 가져오기
           if (!adminPass) {
@@ -1371,6 +1386,7 @@
       }
 
       async function handleSubmitConfirmBtn() {
+        // console.log("confirmBtn 클릭됨"); // 디버깅용 로그
         if (confirmBtn.disabled) return; // 버튼 비활성화 상태면 함수 종료
 
         if (!selectedSeat) { // 좌석이 선택되지 않았을 경우
@@ -1446,6 +1462,7 @@
       }
 
       async function handleSubmitReservationTimeForm(e) {
+        // console.log("handleSubmitReservationTimeForm 실행됨"); // 디버깅용 로그
         e.preventDefault(); // 기본 폼 제출 방지
         const startTime = resStartTimeInput.value;
         const endTime = resEndTimeInput.value;
@@ -1476,6 +1493,7 @@
       }
 
       async function handleSubmitAnnouncementForm(e) {
+        // console.log("handleSubmitAnnouncementForm 실행됨"); // 디버깅용 로그
         e.preventDefault(); // 기본 폼 제출 방지
         const message = announcementMessageInput.value.trim();
         const active = announcementActiveCheckbox.checked;
@@ -1510,7 +1528,10 @@
 
       // 페이지 초기화 함수
       async function initializePage() {
-        // DOM 요소들 가져오기 (DOMContentLoaded 이후 실행되므로 안전)
+        // console.log("initializePage 실행 시작"); // 디버깅용 로그
+
+        // 1. DOM 요소들 가져오기 (DOMContentLoaded 이후 실행되므로 안전)
+        // 이 부분은 이미 전역 변수로 선언되어 있지만, 할당은 이 함수 내에서 이루어져야 합니다.
         loginPage = document.getElementById('loginPage');
         loginForm = document.getElementById('loginForm');
         roomNoInput = document.getElementById('roomNo');
@@ -1563,7 +1584,9 @@
         announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
         announcementMessageStatus = document.getElementById('announcementMessageStatus');
 
-        // Socket.IO 연결
+        // console.log("모든 DOM 요소 할당 완료."); // 디버깅용 로그
+
+        // 2. Socket.IO 연결
         socket = io(BACKEND_URL);
 
         socket.on('connect', () => {
@@ -1621,7 +1644,7 @@
           }
         });
 
-        // --- 이벤트 리스너 등록 ---
+        // 3. --- 이벤트 리스너 등록 ---
         // 폼 제출 이벤트
         if (loginForm) loginForm.addEventListener('submit', handleSubmitLoginForm);
         if (adminLoginForm) adminLoginForm.addEventListener('submit', handleSubmitAdminLoginForm);
@@ -1635,7 +1658,10 @@
         if (floorNextBtn) floorNextBtn.addEventListener('click', handleClickFloorNextBtn);
         if (backToFloorBtn) backToFloorBtn.addEventListener('click', handleClickBackToFloorBtn);
         if (cancelMyReservationBtn) cancelMyReservationBtn.addEventListener('click', handleClickCancelMyReservationBtn);
-        if (document.getElementById('adminLoginBackBtn')) document.getElementById('adminLoginBackBtn').addEventListener('click', handleClickAdminLoginBackBtn); // id로 직접 참조
+        // adminLoginBackBtn은 위에서 전역변수 선언하지 않고 직접 getElementById로 참조하므로 여기에 다시 명시.
+        const adminLoginBackBtnElement = document.getElementById('adminLoginBackBtn');
+        if (adminLoginBackBtnElement) adminLoginBackBtnElement.addEventListener('click', handleClickAdminLoginBackBtn); 
+        
         if (clearAllReservationsBtn) clearAllReservationsBtn.addEventListener('click', handleClickClearAllReservationsBtn);
         if (confirmBtn) confirmBtn.addEventListener('click', handleSubmitConfirmBtn);
         if (announcementCloseBtn) announcementCloseBtn.addEventListener('click', hideAnnouncement);
@@ -1653,8 +1679,9 @@
             }
           });
         }
+        // console.log("모든 이벤트 리스너 등록 완료."); // 디버깅용 로그
 
-        // --- 초기 데이터 로딩 및 페이지 표시 ---
+        // 4. --- 초기 데이터 로딩 및 페이지 표시 ---
         await fetchAllReservations(); // 모든 예약 데이터를 먼저 불러옵니다.
 
         // 관리자 로그인 상태 확인 및 초기 데이터 페칭 (새로고침 시에도 관리자 세션 유지)
@@ -1698,6 +1725,7 @@
             // currentUser 정보가 없다면 로그인 페이지로
             showSection(loginPage);
         }
+        // console.log("initializePage 실행 완료."); // 디버깅용 로그
       }
     })();
   </script>
