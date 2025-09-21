@@ -438,10 +438,10 @@
     <h2>공지사항 설정</h2>
     <form id="announcementForm" novalidate>
       <label for="announcementMessageInput">공지 내용:</label>
-      <textarea id="announcementMessageInput" placeholder="공지 내용을 입력하세요." rows="4"></textarea>
+      <textarea id="announcementMessageInput" rows="4" placeholder="공지 내용을 입력하세요." rows="4"></textarea>
       <div>
         <input type="checkbox" id="announcementActiveCheckbox" />
-        <label for="announcementActiveCheckbox" style="font-weight: normal;">공지 활성화</label>
+        <label for="announcementActiveCheckbox">공지 활성화</label>
       </div>
       <button type="submit">공지 저장</button>
       <div id="announcementMessageStatus" class="error"></div>
@@ -784,9 +784,12 @@
             },
             body: JSON.stringify({ reservationStartTime: startTime, reservationEndTime: endTime })
           });
-          if (!res.ok) throw new Error(data.message || '설정 저장 실패');
-          const data = await res.json();
-          return { success: true, message: '설정이 성공적으로 저장되었습니다.' };
+          if (!res.ok) {
+            const errorData = await res.json(); // 에러 응답 본문 파싱
+            throw new Error(errorData.message || '설정 저장 실패');
+          }
+          const data = await res.json(); // 성공 응답 본문 파싱
+          return { success: true, message: '설정이 성공적으로 저장되었습니다.', data: data };
         } catch (e) {
           console.error('API 호출 에러: updateAdminSettings', e);
           return { success: false, message: e.message || '설정 저장 중 오류 발생' };
@@ -807,9 +810,12 @@
             },
             body: JSON.stringify({ message, active })
           });
-          if (!res.ok) throw new Error(data.message || '공지사항 저장 실패');
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || '공지사항 저장 실패');
+          }
           const data = await res.json();
-          return { success: true, message: '공지사항이 저장되었습니다.' };
+          return { success: true, message: '공지사항이 저장되었습니다.', data: data };
         } catch (e) {
           console.error('API 호출 에러: updateAnnouncement', e);
           return { success: false, message: e.message || '공지사항 저장 중 오류 발생' };
@@ -864,13 +870,12 @@
             }
         }
 
-
-        if (section === seatMapPage) {
-          if (availabilityCheckInterval) clearInterval(availabilityCheckInterval);
-          updateReservationAvailability();
-          availabilityCheckInterval = setInterval(updateReservationAvailability, 1000);
+        if (seatMapPage && !seatMapPage.classList.contains("hidden") && (section === seatMapPage)) { // 현재 좌석 맵 페이지이고 이동하려는 곳도 좌석 맵 페이지라면
+          if (availabilityCheckInterval) clearInterval(availabilityCheckInterval); // 기존 인터벌 클리어
+          updateReservationAvailability(); // 즉시 한번 업데이트
+          availabilityCheckInterval = setInterval(updateReservationAvailability, 1000); // 새 인터벌 시작
           updateSeatPageButtonsVisibility();
-        } else {
+        } else { // 다른 페이지로 이동하거나 좌석 맵 페이지가 아닌 경우 인터벌 클리어
           if (availabilityCheckInterval) {
             clearInterval(availabilityCheckInterval);
             availabilityCheckInterval = null;
@@ -1029,7 +1034,8 @@
         }
         updateSeatPageButtonsVisibility();
 
-        if (hasAllowedStateChanged && seatMapPage && !seatMapPage.classList.contains("hidden") && currentUser && currentFloor) {
+        // 현재 페이지가 좌석 맵 페이지이고 예약 가능 상태가 변했을 때만 좌석 맵 다시 렌더링 및 알림
+        if (seatMapPage && !seatMapPage.classList.contains("hidden") && currentUser && currentFloor && hasAllowedStateChanged) {
           renderSeatMap(currentUser.dormitory, currentFloor);
           alert(`현재 예약 ${currentAllowedState ? '가능' : '불가능'} 시간입니다.`);
         }
@@ -1168,9 +1174,8 @@
           if (selectedDormTitle) selectedDormTitle.textContent = selectedDorm;
           if (selectedFloorTitle) selectedFloorTitle.textContent = currentFloor;
           
-          renderSeatMap(selectedDorm, currentFloor);
-          updateReservationAvailability();
-          showSection(seatMapPage);
+          showSection(seatMapPage); // 먼저 페이지를 변경하고, 좌석 맵은 renderSeatMap 내부에서 처리
+          renderSeatMap(selectedDorm, currentFloor); // 이 함수가 모든 좌석 상태를 업데이트
         } else {
           currentFloor = null;
           selectedSeat = null;
@@ -1216,9 +1221,8 @@
         selectedSeat = null;
         
         if (confirmBtn) confirmBtn.disabled = true;
-        renderSeatMap(currentUser.dormitory, currentFloor);
-        updateReservationAvailability();
-        showSection(seatMapPage);
+        showSection(seatMapPage); // 먼저 페이지를 변경하고, 좌석 맵은 renderSeatMap 내부에서 처리
+        renderSeatMap(currentUser.dormitory, currentFloor); // 이 함수가 모든 좌석 상태를 업데이트
         updateSeatPageButtonsVisibility();
       }
 
@@ -1245,15 +1249,14 @@
                 alert(result.message);
                 currentUserReservation = null;
                 selectedSeat = null;
-                if (currentFloor) {
+                // 예약 취소 후 좌석 맵을 다시 렌더링하여 최신 상태 반영
+                if (currentFloor && currentUser) { // currentFloor와 currentUser가 유효할 때만
                     renderSeatMap(currentUser.dormitory, currentFloor);
                     updateReservationAvailability();
-                } else {
-                    if (currentUser) {
-                        showSection(floorSelectPage);
-                    } else {
-                        navigateToHome();
-                    }
+                } else if (currentUser) { // currentUser는 있는데 currentFloor가 없을 때
+                    showSection(floorSelectPage);
+                } else { // 둘 다 없을 때 로그인 페이지로
+                    navigateToHome();
                 }
             } else {
                 alert('취소 실패: ' + result.message);
@@ -1425,6 +1428,7 @@
       }
 
       async function initializePage() {
+        // DOM 요소들 가져오기
         loginPage = document.getElementById('loginPage');
         loginForm = document.getElementById('loginForm');
         roomNoInput = document.getElementById('roomNo');
@@ -1474,6 +1478,7 @@
         announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
         announcementMessageStatus = document.getElementById('announcementMessageStatus');
 
+        // Socket.IO 연결
         socket = io(BACKEND_URL);
 
         socket.on('connect', () => {
@@ -1493,9 +1498,10 @@
             currentUserReservation = getMyReservation();
           }
 
+          // 현재 좌석 맵 페이지이고 유효한 currentUser와 currentFloor가 있을 때만 좌석 맵 다시 렌더링
           if (seatMapPage && !seatMapPage.classList.contains("hidden") && currentUser && currentFloor) {
             renderSeatMap(currentUser.dormitory, currentFloor);
-            updateReservationAvailability();
+            updateReservationAvailability(); // 상태 업데이트 (예약 가능 시간 체크 등)
           }
           if (adminPage && !adminPage.classList.contains("hidden")) {
             renderReservationList();
@@ -1525,14 +1531,12 @@
           }
         });
 
-
+        // 이벤트 리스너 등록
         if (loginForm) loginForm.addEventListener('submit', handleSubmitLoginForm);
         if (backToLoginBtn) backToLoginBtn.addEventListener('click', handleClickBackToLoginBtn);
         if (floorNextBtn) floorNextBtn.addEventListener('click', handleClickFloorNextBtn);
-        
         if (backToFloorBtn) backToFloorBtn.addEventListener('click', handleClickBackToFloorBtn);
         if (cancelMyReservationBtn) cancelMyReservationBtn.addEventListener('click', handleClickCancelMyReservationBtn);
-        
         if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleClickAdminLoginBtn);
         const adminLoginBackBtn = document.getElementById('adminLoginBackBtn');
         if (adminLoginBackBtn) adminLoginBackBtn.addEventListener('click', handleClickAdminLoginBackBtn);
@@ -1545,33 +1549,39 @@
         if (announcementCloseBtn) announcementCloseBtn.addEventListener('click', hideAnnouncement);
         if (homeButton) homeButton.addEventListener('click', navigateToHome);
 
-        await fetchAllReservations();
+        // 초기 데이터 로딩 및 페이지 표시
+        await fetchAllReservations(); // 모든 예약 데이터를 먼저 불러옵니다.
+
+        // 관리자 로그인 상태 확인 및 초기 데이터 페칭
         isAdminLoggedIn = !!localStorage.getItem('adminPassword');
         if (isAdminLoggedIn) {
-            await fetchAdminSettings();
-            await fetchAnnouncement();
+            await fetchAdminSettings(); // 관리자 설정 가져오기
+            await fetchAnnouncement();  // 공지사항 가져오기
         }
 
+        // currentUser 정보 기반으로 페이지 전환 (새로고침 시 로그인 유지)
         if (currentUser) {
+            // 로그인 폼 필드를 사용자 정보로 미리 채우기
             if (roomNoInput) roomNoInput.value = currentUser.roomNo;
             if (userNameInput) userNameInput.value = currentUser.name;
             if (dormitorySelect) dormitorySelect.value = currentUser.dormitory;
 
-            currentUserReservation = getMyReservation();
+            currentUserReservation = getMyReservation(); // 현재 사용자의 예약 정보 찾기
             if (currentUserReservation) {
-                currentFloor = currentUserReservation.floor;
-                selectedSeat = null;
-                
-                setFloorOptions(currentUser.dormitory);
-                if (floorSelect) floorSelect.value = currentFloor;
+                // 예약이 있다면 바로 좌석 맵 페이지로 이동 및 렌더링
+                currentFloor = currentUserReservation.floor; // 예약된 층으로 설정
+                selectedSeat = null; // 초기에는 선택된 좌석 없음
+
+                setFloorOptions(currentUser.dormitory); // 기숙사에 맞는 층 옵션 설정
+                if (floorSelect) floorSelect.value = currentFloor; // 선택된 층으로 드롭다운 설정
                 if (welcomeText) welcomeText.textContent = `${currentUser.name}님 환영합니다! (${currentUser.dormitory} 기숙사)`;
                 if (selectedDormTitle) selectedDormTitle.textContent = currentUser.dormitory;
                 if (selectedFloorTitle) selectedFloorTitle.textContent = currentFloor;
 
-                renderSeatMap(currentUser.dormitory, currentFloor);
-                updateReservationAvailability();
-                showSection(seatMapPage);
+                showSection(seatMapPage); // 좌석 맵 페이지로 전환
+                renderSeatMap(currentUser.dormitory, currentFloor); // 좌석 맵 렌더링
             } else {
+                // 예약이 없다면 층 선택 페이지로 이동
                 currentFloor = null;
                 selectedSeat = null;
                 setFloorOptions(currentUser.dormitory);
@@ -1579,11 +1589,10 @@
                 showSection(floorSelectPage);
             }
         } else {
+            // currentUser 정보가 없다면 로그인 페이지로
             showSection(loginPage);
         }
       }
-
-      document.addEventListener('DOMContentLoaded', initializePage);
     })();
   </script>
 </body>
