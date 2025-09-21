@@ -372,9 +372,9 @@
       </select>
       <div id="dormError" class="error"></div>
 
-      <!-- ✨ 예약 비밀번호 필드 추가 ✨ -->
-      <label for="reservationPassword">예약 비밀번호 (예약 수정/취소 시 필요):</label>
-      <input type="password" id="reservationPassword" name="reservationPassword" placeholder="4자 이상" minlength="4" required />
+      <!-- 예약 비밀번호 필드 -->
+      <label for="reservationPassword">예약 비밀번호 (4자 이상):</label>
+      <input type="password" id="reservationPassword" name="reservationPassword" placeholder="예약 비밀번호" minlength="4" required />
       <div id="passwordError" class="error"></div>
 
       <input type="text" name="honeypot_field" style="display:none !important; visibility:hidden !important; opacity:0 !important; width:0 !important; height:0 !important; border:none !important; padding:0 !important; margin:0 !important;" tabindex="-1" autocomplete="off" />
@@ -459,7 +459,6 @@
     <h2>예약 현황</h2>
     <table>
       <thead>
-        <!-- ✨ '예약 시간'과 '예약 비밀번호' 컬럼 추가 ✨ -->
         <tr><th>이름</th><th>룸 번호</th><th>기숙사</th><th>층</th><th>자리 번호</th><th>예약 시간</th><th>예약 비밀번호</th><th>기능</th></tr>
       </thead>
       <tbody id="reservationListBody"></tbody>
@@ -661,12 +660,12 @@
           }
       }
 
-      async function deleteReservation(id, password) { // ✨ 비밀번호 인자 추가 ✨
+      async function deleteReservation(id, password) { // 비밀번호 인자 추가
         try {
           const res = await fetch(`${BACKEND_URL}/api/reservations/${id}`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' }, // Body를 보내려면 Content-Type 필요
-            body: JSON.stringify({ password }) // ✨ 비밀번호 전달 ✨
+            body: JSON.stringify({ password }) // 비밀번호 전달
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || '예약 취소 실패');
@@ -723,7 +722,7 @@
         }
       }
 
-      // ✨ 관리자: 사용자 평문 비밀번호 열람 API 호출 함수 ✨
+      // 관리자: 사용자 평문 비밀번호 열람 API 호출 함수
       async function viewUserPlainPassword(reservationId, adminPassword) {
         try {
             const res = await fetch(`${BACKEND_URL}/api/admin/reservations/${reservationId}/view-plain-password`, {
@@ -813,7 +812,7 @@
         if (roomError) roomError.textContent = "";
         if (nameError) nameError.textContent = "";
         if (dormError) dormError.textContent = "";
-        if (passwordError) passwordError.textContent = ""; // ✨ 비밀번호 에러 메시지 초기화 추가 ✨
+        if (passwordError) passwordError.textContent = ""; // 비밀번호 에러 메시지 초기화 추가
       }
 
       function setFloorOptions(dorm) {
@@ -1011,7 +1010,7 @@
           const reservationDateTime = new Date(res.createdAt);
           row.insertCell(5).textContent = formatFullDateTime(reservationDateTime);
 
-          // ✨ 예약 비밀번호 셀과 버튼 추가 ✨
+          // 예약 비밀번호 셀과 버튼 추가
           const passwordCell = row.insertCell(6);
           const viewPasswordButton = document.createElement('button');
           viewPasswordButton.textContent = '보기';
@@ -1037,14 +1036,14 @@
           cancelButton.textContent = '취소';
           cancelButton.dataset.id = res._id;
           cancelButton.addEventListener('click', async (e) => {
-            const userPassForCancel = prompt(`예약자 ${res.name}님의 비밀번호를 입력해주세요:`); // ✨ 예약자 비밀번호 입력받기 ✨
+            const userPassForCancel = prompt(`예약자 ${res.name}님의 비밀번호를 입력해주세요:`); // 예약자 비밀번호 입력받기
             if (!userPassForCancel) {
                 alert('비밀번호가 입력되지 않아 취소를 취소합니다.');
                 return;
             }
 
             if (confirm(`이 예약을 취소하시겠습니까? (이름: ${res.name}, 좌석: ${res.dormitory} ${res.floor}층 ${res.seat}번)`)) {
-              const result = await deleteReservation(e.target.dataset.id, userPassForCancel); // ✨ 비밀번호 전달 ✨
+              const result = await deleteReservation(e.target.dataset.id, userPassForCancel); // 비밀번호 전달
               if (result.success) {
                 alert(result.message);
               } else {
@@ -1085,7 +1084,7 @@
         const roomNo = roomNoInput.value.trim();
         const name = userNameInput.value.trim();
         const selectedDorm = dormitorySelect.value;
-        const password = reservationPasswordInput.value; // ✨ 비밀번호 값 가져오기 ✨
+        const password = reservationPasswordInput.value; // 비밀번호 값 가져오기
         const honeypotField = loginForm.querySelector('input[name="honeypot_field"]').value;
 
         let valid = true;
@@ -1101,7 +1100,7 @@
           dormError.textContent = '기숙사를 선택하세요.';
           valid = false;
         }
-        // ✨ 비밀번호 유효성 검사 추가 ✨
+        // 비밀번호 유효성 검사 추가
         if (password.length < 4) {
             passwordError.textContent = '예약 비밀번호는 4자 이상이어야 합니다.';
             valid = false;
@@ -1112,13 +1111,19 @@
         }
         if (!valid) return;
 
-        currentUser = {roomNo, name, dormitory: selectedDorm, password: password}; // ✨ 비밀번호도 함께 저장 ✨
+        currentUser = {roomNo, name, dormitory: selectedDorm, password: password}; // 비밀번호도 함께 저장
         currentUserReservation = getMyReservation(); // 현재 사용자의 예약을 확인
 
         if (currentUserReservation) { // 이미 예약이 있는 사용자
           currentFloor = currentUserReservation.floor;
           selectedSeat = null;
           
+          // 비밀번호 입력란 숨기기 또는 비활성화
+          if(reservationPasswordInput) {
+            reservationPasswordInput.value = ""; // 입력 비우기
+            reservationPasswordInput.disabled = true; // 입력 비활성화
+          }
+
           setFloorOptions(selectedDorm);
           if (floorSelect) floorSelect.value = currentFloor;
           if (welcomeText) welcomeText.textContent = `${name}님 환영합니다! (${selectedDorm} 기숙사)`;
@@ -1129,6 +1134,11 @@
           updateReservationAvailability();
           showSection(seatMapPage);
         } else { // 예약이 없는 사용자
+          // 신규 사용자는 비밀번호 입력란 활성화
+          if(reservationPasswordInput) {
+            reservationPasswordInput.disabled = false;
+          }
+
           currentFloor = null;
           selectedSeat = null; // 초기화
           setFloorOptions(selectedDorm);
@@ -1144,6 +1154,7 @@
         currentFloor = null;
         selectedSeat = null;
         if (loginForm) loginForm.reset();
+        if(reservationPasswordInput) reservationPasswordInput.disabled = false; // 로그인 페이지로 돌아올 때 비번칸 활성화
         showSection(loginPage);
         updateSeatPageButtonsVisibility();
       }
@@ -1186,14 +1197,14 @@
             return;
         }
 
-        const reservationPassword = prompt('예약 취소를 위해 비밀번호를 입력해주세요:'); // ✨ 비밀번호 입력받기 ✨
+        const reservationPassword = prompt('예약 취소를 위해 비밀번호를 입력해주세요:'); // 비밀번호 입력받기
         if (!reservationPassword) {
             alert('비밀번호가 입력되지 않아 취소를 취소합니다.');
             return;
         }
 
         if (confirm(`현재 예약된 ${myReservation.dormitory} ${myReservation.floor}층 ${myReservation.seat}번 좌석을 취소하시겠습니까?`)) {
-            const result = await deleteReservation(myReservation._id, reservationPassword); // ✨ 비밀번호 전달 ✨
+            const result = await deleteReservation(myReservation._id, reservationPassword); // 비밀번호 전달
             if (result.success) {
                 alert(result.message);
                 currentUserReservation = null;
@@ -1275,7 +1286,7 @@
                 return;
             }
 
-            // ✨ 예약 변경 시에도 비밀번호를 확인하고 전달 ✨
+            // 예약 변경 시에도 비밀번호를 확인하고 전달
             const reservationPassword = prompt('예약 변경을 위해 비밀번호를 입력해주세요:');
             if (!reservationPassword) {
                 alert('비밀번호가 입력되지 않아 변경을 취소합니다.');
@@ -1289,7 +1300,7 @@
                 dormitory: currentUser.dormitory,
                 floor: currentFloor,
                 seat: selectedSeat,
-                password: reservationPassword // ✨ 비밀번호 전달 ✨
+                password: reservationPassword // 비밀번호 전달
             };
             result = await updateReservation(myReservation._id, updatedData);
         } else { // 예약이 없는 경우 -> 신규 예약
@@ -1300,17 +1311,17 @@
                 r.seat === selectedSeat
             );
             if (isNewSeatBooked) {
-                alert('선택하신 좌석은 이미 다른 사람에게 예약되었습니다.');
+                alert('선택하신 좌석은 이미 예약되었습니다.');
                 return;
             }
-            // ✨ 신규 예약 시에는 currentUser에 저장된 비밀번호 사용 ✨
+            // 신규 예약 시에는 currentUser에 저장된 비밀번호 사용
             const reservationData = {
                 roomNo: currentUser.roomNo,
                 name: currentUser.name,
                 dormitory: currentUser.dormitory,
                 floor: currentFloor,
                 seat: selectedSeat,
-                password: currentUser.password // ✨ 비밀번호 전달 ✨
+                password: currentUser.password // 비밀번호 전달
             };
             result = await sendReservation(reservationData);
         }
@@ -1324,6 +1335,7 @@
           currentFloor = null;
           selectedSeat = null;
           if (loginForm) loginForm.reset();
+          if(reservationPasswordInput) reservationPasswordInput.disabled = false; // 예약 성공 후 로그인으로 돌아가니 비번칸 활성화
           showSection(loginPage);
         } else {
           alert(`${myReservation ? '예약 변경' : '예약'} 실패: ` + result.message);
@@ -1402,11 +1414,11 @@
         roomNoInput = document.getElementById('roomNo');
         userNameInput = document.getElementById('userName');
         dormitorySelect = document.getElementById('dormitory');
-        reservationPasswordInput = document.getElementById('reservationPassword'); // ✨ 비밀번호 Input ✨
+        reservationPasswordInput = document.getElementById('reservationPassword'); // 비밀번호 Input
         roomError = document.getElementById('roomError');
         nameError = document.getElementById('nameError');
         dormError = document.getElementById('dormError');
-        passwordError = document.getElementById('passwordError'); // ✨ 비밀번호 에러 영역 ✨
+        passwordError = document.getElementById('passwordError'); // 비밀번호 에러 영역
         adminLoginBtn = document.getElementById('adminLoginBtn');
 
         floorSelectPage = document.getElementById('floorSelectPage');
@@ -1483,7 +1495,10 @@
             if (adminSettings.reservationStartTime) resStartTimeInput.value = formatDateTimeLocal(adminSettings.reservationStartTime);
             if (adminSettings.reservationEndTime) resEndTimeInput.value = formatDateTimeLocal(adminSettings.reservationEndTime);
             // 만약 관리자 페이지에서 예약 시간이 바뀌면, 메시지를 즉시 업데이트
-            handleSubmitReservationTimeForm(new Event('submit', { cancelable: true })); 
+            // 새로운 이벤트 객체를 생성하여 handleSubmitReservationTimeForm 호출
+            // 기존 이벤트 핸들러가 event.preventDefault()를 호출할 경우, 이를 방지하기 위해 cancelable: true 옵션 추가
+            const fakeEvent = new Event('submit', { cancelable: true });
+            handleSubmitReservationTimeForm(fakeEvent);
           }
         });
 
@@ -1523,6 +1538,11 @@
         // 모든 이벤트 리스너 연결
         if (loginForm) loginForm.addEventListener('submit', handleSubmitLoginForm);
         if (backToLoginBtn) backToLoginBtn.addEventListener('click', handleClickBackToLoginBtn);
+        if (floorSelect) floorSelect.addEventListener('change', () => { // 층 변경 시 selectedSeat 초기화
+          selectedSeat = null;
+          if (confirmBtn) confirmBtn.disabled = true;
+          highlightSelectedSeat();
+        });
         if (floorNextBtn) floorNextBtn.addEventListener('click', handleClickFloorNextBtn);
         
         if (backToFloorBtn) backToFloorBtn.addEventListener('click', handleClickBackToFloorBtn);
@@ -1540,10 +1560,6 @@
         if (announcementCloseBtn) announcementCloseBtn.addEventListener('click', hideAnnouncement);
 
         // 최초 페이지 로딩 시 초기 데이터 페칭 및 로그인 페이지 표시
-        // Socket.IO를 통해 initial 데이터 수신 후 화면 표시
-        // await fetchAllReservations(); // Socket.IO의 'reservationsInitial'로 대체
-        // await fetchAdminSettings();   // Socket.IO의 'adminSettingsInitial'로 대체
-        // await fetchAnnouncement();    // Socket.IO의 'announcementInitial'로 대체
         showSection(loginPage);
       });
     })();
