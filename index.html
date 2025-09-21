@@ -494,6 +494,7 @@
       let currentAnnouncement = null;
       let isAdminLoggedIn = !!localStorage.getItem('adminPassword');
 
+      // DOM 요소 변수들 초기화 (null로 미리 설정하여 initializePage에서 실제 할당)
       let loginPage, loginForm, roomNoInput, userNameInput, dormitorySelect, userPasswordInput, passwordError, adminLoginBtn;
       let floorSelectPage, floorSelect, floorNextBtn, backToLoginBtn, welcomeText;
       let seatMapPage, seatMapContainer, confirmBtn, cancelMyReservationBtn, backToFloorBtn, selectedDormTitle, selectedFloorTitle, reservationAvailabilityMessage;
@@ -504,10 +505,6 @@
       let announcementOverlay, announcementPopupMessage, announcementCloseBtn, announcementForm, announcementMessageInput, announcementActiveCheckbox, announcementMessageStatus;
 
       let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
-      // deviceIdentifier는 제거되었으므로 더 이상 사용하지 않음
-      // let deviceIdentifier = localStorage.getItem('deviceIdentifier') || generateUniqueId();
-      // localStorage.setItem('deviceIdentifier', deviceIdentifier);
-
       let currentUserReservation = null;
       let currentFloor = null;
       let selectedSeat = null;
@@ -1169,7 +1166,7 @@
 
       // 로그인 폼 제출 핸들러
       async function handleSubmitLoginForm(e) {
-        e.preventDefault(); // <-- ★★★★ 이 부분이 핵심입니다. 폼의 기본 제출(새로고침) 방지 ★★★★
+        e.preventDefault(); // ★★★★ 이 부분이 핵심입니다. 폼의 기본 제출(새로고침) 방지 ★★★★
         clearErrors(); // 기존 에러 메시지 초기화
 
         const roomNo = roomNoInput.value.trim();
@@ -1324,6 +1321,7 @@
       }
 
       function handleClickAdminLoginBtn() {
+        // console.log("관리자 로그인 버튼 클릭됨"); // 디버깅용 로그 추가
         if (adminPasswordInput) adminPasswordInput.value = ''; // 비밀번호 필드 초기화
         if (adminError) adminError.textContent = ''; // 에러 메시지 초기화
         showSection(adminLoginPage); // 관리자 로그인 페이지 표시
@@ -1512,8 +1510,7 @@
 
       // 페이지 초기화 함수
       async function initializePage() {
-        // DOM 요소들 가져오기 (DOM이 로드된 후에 실행되므로 안전)
-        // console.log("initializePage 실행됨"); // 디버깅용 로그
+        // DOM 요소들 가져오기 (DOMContentLoaded 이후 실행되므로 안전)
         loginPage = document.getElementById('loginPage');
         loginForm = document.getElementById('loginForm');
         roomNoInput = document.getElementById('roomNo');
@@ -1632,7 +1629,7 @@
         if (announcementForm) announcementForm.addEventListener('submit', handleSubmitAnnouncementForm);
 
         // 버튼 클릭 이벤트
-        if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleClickAdminLoginBtn); // ★★★★ adminLoginBtn 클릭 리스너 연결 확인 ★★★★
+        if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleClickAdminLoginBtn); 
         if (adminLogoutBtn) adminLogoutBtn.addEventListener('click', handleClickAdminLogoutBtn);
         if (backToLoginBtn) backToLoginBtn.addEventListener('click', handleClickBackToLoginBtn);
         if (floorNextBtn) floorNextBtn.addEventListener('click', handleClickFloorNextBtn);
