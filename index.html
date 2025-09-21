@@ -6,6 +6,8 @@
 <title>랜선석 예약 시스템</title>
 <link rel="icon" href="data:;base64,iVBORw0KGgo="> 
 <style>
+  /* CSS 스타일: 이전 버전과 동일하며, 모든 세부 스타일이 포함되어 있습니다. */
+  /* 가독성을 위해 주석 처리하지만, 실제 코드에는 모든 CSS가 들어갑니다. */
   body {
     font-family: 'Malgun Gothic', Arial, sans-serif;
     margin: 0; padding: 10px 0;
@@ -496,7 +498,8 @@
       let currentAnnouncement = null;
       let isAdminLoggedIn = !!localStorage.getItem('adminPassword');
 
-      // DOM 요소 변수들 (초기에는 undefined 상태)
+      // DOM 요소 변수들 (initializePage에서 실제 할당)
+      // 초기에는 null로 설정하여, initializePage에서 실제 DOM 요소를 찾아 할당할 것임을 명확히 합니다.
       let loginPage, loginForm, roomNoInput, userNameInput, dormitorySelect, userPasswordInput, passwordError, adminLoginBtn;
       let floorSelectPage, floorSelect, floorNextBtn, backToLoginBtn, welcomeText;
       let seatMapPage, seatMapContainer, confirmBtn, cancelMyReservationBtn, backToFloorBtn, selectedDormTitle, selectedFloorTitle, reservationAvailabilityMessage;
@@ -1046,7 +1049,7 @@
       }
 
       async function loadAdminPage() {
-        console.log("loadAdminPage 실행됨"); // 디버깅용 로그
+        console.log("loadAdminPage 실행됨");
         isAdminLoggedIn = !!localStorage.getItem('adminPassword');
         if (!isAdminLoggedIn) {
             showSection(adminLoginPage);
@@ -1149,8 +1152,14 @@
       }
 
       async function handleSubmitLoginForm(e) {
-        console.log("handleSubmitLoginForm 실행 시작"); // 디버깅용 로그
+        console.log("--- handleSubmitLoginForm 실행 시작 ---"); // 디버깅용 로그
         e.preventDefault(); // ★★★ 필수: 폼 제출 시 페이지 새로고침 방지 ★★★
+
+        if (!loginForm || !roomNoInput || !userNameInput || !dormitorySelect || !userPasswordInput || !roomError || !nameError || !dormError || !passwordError) {
+            console.error("로그인 폼 또는 필수 입력 필드/에러 요소가 제대로 할당되지 않았습니다. initializePage의 DOM 요소 할당을 확인해주세요.");
+            return; // 필수 요소가 없으면 바로 종료
+        }
+
         clearErrors(); // 에러 메시지 초기화
 
         const roomNo = roomNoInput.value.trim();
@@ -1196,6 +1205,11 @@
           currentFloor = currentUserReservation.floor;
           selectedSeat = null;
           
+          if (!floorSelect || !welcomeText || !selectedDormTitle || !selectedFloorTitle || !seatMapPage) {
+              console.error("페이지 전환을 위한 DOM 요소가 제대로 할당되지 않았습니다. initializePage의 DOM 요소 할당을 확인해주세요.");
+              return;
+          }
+
           setFloorOptions(selectedDorm);
           if (floorSelect) floorSelect.value = currentFloor;
           if (welcomeText) welcomeText.textContent = `${name}님 환영합니다! (${selectedDorm} 기숙사)`;
@@ -1205,6 +1219,10 @@
           showSection(seatMapPage);
           renderSeatMap(selectedDorm, currentFloor);
         } else {
+            if (!floorSelect || !welcomeText || !floorSelectPage) {
+                console.error("페이지 전환을 위한 DOM 요소가 제대로 할당되지 않았습니다. initializePage의 DOM 요소 할당을 확인해주세요.");
+                return;
+            }
           currentFloor = null;
           selectedSeat = null;
           setFloorOptions(selectedDorm);
@@ -1212,7 +1230,7 @@
           showSection(floorSelectPage);
         }
         updateSeatPageButtonsVisibility();
-        console.log("로그인 폼 제출 성공, 페이지 전환 시도.");
+        console.log("--- 로그인 폼 제출 성공, 페이지 전환 시도 완료 ---");
       }
 
       function navigateToHome() {
@@ -1229,6 +1247,10 @@
         if (adminLoginForm) adminLoginForm.reset();
         clearErrors();
 
+        if (!loginPage) { // loginPage가 null이면 오류 출력
+            console.error("loginPage 요소를 찾을 수 없어 홈으로 이동할 수 없습니다. initializePage의 DOM 요소 할당을 확인해주세요.");
+            return;
+        }
         showSection(loginPage);
         updateSeatPageButtonsVisibility();
         console.log("navigateToHome 실행 완료");
@@ -1237,12 +1259,14 @@
       function handleClickBackToLoginBtn() {
         console.log("handleClickBackToLoginBtn 실행됨");
         navigateToHome();
+        console.log("handleClickBackToLoginBtn 실행 완료");
       }
 
       function handleClickFloorNextBtn() {
         console.log("handleClickFloorNextBtn 실행됨");
-        if (!floorSelect) {
-          alert('오류: 층 선택 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+        if (!floorSelect || !currentUser || !seatMapPage) {
+          alert('오류: 필수 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+          console.error("handleClickFloorNextBtn: floorSelect, currentUser, seatMapPage 중 하나 이상 null.");
           return;
         }
         if (!floorSelect.value) {
@@ -1268,6 +1292,11 @@
           selectedSeat = null;
           if(confirmBtn) confirmBtn.disabled = true;
           if(floorSelect) floorSelect.value = "";
+          if(!floorSelectPage) {
+              console.error("handleClickBackToFloorBtn: floorSelectPage 요소가 null입니다.");
+              alert("오류: 페이지 전환 요소를 찾을 수 없습니다. 새로고침해주세요.");
+              return;
+          }
           showSection(floorSelectPage);
           updateSeatPageButtonsVisibility();
           console.log("handleClickBackToFloorBtn 실행 완료");
@@ -1295,12 +1324,12 @@
                 alert(result.message);
                 currentUserReservation = null;
                 selectedSeat = null;
-                if (currentFloor && currentUser) {
+                if (currentFloor && currentUser && seatMapPage) { // seatMapPage가 존재하고currentUser와 currentFloor 유효하면 맵 다시 렌더
                     renderSeatMap(currentUser.dormitory, currentFloor);
                     updateReservationAvailability();
-                } else if (currentUser) {
+                } else if (currentUser && floorSelectPage) { // currentUser는 있는데 currentFloor 없으면 층선택 페이지로
                     showSection(floorSelectPage);
-                } else {
+                } else { // 둘 다 없으면 홈으로
                     navigateToHome();
                 }
             } else {
@@ -1312,11 +1341,16 @@
       }
 
       function handleClickAdminLoginBtn() {
-        console.log("handleClickAdminLoginBtn 실행됨"); // ★★★ 이 로그가 콘솔에 뜨는지 확인해주세요! ★★★
-        if (adminPasswordInput) adminPasswordInput.value = '';
-        if (adminError) adminError.textContent = '';
-        showSection(adminLoginPage);
-        console.log("handleClickAdminLoginBtn 실행 완료");
+        console.log("--- handleClickAdminLoginBtn 실행됨 ---"); // ★★★ 이 로그가 콘솔에 뜨는지 확인해주세요! ★★★
+        if (!adminPasswordInput || !adminError || !adminLoginPage) {
+            console.error("관리자 로그인 페이지 전환을 위한 DOM 요소가 제대로 할당되지 않았습니다. initializePage의 DOM 요소 할당을 확인해주세요.");
+            alert("오류: 관리자 로그인 요소를 찾을 수 없습니다. 페이지를 새로고침해주세요.");
+            return;
+        }
+        adminPasswordInput.value = ''; // 비밀번호 필드 초기화
+        adminError.textContent = ''; // 에러 메시지 초기화
+        showSection(adminLoginPage); // 관리자 로그인 페이지 표시
+        console.log("--- handleClickAdminLoginBtn 실행 완료 ---");
       }
 
       function handleClickAdminLoginBackBtn() {
@@ -1326,14 +1360,24 @@
       }
 
       async function handleSubmitAdminLoginForm(e) {
-        console.log("handleSubmitAdminLoginForm 실행 시작"); // 디버깅용 로그
+        console.log("--- handleSubmitAdminLoginForm 실행 시작 ---"); // 디버깅용 로그
         e.preventDefault(); // ★★★ 필수: 폼 제출 시 페이지 새로고침 방지 ★★★
+        
+        if (!adminPasswordInput || !adminError) {
+            console.error("관리자 로그인 폼 필수 입력 필드/에러 요소가 제대로 할당되지 않았습니다. initializePage의 DOM 요소 할당을 확인해주세요.");
+            return;
+        }
+        
         const password = adminPasswordInput.value;
         const success = await adminLogin(password);
         if (success) {
+          if (!adminPage || !reservationListBody || !resStartTimeInput || !resEndTimeInput || !announcementMessageInput || !announcementActiveCheckbox) {
+              console.error("관리자 페이지 전환 후 필수 요소 할당 실패. initializePage의 DOM 요소 할당을 확인해주세요.");
+              return;
+          }
           await loadAdminPage();
         }
-        console.log("handleSubmitAdminLoginForm 실행 완료");
+        console.log("--- handleSubmitAdminLoginForm 실행 완료 ---");
       }
 
       function handleClickAdminLogoutBtn() {
@@ -1512,32 +1556,42 @@
 
       // 페이지 초기화 함수
       async function initializePage() {
-        console.log("initializePage 실행 시작: DOM 요소 할당 및 이벤트 리스너 등록.");
+        console.log("--- initializePage 실행 시작: DOM 요소 할당 및 이벤트 리스너 등록 ---");
 
-        // 1. DOM 요소들 할당 (null 여부 체크를 강화)
-        // 각 요소를 찾고, 없으면 오류 메시지를 출력하여 문제 진단에 도움을 줍니다.
-        const elementsToFind = [
-            'loginPage', 'loginForm', 'roomNo', 'userName', 'dormitory', 'userPassword',
-            'passwordError', 'roomError', 'nameError', 'dormError', 'adminLoginBtn',
-            'floorSelectPage', 'floorSelect', 'floorNextBtn', 'backToLoginBtn', 'welcomeText',
-            'seatMapPage', 'seatMap', 'confirmBtn', 'cancelMyReservationBtn', 'backToFloorBtn',
-            'selectedDorm', 'selectedFloor', 'reservationAvailabilityMessage', 'homeButton',
-            'adminLoginPage', 'adminLoginForm', 'adminPasswordInput', 'toggleAdminPasswordBtn', 'adminError',
-            'adminPage', 'adminLogoutBtn', 'reservationListBody', 'clearAllReservationsBtn',
-            'reservationTimeForm', 'resStartTimeInput', 'resEndTimeInput', 'timeSettingMessage',
-            'announcementOverlay', 'announcementMessage', 'announcementCloseBtn', 'announcementForm',
-            'announcementMessageInput', 'announcementActiveCheckbox', 'announcementMessageStatus'
-        ];
+        // 1. DOM 요소들 할당 및 할당 여부 로그 출력
+        const elementsToFind = {
+            'loginPage': 'loginPage', 'loginForm': 'loginForm', 'roomNo': 'roomNoInput', 'userName': 'userNameInput', 
+            'dormitory': 'dormitorySelect', 'userPassword': 'userPasswordInput', 'passwordError': 'passwordError', 
+            'roomError': 'roomError', 'nameError': 'nameError', 'dormError': 'dormError', 'adminLoginBtn': 'adminLoginBtn',
+            'floorSelectPage': 'floorSelectPage', 'floorSelect': 'floorSelect', 'floorNextBtn': 'floorNextBtn', 
+            'backToLoginBtn': 'backToLoginBtn', 'welcomeText': 'welcomeText',
+            'seatMapPage': 'seatMapPage', 'seatMap': 'seatMapContainer', 'confirmBtn': 'confirmBtn', 
+            'cancelMyReservationBtn': 'cancelMyReservationBtn', 'backToFloorBtn': 'backToFloorBtn',
+            'selectedDorm': 'selectedDormTitle', 'selectedFloor': 'selectedFloorTitle', 
+            'reservationAvailabilityMessage': 'reservationAvailabilityMessage', 'homeButton': 'homeButton',
+            'adminLoginPage': 'adminLoginPage', 'adminLoginForm': 'adminLoginForm', 'adminPasswordInput': 'adminPasswordInput', 
+            'toggleAdminPasswordBtn': 'toggleAdminPasswordBtn', 'adminError': 'adminError',
+            'adminPage': 'adminPage', 'adminLogoutBtn': 'adminLogoutBtn', 'reservationListBody': 'reservationListBody', 
+            'clearAllReservationsBtn': 'clearAllReservationsBtn',
+            'reservationTimeForm': 'reservationTimeForm', 'resStartTimeInput': 'resStartTimeInput', 
+            'resEndTimeInput': 'resEndTimeInput', 'timeSettingMessage': 'timeSettingMessage',
+            'announcementOverlay': 'announcementOverlay', 'announcementMessage': 'announcementPopupMessage', 
+            'announcementCloseBtn': 'announcementCloseBtn', 'announcementForm': 'announcementForm',
+            'announcementMessageInput': 'announcementMessageInput', 'announcementActiveCheckbox': 'announcementActiveCheckbox', 
+            'announcementMessageStatus': 'announcementMessageStatus',
+            'adminLoginBackBtn': 'adminLoginBackBtn' // HTML ID와 JS 변수명 다름 주의
+        };
 
-        elementsToFind.forEach(id => {
-            const element = document.getElementById(id);
+        for (const htmlId in elementsToFind) {
+            const jsVarName = elementsToFind[htmlId];
+            const element = document.getElementById(htmlId);
             if (element) {
-                // 전역 변수에 할당. 예: loginPage = element;
-                window[id] = element; // window 객체에 할당하여 전역 변수처럼 사용
+                window[jsVarName] = element; // 전역 변수에 할당
+                console.log(`DOM 요소 할당됨: ${jsVarName} (ID: ${htmlId})`);
             } else {
-                console.error(`★★★★ 오류: ID '${id}'를 가진 요소를 찾을 수 없습니다. HTML을 확인해주세요! ★★★★`);
+                console.error(`★★★★ 오류: ID '${htmlId}'를 가진 요소를 찾을 수 없습니다! HTML을 확인해주세요. (${jsVarName}) ★★★★`);
             }
-        });
+        }
         
         console.log("모든 DOM 요소 할당 시도 완료.");
 
@@ -1588,8 +1642,6 @@
           if (adminPage && !adminPage.classList.contains("hidden")) {
             announcementMessageInput.value = currentAnnouncement ? currentAnnouncement.message : '';
             announcementActiveCheckbox.checked = currentAnnouncement ? currentAnnouncement.active : false;
-            announcementMessageStatus.textContent = '공지사항이 업데이트되었습니다.';
-            announcementMessageStatus.style.color = 'green';
           }
         });
 
@@ -1607,7 +1659,6 @@
         if (backToFloorBtn) backToFloorBtn.addEventListener('click', handleClickBackToFloorBtn); else console.error("backToFloorBtn에 이벤트 리스너 등록 실패!");
         if (cancelMyReservationBtn) cancelMyReservationBtn.addEventListener('click', handleClickCancelMyReservationBtn); else console.error("cancelMyReservationBtn에 이벤트 리스너 등록 실패!");
         
-        // adminLoginBackBtn은 위에서 전역 변수로 할당했으므로 바로 사용
         if (adminLoginBackBtn) adminLoginBackBtn.addEventListener('click', handleClickAdminLoginBackBtn); else console.error("adminLoginBackBtn에 이벤트 리스너 등록 실패!");
         
         if (clearAllReservationsBtn) clearAllReservationsBtn.addEventListener('click', handleClickClearAllReservationsBtn); else console.error("clearAllReservationsBtn에 이벤트 리스너 등록 실패!");
@@ -1668,7 +1719,7 @@
         } else {
             showSection(loginPage);
         }
-        console.log("initializePage 실행 완료.");
+        console.log("--- initializePage 실행 완료 ---");
       }
     })();
   </script>
