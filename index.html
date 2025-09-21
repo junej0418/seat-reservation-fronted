@@ -864,9 +864,11 @@
       }
 
       function showSection(section) {
+        // 모든 섹션을 숨김
         [loginPage, floorSelectPage, seatMapPage, adminLoginPage, adminPage].forEach(el => {
           if(el) el.classList.add('hidden');
         });
+        // 요청된 섹션만 표시
         if(section) section.classList.remove('hidden');
 
         // 관리자 페이지 진입 시 인증 확인
@@ -1167,7 +1169,7 @@
 
       // 로그인 폼 제출 핸들러
       async function handleSubmitLoginForm(e) {
-        e.preventDefault(); // 기본 폼 제출 동작(페이지 새로고침) 방지
+        e.preventDefault(); // <-- ★★★★ 이 부분이 핵심입니다. 폼의 기본 제출(새로고침) 방지 ★★★★
         clearErrors(); // 기존 에러 메시지 초기화
 
         const roomNo = roomNoInput.value.trim();
@@ -1332,7 +1334,7 @@
       }
 
       async function handleSubmitAdminLoginForm(e) {
-        e.preventDefault(); // 기본 폼 제출 동작 방지
+        e.preventDefault(); // ★★★★ 이 부분이 핵심입니다. 폼의 기본 제출(새로고침) 방지 ★★★★
         const password = adminPasswordInput.value; // 입력된 관리자 비밀번호
         const success = await adminLogin(password); // 관리자 로그인 API 호출
         if (success) {
@@ -1511,6 +1513,7 @@
       // 페이지 초기화 함수
       async function initializePage() {
         // DOM 요소들 가져오기 (DOM이 로드된 후에 실행되므로 안전)
+        // console.log("initializePage 실행됨"); // 디버깅용 로그
         loginPage = document.getElementById('loginPage');
         loginForm = document.getElementById('loginForm');
         roomNoInput = document.getElementById('roomNo');
@@ -1629,13 +1632,13 @@
         if (announcementForm) announcementForm.addEventListener('submit', handleSubmitAnnouncementForm);
 
         // 버튼 클릭 이벤트
-        if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleClickAdminLoginBtn);
+        if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleClickAdminLoginBtn); // ★★★★ adminLoginBtn 클릭 리스너 연결 확인 ★★★★
         if (adminLogoutBtn) adminLogoutBtn.addEventListener('click', handleClickAdminLogoutBtn);
         if (backToLoginBtn) backToLoginBtn.addEventListener('click', handleClickBackToLoginBtn);
         if (floorNextBtn) floorNextBtn.addEventListener('click', handleClickFloorNextBtn);
         if (backToFloorBtn) backToFloorBtn.addEventListener('click', handleClickBackToFloorBtn);
         if (cancelMyReservationBtn) cancelMyReservationBtn.addEventListener('click', handleClickCancelMyReservationBtn);
-        if (adminLoginBackBtn) adminLoginBackBtn.addEventListener('click', handleClickAdminLoginBackBtn);
+        if (document.getElementById('adminLoginBackBtn')) document.getElementById('adminLoginBackBtn').addEventListener('click', handleClickAdminLoginBackBtn); // id로 직접 참조
         if (clearAllReservationsBtn) clearAllReservationsBtn.addEventListener('click', handleClickClearAllReservationsBtn);
         if (confirmBtn) confirmBtn.addEventListener('click', handleSubmitConfirmBtn);
         if (announcementCloseBtn) announcementCloseBtn.addEventListener('click', hideAnnouncement);
