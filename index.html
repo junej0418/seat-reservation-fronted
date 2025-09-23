@@ -216,40 +216,6 @@
     min-height: 1.5em;
   }
 
-  /* 반응형 */
-  @media (max-width: 768px) {
-    .container {
-      margin: 10px auto 30px;
-      padding: 10px;
-    }
-    .seat-btn {
-      min-width: 38px;
-      font-size: 1rem;
-    }
-    h1, h2 { font-size: 1.5rem; }
-  }
-
-  @media (max-width: 480px) {
-    body { padding: 5px; }
-    .container {
-      margin: 5px auto 20px;
-      padding: 8px;
-      border-radius: 8px;
-    }
-    h1, h2 { font-size: 1.4rem; margin: 0.8em 0; }
-    label, input, select, textarea { font-size: 0.9rem; }
-    button { padding: 8px 12px; font-size: 0.95rem; margin-top: 15px; min-width: auto; }
-    nav button { padding: 5px 8px; font-size: 0.85rem; }
-    .seat-btn {
-      min-width: 26px;
-      font-size: 0.85rem;
-      padding: 0;
-    }
-    table { font-size: 0.8rem; }
-    th, td { padding: 6px 4px; }
-    td button { padding: 3px 6px; font-size: 0.75rem; }
-  }
-
   /* 공지 팝업 스타일 */
   .announcement-overlay {
     position: fixed;
@@ -300,7 +266,7 @@
   .announcement-popup button.close-btn:hover {
     background: #8e420b;
   }
-  #announcementMessageInput {
+  #announcementMessageInput, #adminOnlyAnnouncementMessageInput {
     width: calc(100% - 20px);
     height: 80px;
     padding: 10px;
@@ -310,7 +276,7 @@
     resize: vertical;
     font-size: 1rem;
   }
-  #announcementActiveCheckbox {
+  #announcementActiveCheckbox, #adminOnlyAnnouncementActiveCheckbox {
     margin-top: 15px;
     margin-right: 8px;
   }
@@ -416,9 +382,14 @@
   <div class="container hidden" id="adminLoginPage">
     <h1>관리자 로그인</h1>
     <form id="adminLoginForm" autocomplete="off" novalidate>
+      <label for="adminUsernameInput">관리자 이름:</label>
+      <input type="text" id="adminUsernameInput" name="adminUsername" required />
+      <div id="adminUsernameError" class="error"></div>
+
       <label for="adminPasswordInput">비밀번호:</label>
       <input type="password" id="adminPasswordInput" name="adminPassword" required />
-      <div id="adminError" class="error"></div>
+      <div id="adminPasswordError" class="error"></div>
+
       <div class="button-group">
         <button id="adminLoginBackBtn" type="button">로그인페이지로 돌아가기</button>
         <button type="submit">로그인</button>
@@ -427,7 +398,7 @@
   </div>
 
   <div class="container hidden" id="adminPage">
-    <h1>관리자 페이지</h1>
+    <h1>관리자 페이지 <span id="loggedInAdminName" style="font-size: 0.8em; color: #b45309;"></span></h1>
     <button id="adminLogoutBtn" type="button">로그아웃</button>
 
     <h2>예약 가능 시간 설정</h2>
@@ -442,7 +413,7 @@
 
     <hr style="margin: 2em 0;">
 
-    <h2>공지사항 설정</h2>
+    <h2>전체 공지사항 설정 (사용자에게도 표시)</h2>
     <form id="announcementForm" novalidate>
       <label for="announcementMessageInput">공지 내용:</label>
       <textarea id="announcementMessageInput" placeholder="모든 사용자에게 표시될 공지 내용을 입력하세요." rows="4"></textarea>
@@ -452,6 +423,20 @@
       </div>
       <button type="submit">공지 저장</button>
       <div id="announcementMessageStatus" class="error"></div>
+    </form>
+
+    <hr style="margin: 2em 0;">
+
+    <h2>관리자 전용 공지사항 설정 (관리자에게만 표시)</h2>
+    <form id="adminOnlyAnnouncementForm" novalidate>
+      <label for="adminOnlyAnnouncementMessageInput">관리자 공지 내용:</label>
+      <textarea id="adminOnlyAnnouncementMessageInput" placeholder="관리자에게만 표시될 공지 내용을 입력하세요." rows="4"></textarea>
+      <div>
+        <input type="checkbox" id="adminOnlyAnnouncementActiveCheckbox" />
+        <label for="adminOnlyAnnouncementActiveCheckbox" style="display: inline-block; margin-top: 0; font-weight: normal;">공지 활성화</label>
+      </div>
+      <button type="submit">공지 저장</button>
+      <div id="adminOnlyAnnouncementMessageStatus" class="error"></div>
     </form>
 
     <hr style="margin: 2em 0;">
@@ -475,6 +460,15 @@
     </div>
   </div>
 
+  <div class="announcement-overlay hidden" id="adminOnlyAnnouncementOverlay">
+    <div class="announcement-popup">
+      <h3>관리자 전용 공지사항</h3>
+      <p id="adminOnlyAnnouncementMessage"></p>
+      <button class="close-btn" type="button">닫기</button>
+    </div>
+  </div>
+
+
   <!-- Socket.IO 클라이언트 라이브러리 (백엔드 URL로 변경) -->
   <script src="https://seat-reservation-backend-ygl9.onrender.com/socket.io/socket.io.js"></script>
 
@@ -488,17 +482,20 @@
       let availabilityCheckInterval = null;
       let prevAllowedState = null;
       let currentAnnouncement = null;
+      let currentAdminOnlyAnnouncement = null; // 관리자 전용 공지사항 상태 저장
 
       // DOM 요소 변수들
       let loginPage, loginForm, roomNoInput, userNameInput, dormitorySelect, reservationPasswordInput, roomError, nameError, dormError, passwordError, adminLoginBtn;
       let floorSelectPage, floorSelect, floorNextBtn, backToLoginBtn, welcomeText;
       let seatMapPage, seatMapContainer, confirmBtn, cancelMyReservationBtn, backToFloorBtn, selectedDormTitle, selectedFloorTitle, reservationAvailabilityMessage;
-      let adminLoginPage, adminLoginForm, adminPasswordInput, adminError;
+      let adminLoginPage, adminLoginForm, adminUsernameInput, adminPasswordInput, adminUsernameError, adminPasswordError, loggedInAdminName;
       let adminPage, adminLogoutBtn, reservationListBody, clearAllReservationsBtn;
       let reservationTimeForm, resStartTimeInput, resEndTimeInput, timeSettingMessage;
       let announcementOverlay, announcementPopupMessage, announcementCloseBtn, announcementForm, announcementMessageInput, announcementActiveCheckbox, announcementMessageStatus;
+      let adminOnlyAnnouncementOverlay, adminOnlyAnnouncementPopupMessage, adminOnlyAnnouncementCloseBtn, adminOnlyAnnouncementForm, adminOnlyAnnouncementMessageInput, adminOnlyAnnouncementActiveCheckbox, adminOnlyAnnouncementMessageStatus;
 
       let currentUser = null; // { roomNo, name, dormitory, password }
+      let currentAdmin = null; // { username } (관리자 로그인 시)
       let currentUserReservation = null; // null or { _id, roomNo, name, dormitory, floor, seat, createdAt }
       let currentFloor = null;
       let selectedSeat = null;
@@ -600,24 +597,49 @@
         }
       }
 
-      async function adminLogin(password) {
+      // 관리자 전용 공지사항 가져오기
+      async function fetchAdminOnlyAnnouncement() {
+        try {
+          const res = await fetch(`${BACKEND_URL}/api/admin-announcement`);
+          if (!res.ok) throw new Error('관리자 전용 공지사항 불러오기 실패: ' + res.statusText);
+          currentAdminOnlyAnnouncement = await res.json();
+          // 이 함수는 관리자 페이지에서만 호출되므로, 바로 input 값을 업데이트
+          if (adminOnlyAnnouncementMessageInput) adminOnlyAnnouncementMessageInput.value = currentAdminOnlyAnnouncement.message || '';
+          if (adminOnlyAnnouncementActiveCheckbox) adminOnlyAnnouncementActiveCheckbox.checked = currentAdminOnlyAnnouncement.active || false;
+        } catch (e) {
+          console.error('API 호출 에러: fetchAdminOnlyAnnouncement', e);
+          currentAdminOnlyAnnouncement = { message: '', active: false }; // 실패 시 초기화
+        }
+      }
+
+
+      async function adminLogin(password, username) { // 사용자 이름 인자 추가
         try {
           const res = await fetch(`${BACKEND_URL}/api/admin-login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password })
+            body: JSON.stringify({ password, username }) // 사용자 이름 전송
           });
           const data = await res.json();
           if (data.success) {
-            adminError.textContent = '';
+            adminUsernameError.textContent = '';
+            adminPasswordError.textContent = '';
+            currentAdmin = { username: username }; // 관리자 로그인 성공 시 사용자 이름 저장
             return true;
           } else {
-            adminError.textContent = data.message;
+            // 백엔드에서 어떤 오류인지에 따라 다른 에러 메시지 표시
+            if (data.message.includes('이름')) { // 이름 관련 오류 메시지
+              adminUsernameError.textContent = data.message;
+              adminPasswordError.textContent = '';
+            } else { // 비밀번호 관련 오류 메시지 (기본)
+              adminPasswordError.textContent = data.message;
+              adminUsernameError.textContent = '';
+            }
             return false;
           }
         } catch (e) {
           console.error('API 호출 에러: adminLogin', e);
-          adminError.textContent = '로그인 중 오류가 발생했습니다.';
+          adminPasswordError.textContent = '로그인 중 오류가 발생했습니다.';
           return false;
         }
       }
@@ -660,12 +682,12 @@
           }
       }
 
-      async function deleteReservation(id, password) { // 비밀번호 인자 추가
+      async function deleteReservation(id, password) {
         try {
           const res = await fetch(`${BACKEND_URL}/api/reservations/${id}`, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' }, // Body를 보내려면 Content-Type 필요
-            body: JSON.stringify({ password }) // 비밀번호 전달
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password, adminUsername: currentAdmin ? currentAdmin.username : null }) // 관리자 이름 전송
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || '예약 취소 실패');
@@ -676,10 +698,12 @@
         }
       }
 
-      async function deleteAllReservations() {
+      async function deleteAllReservations() { // 비밀번호 불필요
         try {
           const res = await fetch(`${BACKEND_URL}/api/reservations/all`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminUsername: currentAdmin ? currentAdmin.username : null }) // 관리자 이름 전송
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || '모든 예약 취소 실패');
@@ -695,7 +719,7 @@
           const res = await fetch(`${BACKEND_URL}/api/admin-settings`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reservationStartTime: startTime, reservationEndTime: endTime })
+            body: JSON.stringify({ reservationStartTime: startTime, reservationEndTime: endTime, adminUsername: currentAdmin ? currentAdmin.username : null }) // 관리자 이름 전송
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || '설정 저장 실패');
@@ -711,7 +735,7 @@
           const res = await fetch(`${BACKEND_URL}/api/announcement`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, active })
+            body: JSON.stringify({ message, active, adminUsername: currentAdmin ? currentAdmin.username : null }) // 관리자 이름 전송
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || '공지사항 저장 실패');
@@ -722,13 +746,31 @@
         }
       }
 
+      // 관리자 전용 공지사항 업데이트 (새로운 함수)
+      async function updateAdminOnlyAnnouncement(message, active) {
+        try {
+          const res = await fetch(`${BACKEND_URL}/api/admin-announcement`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, active, adminUsername: currentAdmin ? currentAdmin.username : null }) // 관리자 이름 전송
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || '관리자 전용 공지사항 저장 실패');
+          return { success: true, message: '관리자 전용 공지사항이 저장되었습니다.' };
+        } catch (e) {
+          console.error('API 호출 에러: updateAdminOnlyAnnouncement', e);
+          return { success: false, message: e.message || '관리자 전용 공지사항 저장 중 오류 발생' };
+        }
+      }
+
+
       // 관리자: 사용자 평문 비밀번호 열람 API 호출 함수
       async function viewUserPlainPassword(reservationId, adminPassword) {
         try {
             const res = await fetch(`${BACKEND_URL}/api/admin/reservations/${reservationId}/view-plain-password`, {
-                method: 'POST', // POST 사용 (비밀번호를 body에 담아 전송)
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ adminPassword })
+                body: JSON.stringify({ adminPassword, adminUsername: currentAdmin ? currentAdmin.username : null }) // 관리자 이름 전송
             });
             const data = await res.json();
             if (!res.ok) {
@@ -770,17 +812,21 @@
       }
 
       function showSection(section) {
+        // 모든 섹션을 숨김
         [loginPage, floorSelectPage, seatMapPage, adminLoginPage, adminPage].forEach(el => {
           if(el) el.classList.add('hidden');
         });
+        // 요청된 섹션만 표시
         if(section) section.classList.remove('hidden');
 
+        // 좌석 배치 페이지일 경우에만 인터벌 시작
         if (section === seatMapPage) {
           if (availabilityCheckInterval) clearInterval(availabilityCheckInterval);
-          updateReservationAvailability();
-          availabilityCheckInterval = setInterval(updateReservationAvailability, 1000);
+          updateReservationAvailability(); // 즉시 한 번 업데이트
+          availabilityCheckInterval = setInterval(updateReservationAvailability, 1000); // 1초마다 업데이트
           updateSeatPageButtonsVisibility();
         } else {
+          // 다른 섹션으로 이동하면 인터벌 중지
           if (availabilityCheckInterval) {
             clearInterval(availabilityCheckInterval);
             availabilityCheckInterval = null;
@@ -812,7 +858,9 @@
         if (roomError) roomError.textContent = "";
         if (nameError) nameError.textContent = "";
         if (dormError) dormError.textContent = "";
-        if (passwordError) passwordError.textContent = ""; // 비밀번호 에러 메시지 초기화 추가
+        if (passwordError) passwordError.textContent = "";
+        if (adminUsernameError) adminUsernameError.textContent = ""; // 관리자 로그인 에러 초기화
+        if (adminPasswordError) adminPasswordError.textContent = ""; // 관리자 로그인 에러 초기화
       }
 
       function setFloorOptions(dorm) {
@@ -955,23 +1003,23 @@
       }
 
       async function loadAdminPage() {
+        if (currentAdmin && loggedInAdminName) { // 관리자 이름 표시
+            loggedInAdminName.textContent = `(${currentAdmin.username})`;
+        }
         await fetchAllReservations();
         renderReservationList();
         await fetchAdminSettings();
-        if (adminSettings.reservationStartTime) {
-          resStartTimeInput.value = formatDateTimeLocal(adminSettings.reservationStartTime);
-        }
-        if (adminSettings.reservationEndTime) {
-          resEndTimeInput.value = formatDateTimeLocal(adminSettings.reservationEndTime);
-        }
-        await fetchAnnouncement();
-        if (currentAnnouncement) {
-          announcementMessageInput.value = currentAnnouncement.message || '';
-          announcementActiveCheckbox.checked = currentAnnouncement.active || false;
-        } else {
-          announcementMessageInput.value = '';
-          announcementActiveCheckbox.checked = false;
-        }
+        if (resStartTimeInput) resStartTimeInput.value = adminSettings.reservationStartTime ? formatDateTimeLocal(adminSettings.reservationStartTime) : '';
+        if (resEndTimeInput) resEndTimeInput.value = adminSettings.reservationEndTime ? formatDateTimeLocal(adminSettings.reservationEndTime) : '';
+        
+        await fetchAnnouncement(); // 일반 공지사항
+        if (announcementMessageInput) announcementMessageInput.value = currentAnnouncement ? currentAnnouncement.message || '' : '';
+        if (announcementActiveCheckbox) announcementActiveCheckbox.checked = currentAnnouncement ? currentAnnouncement.active || false : false;
+
+        await fetchAdminOnlyAnnouncement(); // 관리자 전용 공지사항
+        if (adminOnlyAnnouncementMessageInput) adminOnlyAnnouncementMessageInput.value = currentAdminOnlyAnnouncement ? currentAdminOnlyAnnouncement.message || '' : '';
+        if (adminOnlyAnnouncementActiveCheckbox) adminOnlyAnnouncementActiveCheckbox.checked = currentAdminOnlyAnnouncement ? currentAdminOnlyAnnouncement.active || false : false;
+        
         showSection(adminPage);
       }
 
@@ -1070,6 +1118,23 @@
         if (announcementOverlay) announcementOverlay.classList.add('hidden');
       }
 
+      // 관리자 전용 공지사항 표시/숨김
+      function updateAdminOnlyAnnouncementDisplay() {
+        if (adminOnlyAnnouncementOverlay && adminOnlyAnnouncementPopupMessage) {
+          if (currentAdminOnlyAnnouncement && currentAdminOnlyAnnouncement.active && currentAdminOnlyAnnouncement.message) {
+            adminOnlyAnnouncementPopupMessage.textContent = currentAdminOnlyAnnouncement.message;
+            adminOnlyAnnouncementOverlay.classList.remove('hidden');
+          } else {
+            adminOnlyAnnouncementOverlay.classList.add('hidden');
+          }
+        }
+      }
+
+      function hideAdminOnlyAnnouncement() {
+        if (adminOnlyAnnouncementOverlay) adminOnlyAnnouncementOverlay.classList.add('hidden');
+      }
+
+
       function formatDateTimeLocal(date) {
         if (!date) return '';
         const d = new Date(date);
@@ -1084,7 +1149,7 @@
         const roomNo = roomNoInput.value.trim();
         const name = userNameInput.value.trim();
         const selectedDorm = dormitorySelect.value;
-        const password = reservationPasswordInput.value; // 비밀번호 값 가져오기
+        const password = reservationPasswordInput.value;
         const honeypotField = loginForm.querySelector('input[name="honeypot_field"]').value;
 
         let valid = true;
@@ -1100,7 +1165,7 @@
           dormError.textContent = '기숙사를 선택하세요.';
           valid = false;
         }
-        // 비밀번호 유효성 검사 추가
+        // 약한 비밀번호는 백엔드에서 검증하고 에러 메시지를 받을 것이므로 프론트엔드에서는 4자 이상만 검증
         if (password.length < 4) {
             passwordError.textContent = '예약 비밀번호는 4자 이상이어야 합니다.';
             valid = false;
@@ -1111,17 +1176,24 @@
         }
         if (!valid) return;
 
-        currentUser = {roomNo, name, dormitory: selectedDorm, password: password}; // 비밀번호도 함께 저장
-        currentUserReservation = getMyReservation(); // 현재 사용자의 예약을 확인
+        // currentUser 정보만 우선 저장 (비밀번호는 백엔드 인증/등록 시 사용)
+        currentUser = {roomNo, name, dormitory: selectedDorm, password: password};
+        currentUserReservation = Object.values(allReservations).find(r => // 전역 예약 목록에서 자신의 예약 찾기
+            r.roomNo === currentUser.roomNo &&
+            r.name === currentUser.name &&
+            r.dormitory === currentUser.dormitory
+        );
 
         if (currentUserReservation) { // 이미 예약이 있는 사용자
           currentFloor = currentUserReservation.floor;
           selectedSeat = null;
           
-          // 비밀번호 입력란 숨기기 또는 비활성화
+          // 비밀번호 입력란 비활성화
           if(reservationPasswordInput) {
             reservationPasswordInput.value = ""; // 입력 비우기
             reservationPasswordInput.disabled = true; // 입력 비활성화
+            passwordError.textContent = '이미 예약된 사용자입니다. 예약 변경/취소 시에만 비밀번호를 다시 입력합니다.';
+            passwordError.style.color = '#3366cc';
           }
 
           setFloorOptions(selectedDorm);
@@ -1133,10 +1205,11 @@
           renderSeatMap(selectedDorm, currentFloor);
           updateReservationAvailability();
           showSection(seatMapPage);
-        } else { // 예약이 없는 사용자
-          // 신규 사용자는 비밀번호 입력란 활성화
+        } else { // 예약이 없는 사용자 (신규 예약)
+          // 비밀번호 입력란 활성화 유지
           if(reservationPasswordInput) {
             reservationPasswordInput.disabled = false;
+            passwordError.textContent = ''; // 메시지 초기화
           }
 
           currentFloor = null;
@@ -1150,12 +1223,15 @@
 
       function handleClickBackToLoginBtn() {
         currentUser = null;
+        currentAdmin = null; // 관리자 정보도 초기화
         currentUserReservation = null;
         currentFloor = null;
         selectedSeat = null;
         if (loginForm) loginForm.reset();
-        if(reservationPasswordInput) reservationPasswordInput.disabled = false; // 로그인 페이지로 돌아올 때 비번칸 활성화
+        if(reservationPasswordInput) reservationPasswordInput.disabled = false; // 비번칸 활성화
+        if(passwordError) passwordError.textContent = ''; // 메시지 초기화
         showSection(loginPage);
+        hideAdminOnlyAnnouncement(); // 관리자 페이지 벗어날 때 관리자 전용 공지 숨김
         updateSeatPageButtonsVisibility();
       }
 
@@ -1209,11 +1285,12 @@
                 alert(result.message);
                 currentUserReservation = null;
                 selectedSeat = null;
-                if (currentFloor) {
-                    renderSeatMap(currentUser.dormitory, currentFloor);
-                    updateReservationAvailability();
-                } else {
-                    showSection(floorSelectPage);
+                // 다시 로그인 페이지로 돌아가 사용자 정보 재입력 유도
+                showSection(loginPage);
+                if (loginForm) loginForm.reset();
+                if(reservationPasswordInput) { // 비번칸 활성화 및 메시지 초기화
+                  reservationPasswordInput.disabled = false;
+                  passwordError.textContent = '';
                 }
             } else {
                 alert('취소 실패: ' + result.message);
@@ -1223,8 +1300,9 @@
       }
 
       function handleClickAdminLoginBtn() {
+        if (adminUsernameInput) adminUsernameInput.value = '';
         if (adminPasswordInput) adminPasswordInput.value = '';
-        if (adminError) adminError.textContent = '';
+        clearErrors(); // 모든 관리자 에러 메시지 초기화
         showSection(adminLoginPage);
       }
 
@@ -1234,22 +1312,48 @@
 
       async function handleSubmitAdminLoginForm(e) {
         e.preventDefault();
+        const username = adminUsernameInput.value.trim(); // 관리자 이름 가져오기
         const password = adminPasswordInput.value;
-        const success = await adminLogin(password);
+        clearErrors(); // 에러 메시지 초기화
+
+        let valid = true;
+        if (!username) {
+            adminUsernameError.textContent = '관리자 이름을 입력해주세요.';
+            valid = false;
+        }
+        if (!password) {
+            adminPasswordError.textContent = '비밀번호를 입력해주세요.';
+            valid = false;
+        }
+        if (!valid) return;
+
+        const success = await adminLogin(password, username); // 이름과 비밀번호 모두 전송
         if (success) {
           await loadAdminPage();
+          updateAdminOnlyAnnouncementDisplay(); // 관리자 전용 공지 표시
         }
       }
 
       function handleClickAdminLogoutBtn() {
         if (confirm('관리자 페이지에서 로그아웃하시겠습니까?')) {
+          currentAdmin = null; // 관리자 정보 초기화
           showSection(loginPage);
+          if (loginForm) loginForm.reset();
+          if(reservationPasswordInput) { // 비번칸 활성화 및 메시지 초기화
+            reservationPasswordInput.disabled = false;
+            passwordError.textContent = '';
+          }
+          hideAdminOnlyAnnouncement(); // 관리자 페이지 벗어날 때 관리자 전용 공지 숨김
         }
       }
 
       async function handleClickClearAllReservationsBtn() {
-        if (confirm('경고: 모든 예약을 정말로 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
-          const result = await deleteAllReservations();
+        if (!currentAdmin) {
+            alert('관리자 로그인 상태가 아닙니다.');
+            return;
+        }
+        if (confirm(`경고: 관리자(${currentAdmin.username})님, 모든 예약을 정말로 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
+          const result = await deleteAllReservations(); // 비밀번호 불필요, 관리자 이름은 자동으로 전송
           if (result.success) {
             alert(result.message);
           } else {
@@ -1335,7 +1439,10 @@
           currentFloor = null;
           selectedSeat = null;
           if (loginForm) loginForm.reset();
-          if(reservationPasswordInput) reservationPasswordInput.disabled = false; // 예약 성공 후 로그인으로 돌아가니 비번칸 활성화
+          if(reservationPasswordInput) { // 비번칸 활성화 및 메시지 초기화
+            reservationPasswordInput.disabled = false;
+            passwordError.textContent = '';
+          }
           showSection(loginPage);
         } else {
           alert(`${myReservation ? '예약 변경' : '예약'} 실패: ` + result.message);
@@ -1406,6 +1513,41 @@
         }
       }
 
+      // 관리자 전용 공지사항 저장 핸들러 (새로운 핸들러)
+      async function handleSubmitAdminOnlyAnnouncementForm(e) {
+        e.preventDefault();
+        const message = adminOnlyAnnouncementMessageInput.value.trim();
+        const active = adminOnlyAnnouncementActiveCheckbox.checked;
+
+        if (!active && !message) { // 비활성화 & 내용 없음 => 공지 제거
+          const result = await updateAdminOnlyAnnouncement("", false);
+          if (result.success) {
+            adminOnlyAnnouncementMessageStatus.textContent = '관리자 전용 공지사항이 비활성화되었습니다.';
+            adminOnlyAnnouncementMessageStatus.style.color = '#10b981';
+          } else {
+            adminOnlyAnnouncementMessageStatus.textContent = result.message;
+            adminOnlyAnnouncementMessageStatus.style.color = '#dc2626';
+          }
+          return;
+        }
+
+        if (active && !message) { // 활성화 & 내용 없음 => 에러
+          adminOnlyAnnouncementMessageStatus.textContent = '공지를 활성화하려면 내용을 입력해야 합니다.';
+          adminOnlyAnnouncementMessageStatus.style.color = '#dc2626';
+          return;
+        }
+
+        const result = await updateAdminOnlyAnnouncement(message, active);
+        if (result.success) {
+          adminOnlyAnnouncementMessageStatus.textContent = result.message;
+          adminOnlyAnnouncementMessageStatus.style.color = '#10b981';
+        } else {
+          adminOnlyAnnouncementMessageStatus.textContent = result.message;
+          adminOnlyAnnouncementMessageStatus.style.color = '#dc2626';
+        }
+      }
+
+
       // ---- 초기화 및 Socket.IO 리스너 ----
       document.addEventListener('DOMContentLoaded', async () => {
         // 모든 DOM 요소 변수에 할당
@@ -1414,11 +1556,11 @@
         roomNoInput = document.getElementById('roomNo');
         userNameInput = document.getElementById('userName');
         dormitorySelect = document.getElementById('dormitory');
-        reservationPasswordInput = document.getElementById('reservationPassword'); // 비밀번호 Input
+        reservationPasswordInput = document.getElementById('reservationPassword');
         roomError = document.getElementById('roomError');
         nameError = document.getElementById('nameError');
         dormError = document.getElementById('dormError');
-        passwordError = document.getElementById('passwordError'); // 비밀번호 에러 영역
+        passwordError = document.getElementById('passwordError');
         adminLoginBtn = document.getElementById('adminLoginBtn');
 
         floorSelectPage = document.getElementById('floorSelectPage');
@@ -1438,11 +1580,14 @@
 
         adminLoginPage = document.getElementById('adminLoginPage');
         adminLoginForm = document.getElementById('adminLoginForm');
+        adminUsernameInput = document.getElementById('adminUsernameInput'); // 관리자 이름 입력 필드
         adminPasswordInput = document.getElementById('adminPasswordInput');
-        adminError = document.getElementById('adminError');
+        adminUsernameError = document.getElementById('adminUsernameError'); // 관리자 이름 에러 영역
+        adminPasswordError = document.getElementById('adminPasswordError'); // 관리자 비밀번호 에러 영역
 
         adminPage = document.getElementById('adminPage');
         adminLogoutBtn = document.getElementById('adminLogoutBtn');
+        loggedInAdminName = document.getElementById('loggedInAdminName'); // 로그인한 관리자 이름 표시
         reservationListBody = document.getElementById('reservationListBody');
         clearAllReservationsBtn = document.getElementById('clearAllReservationsBtn');
 
@@ -1458,6 +1603,16 @@
         announcementMessageInput = document.getElementById('announcementMessageInput');
         announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
         announcementMessageStatus = document.getElementById('announcementMessageStatus');
+        
+        // 관리자 전용 공지사항 관련 DOM 요소
+        adminOnlyAnnouncementOverlay = document.getElementById('adminOnlyAnnouncementOverlay');
+        adminOnlyAnnouncementPopupMessage = document.getElementById('adminOnlyAnnouncementMessage');
+        adminOnlyAnnouncementCloseBtn = adminOnlyAnnouncementOverlay.querySelector('.close-btn');
+        adminOnlyAnnouncementForm = document.getElementById('adminOnlyAnnouncementForm');
+        adminOnlyAnnouncementMessageInput = document.getElementById('adminOnlyAnnouncementMessageInput');
+        adminOnlyAnnouncementActiveCheckbox = document.getElementById('adminOnlyAnnouncementActiveCheckbox');
+        adminOnlyAnnouncementMessageStatus = document.getElementById('adminOnlyAnnouncementMessageStatus');
+
 
         // Socket.IO 클라이언트 연결 및 이벤트 리스너 설정
         socket = io(BACKEND_URL);
@@ -1492,13 +1647,10 @@
           adminSettings = updatedSettings;
           updateReservationAvailability();
           if (adminPage && !adminPage.classList.contains("hidden")) {
-            if (adminSettings.reservationStartTime) resStartTimeInput.value = formatDateTimeLocal(adminSettings.reservationStartTime);
-            if (adminSettings.reservationEndTime) resEndTimeInput.value = formatDateTimeLocal(adminSettings.reservationEndTime);
-            // 만약 관리자 페이지에서 예약 시간이 바뀌면, 메시지를 즉시 업데이트
-            // 새로운 이벤트 객체를 생성하여 handleSubmitReservationTimeForm 호출
-            // 기존 이벤트 핸들러가 event.preventDefault()를 호출할 경우, 이를 방지하기 위해 cancelable: true 옵션 추가
+            if (resStartTimeInput) resStartTimeInput.value = adminSettings.reservationStartTime ? formatDateTimeLocal(adminSettings.reservationStartTime) : '';
+            if (resEndTimeInput) resEndTimeInput.value = adminSettings.reservationEndTime ? formatDateTimeLocal(adminSettings.reservationEndTime) : '';
             const fakeEvent = new Event('submit', { cancelable: true });
-            handleSubmitReservationTimeForm(fakeEvent);
+            handleSubmitReservationTimeForm(fakeEvent); // 메시지 업데이트용
           }
         });
 
@@ -1507,11 +1659,30 @@
           currentAnnouncement = updatedAnnouncement;
           updateAnnouncementDisplay();
           if (adminPage && !adminPage.classList.contains("hidden")) {
-            announcementMessageInput.value = currentAnnouncement ? currentAnnouncement.message : '';
-            announcementActiveCheckbox.checked = currentAnnouncement ? currentAnnouncement.active : false;
-            announcementMessageStatus.textContent = '공지사항이 업데이트되었습니다.';
-            announcementMessageStatus.style.color = '#10b981';
+            if (announcementMessageInput) announcementMessageInput.value = currentAnnouncement ? currentAnnouncement.message || '' : '';
+            if (announcementActiveCheckbox) announcementActiveCheckbox.checked = currentAnnouncement ? currentAnnouncement.active || false : false;
+            if (announcementMessageStatus) { // 메시지 업데이트용
+                announcementMessageStatus.textContent = '공지사항이 업데이트되었습니다.';
+                announcementMessageStatus.style.color = '#10b981';
+            }
           }
+        });
+        
+        // 관리자 전용 공지사항 업데이트 이벤트 리스너 (새로운 이벤트)
+        socket.on('adminAnnouncementUpdated', (updatedAdminAnnouncement) => {
+            console.log('관리자 전용 공지사항 업데이트 수신:', updatedAdminAnnouncement);
+            currentAdminOnlyAnnouncement = updatedAdminAnnouncement;
+            // 관리자 전용 공지사항은 관리자 로그인 시에만 보이므로 별도의 오버레이 업데이트 함수 호출
+            if (currentAdmin) updateAdminOnlyAnnouncementDisplay(); 
+
+            if (adminPage && !adminPage.classList.contains("hidden")) {
+                if (adminOnlyAnnouncementMessageInput) adminOnlyAnnouncementMessageInput.value = currentAdminOnlyAnnouncement ? currentAdminOnlyAnnouncement.message || '' : '';
+                if (adminOnlyAnnouncementActiveCheckbox) adminOnlyAnnouncementActiveCheckbox.checked = currentAdminOnlyAnnouncement ? currentAdminOnlyAnnouncement.active || false : false;
+                if (adminOnlyAnnouncementMessageStatus) { // 메시지 업데이트용
+                    adminOnlyAnnouncementMessageStatus.textContent = '관리자 전용 공지사항이 업데이트되었습니다.';
+                    adminOnlyAnnouncementMessageStatus.style.color = '#10b981';
+                }
+            }
         });
 
         socket.on('reservationsInitial', (initialReservations) => {
@@ -1532,6 +1703,13 @@
             console.log('초기 공지사항 수신:', initialAnnouncement);
             currentAnnouncement = initialAnnouncement;
             updateAnnouncementDisplay();
+        });
+
+        // 초기 관리자 전용 공지사항 수신 (새로운 초기 이벤트)
+        socket.on('adminOnlyAnnouncementInitial', (initialAdminAnnouncement) => {
+            console.log('초기 관리자 전용 공지사항 수신:', initialAdminAnnouncement);
+            currentAdminOnlyAnnouncement = initialAdminAnnouncement;
+            // 관리자 전용 공지사항은 관리자 로그인 시에만 보이므로 초기 로드 시에는 숨김
         });
 
 
@@ -1558,6 +1736,11 @@
         if (reservationTimeForm) reservationTimeForm.addEventListener('submit', handleSubmitReservationTimeForm);
         if (announcementForm) announcementForm.addEventListener('submit', handleSubmitAnnouncementForm);
         if (announcementCloseBtn) announcementCloseBtn.addEventListener('click', hideAnnouncement);
+        
+        // 관리자 전용 공지사항 이벤트 리스너
+        if (adminOnlyAnnouncementForm) adminOnlyAnnouncementForm.addEventListener('submit', handleSubmitAdminOnlyAnnouncementForm);
+        if (adminOnlyAnnouncementCloseBtn) adminOnlyAnnouncementCloseBtn.addEventListener('click', hideAdminOnlyAnnouncement);
+
 
         // 최초 페이지 로딩 시 초기 데이터 페칭 및 로그인 페이지 표시
         showSection(loginPage);
