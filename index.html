@@ -493,6 +493,7 @@
       let reservationTimeForm, resStartTimeInput, resEndTimeInput, timeSettingMessage;
       let announcementOverlay, announcementPopupMessage, announcementCloseBtn, announcementForm, announcementMessageInput, announcementActiveCheckbox, announcementMessageStatus;
       let adminOnlyAnnouncementOverlay, adminOnlyAnnouncementPopupMessage, adminOnlyAnnouncementCloseBtn, adminOnlyAnnouncementForm, adminOnlyAnnouncementMessageInput, adminOnlyAnnouncementActiveCheckbox, adminOnlyAnnouncementMessageStatus;
+      let loginSubmitButton; // "다음" 버튼 참조 추가
 
       let currentUser = null; // { roomNo, name, dormitory, password }
       let currentAdmin = null; // { username } (관리자 로그인 시)
@@ -558,6 +559,17 @@
         }
       };
 
+      // 약한 비밀번호 검증 헬퍼 함수 (백엔드 로직과 동일하게)
+      function isWeakPassword(password) {
+        const weakPatterns = [
+          /^(.)\1{3,}$/, // 1111, aaaa 등 4자리 이상 반복
+          /^1234(5?6?7?8?9?)?$/, // 1234, 12345 등 순차적
+          /^0000$/, // 0000 (0이 4자리 이상)
+          // 필요한 경우 추가 패턴 정의
+        ];
+        return weakPatterns.some(pattern => pattern.test(password));
+      }
+
       // ---- API 통신 함수들 ----
       async function fetchAllReservations() {
         try {
@@ -611,7 +623,6 @@
           currentAdminOnlyAnnouncement = { message: '', active: false }; // 실패 시 초기화
         }
       }
-
 
       async function adminLogin(password, username) { // 사용자 이름 인자 추가
         try {
@@ -861,7 +872,40 @@
         if (passwordError) passwordError.textContent = "";
         if (adminUsernameError) adminUsernameError.textContent = ""; // 관리자 로그인 에러 초기화
         if (adminPasswordError) adminPasswordError.textContent = ""; // 관리자 로그인 에러 초기화
+        // 비밀번호 강도 체크로 인해 비활성화된 버튼이 있다면 다시 활성화
+        if (loginSubmitButton) loginSubmitButton.disabled = false;
       }
+
+      // 비밀번호 강도 실시간 체크 함수
+      function checkPasswordStrength() {
+        const password = reservationPasswordInput.value;
+        const loginSubmitButton = loginForm.querySelector('button[type="submit"]');
+
+        // 예약이 있는 사용자 (비활성화 상태)일 경우 검증 스킵
+        if (reservationPasswordInput.disabled) {
+          passwordError.textContent = '';
+          if (loginSubmitButton) loginSubmitButton.disabled = false;
+          return;
+        }
+
+        // 4자 미만이면 기본 에러 메시지
+        if (password.length < 4) {
+          passwordError.textContent = '예약 비밀번호는 4자 이상이어야 합니다.';
+          if (loginSubmitButton) loginSubmitButton.disabled = true;
+          return;
+        }
+
+        // 약한 비밀번호 검증
+        if (isWeakPassword(password)) {
+          passwordError.textContent = '매우 단순한 비밀번호는 사용할 수 없습니다. 다른 비밀번호를 사용해주세요.';
+          if (loginSubmitButton) loginSubmitButton.disabled = true; // 약한 비밀번호면 버튼 비활성화
+        } else {
+          passwordError.textContent = '';
+          // 다른 유효성 검사는 handleSubmitLoginForm에서 최종적으로 수행되므로, 여기서는 약한 비번만 아니면 일단 활성화
+          if (loginSubmitButton) loginSubmitButton.disabled = false;
+        }
+      }
+
 
       function setFloorOptions(dorm) {
         if (!floorSelect) {
@@ -1165,16 +1209,24 @@
           dormError.textContent = '기숙사를 선택하세요.';
           valid = false;
         }
-        // 약한 비밀번호는 백엔드에서 검증하고 에러 메시지를 받을 것이므로 프론트엔드에서는 4자 이상만 검증
+        // 프론트엔드 실시간 검증에서 약한 비밀번호를 막았지만, 혹시 모를 상황 대비해 최종 유효성 다시 체크
         if (password.length < 4) {
             passwordError.textContent = '예약 비밀번호는 4자 이상이어야 합니다.';
             valid = false;
+        }
+        if (isWeakPassword(password)) { // 최종 제출 전에도 다시 검증
+          passwordError.textContent = '매우 단순한 비밀번호는 사용할 수 없습니다. 다른 비밀번호를 사용해주세요.';
+          valid = false;
         }
         if (honeypotField) {
           alert('비정상적인 요청이 감지되었습니다. (Honeypot)');
           valid = false;
         }
-        if (!valid) return;
+        if (!valid) {
+          // 유효하지 않은 경우 버튼 비활성화 상태 유지
+          if (loginSubmitButton) loginSubmitButton.disabled = true;
+          return;
+        }
 
         // currentUser 정보만 우선 저장 (비밀번호는 백엔드 인증/등록 시 사용)
         currentUser = {roomNo, name, dormitory: selectedDorm, password: password};
@@ -1218,6 +1270,8 @@
           if (welcomeText) welcomeText.textContent = `${name}님 환영합니다! (${selectedDorm} 기숙사)`;
           showSection(floorSelectPage);
         }
+        // 최종적으로 버튼 상태 업데이트
+        if (loginSubmitButton) loginSubmitButton.disabled = false; // 제출 버튼 활성화
         updateSeatPageButtonsVisibility();
       }
 
@@ -1230,6 +1284,7 @@
         if (loginForm) loginForm.reset();
         if(reservationPasswordInput) reservationPasswordInput.disabled = false; // 비번칸 활성화
         if(passwordError) passwordError.textContent = ''; // 메시지 초기화
+        if (loginSubmitButton) loginSubmitButton.disabled = false; // 버튼 활성화
         showSection(loginPage);
         hideAdminOnlyAnnouncement(); // 관리자 페이지 벗어날 때 관리자 전용 공지 숨김
         updateSeatPageButtonsVisibility();
@@ -1343,6 +1398,7 @@
             reservationPasswordInput.disabled = false;
             passwordError.textContent = '';
           }
+          if (loginSubmitButton) loginSubmitButton.disabled = false; // 버튼 활성화
           hideAdminOnlyAnnouncement(); // 관리자 페이지 벗어날 때 관리자 전용 공지 숨김
         }
       }
@@ -1443,6 +1499,7 @@
             reservationPasswordInput.disabled = false;
             passwordError.textContent = '';
           }
+          if (loginSubmitButton) loginSubmitButton.disabled = false; // 버튼 활성화
           showSection(loginPage);
         } else {
           alert(`${myReservation ? '예약 변경' : '예약'} 실패: ` + result.message);
@@ -1562,6 +1619,7 @@
         dormError = document.getElementById('dormError');
         passwordError = document.getElementById('passwordError');
         adminLoginBtn = document.getElementById('adminLoginBtn');
+        loginSubmitButton = loginForm.querySelector('button[type="submit"]'); // "다음" 버튼 참조 추가
 
         floorSelectPage = document.getElementById('floorSelectPage');
         floorSelect = document.getElementById('floorSelect');
@@ -1741,6 +1799,12 @@
         if (adminOnlyAnnouncementForm) adminOnlyAnnouncementForm.addEventListener('submit', handleSubmitAdminOnlyAnnouncementForm);
         if (adminOnlyAnnouncementCloseBtn) adminOnlyAnnouncementCloseBtn.addEventListener('click', hideAdminOnlyAnnouncement);
 
+        // 예약 비밀번호 입력 필드에 실시간 검증 리스너 추가
+        if (reservationPasswordInput) {
+            reservationPasswordInput.addEventListener('input', checkPasswordStrength);
+            // 페이지 로드 시 또는 초기화 시 버튼 비활성 상태 초기화 (다른 유효성 통과 후 활성 가능)
+            if (loginSubmitButton) loginSubmitButton.disabled = true;
+        }
 
         // 최초 페이지 로딩 시 초기 데이터 페칭 및 로그인 페이지 표시
         showSection(loginPage);
