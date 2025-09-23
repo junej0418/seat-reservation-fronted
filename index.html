@@ -345,7 +345,7 @@
 
       <input type="text" name="honeypot_field" style="display:none !important; visibility:hidden !important; opacity:0 !important; width:0 !important; height:0 !important; border:none !important; padding:0 !important; margin:0 !important;" tabindex="-1" autocomplete="off" />
 
-      <button type="submit">다음</button>
+      <button type="submit" id="loginSubmitBtn">다음</button>
     </form>
     <nav>
       <button id="adminLoginBtn" type="button">관리자 로그인</button>
@@ -493,7 +493,7 @@
       let reservationTimeForm, resStartTimeInput, resEndTimeInput, timeSettingMessage;
       let announcementOverlay, announcementPopupMessage, announcementCloseBtn, announcementForm, announcementMessageInput, announcementActiveCheckbox, announcementMessageStatus;
       let adminOnlyAnnouncementOverlay, adminOnlyAnnouncementPopupMessage, adminOnlyAnnouncementCloseBtn, adminOnlyAnnouncementForm, adminOnlyAnnouncementMessageInput, adminOnlyAnnouncementActiveCheckbox, adminOnlyAnnouncementMessageStatus;
-      let loginSubmitButton; // "다음" 버튼 참조 추가
+      let loginSubmitBtn; // "다음" 버튼 참조 추가 (ID 변경)
 
       let currentUser = null; // { roomNo, name, dormitory, password }
       let currentAdmin = null; // { username } (관리자 로그인 시)
@@ -560,7 +560,7 @@
       };
 
       // 약한 비밀번호 검증 헬퍼 함수 (백엔드 로직과 동일하게)
-     function isWeakPassword(password) {
+      function isWeakPassword(password) {
         const passwordLower = password.toLowerCase(); // 소문자로 변환하여 검사 (대소문자 무시)
         const passwordLength = password.length;
 
@@ -570,6 +570,8 @@
             // 키보드 상의 연속 패턴들 (4자리 이상부터)
             /^abcd(e?f?g?h?i?j?k?l?m?n?o?p?q?r?s?t?u?v?w?x?y?z?)?$/, // 알파벳 순차 (abcd...)
             /^qwer(t?y?u?i?o?p?)?$/,                               // QWERTY 키보드 상위열 (qwer...)
+            /^asdf(g?h?j?k?l?)?$/,                               // QWERTY 키보드 중간열 (asdf...)
+            /^zxcv(b?n?m?)?$/,                                   // QWERTY 키보드 하위열 (zxcv...)
             // 다른 자주 쓰이는 단순한 문자열도 추가 가능 (예: password, 0000, 123456 등)
         ];
 
@@ -612,7 +614,6 @@
                 }
             }
         }
-
         return false; // 위 패턴에 해당하지 않으면 안전하다고 판단
       }
 
@@ -919,13 +920,13 @@
         if (adminUsernameError) adminUsernameError.textContent = ""; // 관리자 로그인 에러 초기화
         if (adminPasswordError) adminPasswordError.textContent = ""; // 관리자 로그인 에러 초기화
         // 비밀번호 강도 체크로 인해 비활성화된 버튼이 있다면 다시 활성화
-        if (loginSubmitButton) loginSubmitButton.disabled = false;
+        if (loginSubmitBtn) loginSubmitBtn.disabled = false;
       }
 
       // 비밀번호 강도 실시간 체크 함수
       function checkPasswordStrength() {
         const password = reservationPasswordInput.value;
-        const loginSubmitButton = loginForm.querySelector('button[type="submit"]');
+        const loginSubmitButton = loginSubmitBtn; // ID가 loginSubmitBtn인 버튼 사용
 
         // 예약이 있는 사용자 (비활성화 상태)일 경우 검증 스킵
         if (reservationPasswordInput.disabled) {
@@ -1269,8 +1270,8 @@
           valid = false;
         }
         if (!valid) {
-          // 유효하지 않은 경우 버튼 비활성화 상태 유지
-          if (loginSubmitButton) loginSubmitButton.disabled = true;
+          // 유효하지 않은 경우 버튼 비활성화 상태 유지 (checkPasswordStrength에서 이미 비활성화 되었을 수도 있음)
+          if (loginSubmitBtn) loginSubmitBtn.disabled = true;
           return;
         }
 
@@ -1316,8 +1317,8 @@
           if (welcomeText) welcomeText.textContent = `${name}님 환영합니다! (${selectedDorm} 기숙사)`;
           showSection(floorSelectPage);
         }
-        // 최종적으로 버튼 상태 업데이트
-        if (loginSubmitButton) loginSubmitButton.disabled = false; // 제출 버튼 활성화
+        // 모든 유효성 검사를 통과했으니 제출 버튼 활성화
+        if (loginSubmitBtn) loginSubmitBtn.disabled = false;
         updateSeatPageButtonsVisibility();
       }
 
@@ -1330,7 +1331,7 @@
         if (loginForm) loginForm.reset();
         if(reservationPasswordInput) reservationPasswordInput.disabled = false; // 비번칸 활성화
         if(passwordError) passwordError.textContent = ''; // 메시지 초기화
-        if (loginSubmitButton) loginSubmitButton.disabled = false; // 버튼 활성화
+        if (loginSubmitBtn) loginSubmitBtn.disabled = false; // 버튼 활성화
         showSection(loginPage);
         hideAdminOnlyAnnouncement(); // 관리자 페이지 벗어날 때 관리자 전용 공지 숨김
         updateSeatPageButtonsVisibility();
@@ -1393,6 +1394,7 @@
                   reservationPasswordInput.disabled = false;
                   passwordError.textContent = '';
                 }
+                 if (loginSubmitBtn) loginSubmitBtn.disabled = false; // 버튼 활성화
             } else {
                 alert('취소 실패: ' + result.message);
             }
@@ -1444,7 +1446,7 @@
             reservationPasswordInput.disabled = false;
             passwordError.textContent = '';
           }
-          if (loginSubmitButton) loginSubmitButton.disabled = false; // 버튼 활성화
+          if (loginSubmitBtn) loginSubmitBtn.disabled = false; // 버튼 활성화
           hideAdminOnlyAnnouncement(); // 관리자 페이지 벗어날 때 관리자 전용 공지 숨김
         }
       }
@@ -1545,7 +1547,7 @@
             reservationPasswordInput.disabled = false;
             passwordError.textContent = '';
           }
-          if (loginSubmitButton) loginSubmitButton.disabled = false; // 버튼 활성화
+          if (loginSubmitBtn) loginSubmitBtn.disabled = false; // 버튼 활성화
           showSection(loginPage);
         } else {
           alert(`${myReservation ? '예약 변경' : '예약'} 실패: ` + result.message);
@@ -1665,7 +1667,7 @@
         dormError = document.getElementById('dormError');
         passwordError = document.getElementById('passwordError');
         adminLoginBtn = document.getElementById('adminLoginBtn');
-        loginSubmitButton = loginForm.querySelector('button[type="submit"]'); // "다음" 버튼 참조 추가
+        loginSubmitBtn = document.getElementById('loginSubmitBtn'); // "다음" 버튼 참조 추가
 
         floorSelectPage = document.getElementById('floorSelectPage');
         floorSelect = document.getElementById('floorSelect');
@@ -1848,11 +1850,11 @@
         // 예약 비밀번호 입력 필드에 실시간 검증 리스너 추가
         if (reservationPasswordInput) {
             reservationPasswordInput.addEventListener('input', checkPasswordStrength);
-            // 페이지 로드 시 또는 초기화 시 버튼 비활성 상태 초기화 (다른 유효성 통과 후 활성 가능)
-            if (loginSubmitButton) loginSubmitButton.disabled = true;
+            // 페이지 로드 시 또는 초기화 시 버튼 비활성 상태 (초기에는 유효성 검사 미완료)
+            if (loginSubmitBtn) loginSubmitBtn.disabled = true;
         }
 
-        // 최초 페이지 로딩 시 초기 데이터 페칭 및 로그인 페이지 표시
+        // 초기 DOM 로드 시 첫 페이지 표시
         showSection(loginPage);
       });
     })();
