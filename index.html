@@ -484,7 +484,7 @@
       let currentAnnouncement = null;
       let currentAdminOnlyAnnouncement = null; // 관리자 전용 공지사항 상태 저장
 
-      // DOM 요소 변수들
+      // DOM 요소 변수들 (올바른 스코프 내에서 let으로 선언)
       let loginPage, loginForm, roomNoInput, userNameInput, dormitorySelect, reservationPasswordInput, roomError, nameError, dormError, passwordError, adminLoginBtn;
       let floorSelectPage, floorSelect, floorNextBtn, backToLoginBtn, welcomeText;
       let seatMapPage, seatMapContainer, confirmBtn, cancelMyReservationBtn, backToFloorBtn, selectedDormTitle, selectedFloorTitle, reservationAvailabilityMessage;
@@ -492,7 +492,7 @@
       let adminPage, adminLogoutBtn, reservationListBody, clearAllReservationsBtn;
       let reservationTimeForm, resStartTimeInput, resEndTimeInput, timeSettingMessage;
       let announcementOverlay, announcementPopupMessage, announcementCloseBtn, announcementForm, announcementMessageInput, announcementActiveCheckbox, announcementMessageStatus;
-      let adminOnlyAnnouncementOverlay, adminOnlyAnnouncementPopupMessage, adminOnlyAnnouncementCloseBtn, adminOnlyAnnouncementForm, adminOnlyAnnouncementMessageInput, adminOnlyAnnouncementMessageStatus, adminOnlyAnnouncementActiveCheckbox;
+      let adminOnlyAnnouncementOverlay, adminOnlyAnnouncementPopupMessage, adminOnlyAnnouncementCloseBtn, adminOnlyAnnouncementForm, adminOnlyAnnouncementMessageInput, adminOnlyAnnouncementActiveCheckbox, adminOnlyAnnouncementMessageStatus;
       let loginSubmitBtn; // "다음" 버튼 참조 추가
 
       let currentUser = null; // { roomNo, name, dormitory, password }
@@ -931,10 +931,16 @@
         const password = reservationPasswordInput.value;
         const submitButton = loginSubmitBtn; 
 
+        // 폼 내의 다른 필수 필드도 확인
+        const isOtherFieldsValid = roomNoInput.value.trim() !== '' &&
+                                   userNameInput.value.trim() !== '' &&
+                                   dormitorySelect.value !== '';
+
         // 예약이 있는 사용자 (비활성화 상태)일 경우 검증 스킵
         if (reservationPasswordInput.disabled) {
           passwordError.textContent = '';
-          if (submitButton) submitButton.disabled = false;
+          if (submitButton && isOtherFieldsValid) submitButton.disabled = false; // 다른 필드도 유효해야 활성화
+          else if (submitButton) submitButton.disabled = true;
           return;
         }
 
@@ -951,8 +957,9 @@
           if (submitButton) submitButton.disabled = true; // 약한 비밀번호면 버튼 비활성화
         } else {
           passwordError.textContent = '';
-          // 다른 유효성 검사는 handleSubmitLoginForm에서 최종적으로 수행되므로, 여기서는 약한 비번만 아니면 일단 활성화
-          if (submitButton) submitButton.disabled = false;
+          // 비밀번호가 약하지 않고 다른 필드도 유효하면 버튼 활성화
+          if (submitButton && isOtherFieldsValid) submitButton.disabled = false;
+          else if (submitButton) submitButton.disabled = true;
         }
       }
 
@@ -1272,8 +1279,9 @@
           alert('비정상적인 요청이 감지되었습니다. (Honeypot)');
           valid = false;
         }
+        // 이 부분은 최종적으로 loginSubmitBtn.disabled = !valid; 처리되므로 필요에 따라 조건 추가 가능
         if (!valid) {
-          // 유효하지 않은 경우 버튼 비활성화 상태 유지 (checkPasswordStrength에서 이미 비활성화 되었을 수도 있음)
+          // 유효하지 않은 경우 버튼 비활성화 상태 유지
           if (loginSubmitBtn) loginSubmitBtn.disabled = true;
           return;
         }
@@ -1334,7 +1342,7 @@
         if (loginForm) loginForm.reset();
         if(reservationPasswordInput) reservationPasswordInput.disabled = false; // 비번칸 활성화
         if(passwordError) passwordError.textContent = ''; // 메시지 초기화
-        if (loginSubmitBtn) loginSubmitBtn.disabled = false; // 버튼 활성화
+        if (loginSubmitBtn) loginSubmitBtn.disabled = true; // 버튼 비활성화 (다시 유효성 검사해야 하므로)
         showSection(loginPage);
         hideAdminOnlyAnnouncement(); // 관리자 페이지 벗어날 때 관리자 전용 공지 숨김
         updateSeatPageButtonsVisibility();
@@ -1397,7 +1405,7 @@
                   reservationPasswordInput.disabled = false;
                   passwordError.textContent = '';
                 }
-                 if (loginSubmitBtn) loginSubmitBtn.disabled = false; // 버튼 활성화
+                 if (loginSubmitBtn) loginSubmitBtn.disabled = true; // 버튼 비활성화 (다시 유효성 검사해야 하므로)
             } else {
                 alert('취소 실패: ' + result.message);
             }
@@ -1414,6 +1422,13 @@
 
       function handleClickAdminLoginBackBtn() {
         showSection(loginPage);
+        // 관리자 페이지에서 벗어나므로, 초기화하고 "다음" 버튼 비활성화
+        if (loginForm) loginForm.reset();
+        if(reservationPasswordInput) {
+            reservationPasswordInput.disabled = false;
+            passwordError.textContent = '';
+        }
+        if (loginSubmitBtn) loginSubmitBtn.disabled = true;
       }
 
       async function handleSubmitAdminLoginForm(e) {
@@ -1449,18 +1464,20 @@
             reservationPasswordInput.disabled = false;
             passwordError.textContent = '';
           }
-          if (loginSubmitBtn) loginSubmitBtn.disabled = false; // 버튼 활성화
+          if (loginSubmitBtn) loginSubmitBtn.disabled = true; // 버튼 비활성화 (다시 유효성 검사해야 하므로)
           hideAdminOnlyAnnouncement(); // 관리자 페이지 벗어날 때 관리자 전용 공지 숨김
         }
       }
 
       async function handleClickClearAllReservationsBtn() {
+        // 백엔드에서 adminUsername을 필요로 하므로, currentAdmin이 없으면 경고
         if (!currentAdmin || !currentAdmin.username) {
             alert('권한이 없습니다. 관리자로 로그인했는지 확인해주세요.');
             return;
         }
+        // 비밀번호를 묻지 않음! 바로 컨펌 메시지 띄우고 관리자 이름을 전송
         if (confirm(`경고: 관리자(${currentAdmin.username})님, 모든 예약을 정말로 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
-          const result = await deleteAllReservations(); // 비밀번호 불필요, 관리자 이름은 자동으로 전송
+          const result = await deleteAllReservations(); // 이미 currentAdmin.username을 사용하여 API 호출
           if (result.success) {
             alert(result.message);
             // 모든 예약이 삭제되었으므로, 기존 사용자 로그인 정보 초기화 및 로그인 페이지로 이동
@@ -1473,8 +1490,10 @@
               reservationPasswordInput.disabled = false;
               passwordError.textContent = '';
             }
-            if (loginSubmitBtn) loginSubmitBtn.disabled = false;
+            if (loginSubmitBtn) loginSubmitBtn.disabled = true; // 버튼 비활성화 (다시 유효성 검사해야 하므로)
             showSection(loginPage);
+            // 관리자 페이지에서도 예약 목록이 비었음을 반영해야 함 (소켓이 처리하지만 UI 업데이트도 고려)
+            renderReservationList(); 
 
           } else {
             alert('모든 예약 취소 실패: ' + result.message);
@@ -1563,7 +1582,7 @@
             reservationPasswordInput.disabled = false;
             passwordError.textContent = '';
           }
-          if (loginSubmitBtn) loginSubmitBtn.disabled = false; // 버튼 활성화
+          if (loginSubmitBtn) loginSubmitBtn.disabled = true; // 버튼 비활성화 (다시 유효성 검사해야 하므로)
           showSection(loginPage);
         } else {
           alert(`${myReservation ? '예약 변경' : '예약'} 실패: ` + result.message);
@@ -1668,74 +1687,81 @@
         }
       }
 
+      // 모든 필수 입력 필드가 유효한지 확인하는 함수
+      function areLoginFieldsValid() {
+          return roomNoInput.value.trim() !== '' &&
+                 koreanNamePattern.test(userNameInput.value.trim()) &&
+                 dormitorySelect.value !== '' &&
+                 reservationPasswordInput.value.length >= 4 &&
+                 !isWeakPassword(reservationPasswordInput.value);
+      }
+
 
       // ---- 초기화 및 Socket.IO 리스너 ----
       document.addEventListener('DOMContentLoaded', async () => {
-        // 모든 DOM 요소 변수에 할당
-        Object.assign(window, { // global scope에 변수 할당 (최소화된 코드에서는 권장되지 않음)
-          loginPage: document.getElementById('loginPage'),
-          loginForm: document.getElementById('loginForm'),
-          roomNoInput: document.getElementById('roomNo'),
-          userNameInput: document.getElementById('userName'),
-          dormitorySelect: document.getElementById('dormitory'),
-          reservationPasswordInput: document.getElementById('reservationPassword'),
-          roomError: document.getElementById('roomError'),
-          nameError: document.getElementById('nameError'),
-          dormError: document.getElementById('dormError'),
-          passwordError: document.getElementById('passwordError'),
-          adminLoginBtn: document.getElementById('adminLoginBtn'),
-          loginSubmitBtn: document.getElementById('loginSubmitBtn'), // "다음" 버튼 참조 추가
+        // 모든 DOM 요소 변수에 할당 (스코프 내에서 let으로 선언)
+        loginPage = document.getElementById('loginPage');
+        loginForm = document.getElementById('loginForm');
+        roomNoInput = document.getElementById('roomNo');
+        userNameInput = document.getElementById('userName');
+        dormitorySelect = document.getElementById('dormitory');
+        reservationPasswordInput = document.getElementById('reservationPassword');
+        roomError = document.getElementById('roomError');
+        nameError = document.getElementById('nameError');
+        dormError = document.getElementById('dormError');
+        passwordError = document.getElementById('passwordError');
+        adminLoginBtn = document.getElementById('adminLoginBtn');
+        loginSubmitBtn = document.getElementById('loginSubmitBtn'); // "다음" 버튼 참조 추가
 
-          floorSelectPage: document.getElementById('floorSelectPage'),
-          floorSelect: document.getElementById('floorSelect'),
-          floorNextBtn: document.getElementById('floorNextBtn'),
-          backToLoginBtn: document.getElementById('backToLoginBtn'),
-          welcomeText: document.getElementById('welcomeText'),
+        floorSelectPage = document.getElementById('floorSelectPage');
+        floorSelect = document.getElementById('floorSelect');
+        floorNextBtn = document.getElementById('floorNextBtn');
+        backToLoginBtn = document.getElementById('backToLoginBtn');
+        welcomeText = document.getElementById('welcomeText');
 
-          seatMapPage: document.getElementById('seatMapPage'),
-          seatMapContainer: document.getElementById('seatMap'),
-          confirmBtn: document.getElementById('confirmBtn'),
-          cancelMyReservationBtn: document.getElementById('cancelMyReservationBtn'),
-          backToFloorBtn: document.getElementById('backToFloorBtn'),
-          selectedDormTitle: document.getElementById('selectedDorm'),
-          selectedFloorTitle: document.getElementById('selectedFloor'),
-          reservationAvailabilityMessage: document.getElementById('reservationAvailabilityMessage'),
+        seatMapPage = document.getElementById('seatMapPage');
+        seatMapContainer = document.getElementById('seatMap');
+        confirmBtn = document.getElementById('confirmBtn');
+        cancelMyReservationBtn = document.getElementById('cancelMyReservationBtn');
+        backToFloorBtn = document.getElementById('backToFloorBtn');
+        selectedDormTitle = document.getElementById('selectedDorm');
+        selectedFloorTitle = document.getElementById('selectedFloor');
+        reservationAvailabilityMessage = document.getElementById('reservationAvailabilityMessage');
 
-          adminLoginPage: document.getElementById('adminLoginPage'),
-          adminLoginForm: document.getElementById('adminLoginForm'),
-          adminUsernameInput: document.getElementById('adminUsernameInput'), // 관리자 이름 입력 필드
-          adminPasswordInput: document.getElementById('adminPasswordInput'),
-          adminUsernameError: document.getElementById('adminUsernameError'), // 관리자 이름 에러 영역
-          adminPasswordError: document.getElementById('adminPasswordError'), // 관리자 비밀번호 에러 영역
+        adminLoginPage = document.getElementById('adminLoginPage');
+        adminLoginForm = document.getElementById('adminLoginForm');
+        adminUsernameInput = document.getElementById('adminUsernameInput'); // 관리자 이름 입력 필드
+        adminPasswordInput = document.getElementById('adminPasswordInput');
+        adminUsernameError = document.getElementById('adminUsernameError'); // 관리자 이름 에러 영역
+        adminPasswordError = document.getElementById('adminPasswordError'); // 관리자 비밀번호 에러 영역
 
-          adminPage: document.getElementById('adminPage'),
-          adminLogoutBtn: document.getElementById('adminLogoutBtn'),
-          loggedInAdminName: document.getElementById('loggedInAdminName'), // 로그인한 관리자 이름 표시
-          reservationListBody: document.getElementById('reservationListBody'),
-          clearAllReservationsBtn: document.getElementById('clearAllReservationsBtn'),
+        adminPage = document.getElementById('adminPage');
+        adminLogoutBtn = document.getElementById('adminLogoutBtn');
+        loggedInAdminName = document.getElementById('loggedInAdminName'); // 로그인한 관리자 이름 표시
+        reservationListBody = document.getElementById('reservationListBody');
+        clearAllReservationsBtn = document.getElementById('clearAllReservationsBtn');
 
-          reservationTimeForm: document.getElementById('reservationTimeForm'),
-          resStartTimeInput: document.getElementById('resStartTimeInput'),
-          resEndTimeInput: document.getElementById('resEndTimeInput'),
-          timeSettingMessage: document.getElementById('timeSettingMessage'),
+        reservationTimeForm = document.getElementById('reservationTimeForm');
+        resStartTimeInput = document.getElementById('resStartTimeInput');
+        resEndTimeInput = document.getElementById('resEndTimeInput');
+        timeSettingMessage = document.getElementById('timeSettingMessage');
 
-          announcementOverlay: document.getElementById('announcementOverlay'),
-          announcementPopupMessage: document.getElementById('announcementMessage'),
-          announcementCloseBtn: announcementOverlay.querySelector('.close-btn'),
-          announcementForm: document.getElementById('announcementForm'),
-          announcementMessageInput: document.getElementById('announcementMessageInput'),
-          announcementActiveCheckbox: document.getElementById('announcementActiveCheckbox'),
-          announcementMessageStatus: document.getElementById('announcementMessageStatus'),
-          
-          // 관리자 전용 공지사항 관련 DOM 요소
-          adminOnlyAnnouncementOverlay: document.getElementById('adminOnlyAnnouncementOverlay'),
-          adminOnlyAnnouncementPopupMessage: document.getElementById('adminOnlyAnnouncementMessage'),
-          adminOnlyAnnouncementCloseBtn: adminOnlyAnnouncementOverlay.querySelector('.close-btn'),
-          adminOnlyAnnouncementForm: document.getElementById('adminOnlyAnnouncementForm'),
-          adminOnlyAnnouncementMessageInput: document.getElementById('adminOnlyAnnouncementMessageInput'),
-          adminOnlyAnnouncementActiveCheckbox: document.getElementById('adminOnlyAnnouncementActiveCheckbox'),
-          adminOnlyAnnouncementMessageStatus: document.getElementById('adminOnlyAnnouncementMessageStatus'),
-        });
+        announcementOverlay = document.getElementById('announcementOverlay');
+        announcementPopupMessage = document.getElementById('announcementMessage');
+        announcementCloseBtn = announcementOverlay.querySelector('.close-btn');
+        announcementForm = document.getElementById('announcementForm');
+        announcementMessageInput = document.getElementById('announcementMessageInput');
+        announcementActiveCheckbox = document.getElementById('announcementActiveCheckbox');
+        announcementMessageStatus = document.getElementById('announcementMessageStatus');
+        
+        // 관리자 전용 공지사항 관련 DOM 요소
+        adminOnlyAnnouncementOverlay = document.getElementById('adminOnlyAnnouncementOverlay');
+        adminOnlyAnnouncementPopupMessage = document.getElementById('adminOnlyAnnouncementMessage');
+        adminOnlyAnnouncementCloseBtn = adminOnlyAnnouncementOverlay.querySelector('.close-btn');
+        adminOnlyAnnouncementForm = document.getElementById('adminOnlyAnnouncementForm');
+        adminOnlyAnnouncementMessageInput = document.getElementById('adminOnlyAnnouncementMessageInput');
+        adminOnlyAnnouncementActiveCheckbox = document.getElementById('adminOnlyAnnouncementActiveCheckbox');
+        adminOnlyAnnouncementMessageStatus = document.getElementById('adminOnlyAnnouncementMessageStatus');
 
 
         // Socket.IO 클라이언트 연결 및 이벤트 리스너 설정
@@ -1868,25 +1894,17 @@
         // 예약 비밀번호 입력 필드에 실시간 검증 리스너 추가
         if (reservationPasswordInput) {
             reservationPasswordInput.addEventListener('input', checkPasswordStrength);
-            // 페이지 로드 시 또는 초기화 시 버튼 비활성 상태 (초기에는 유효성 검사 미완료)
-            if (loginSubmitBtn) loginSubmitBtn.disabled = true;
         }
         
-        // DOMContentLoaded에서 모든 input 필드에 이벤트 리스너 추가
-        [roomNoInput, userNameInput, dormitorySelect, reservationPasswordInput].forEach(input => {
+        // 로그인 폼의 다른 입력 필드에도 input 이벤트 리스너 추가하여 "다음" 버튼 활성화/비활성화 제어
+        [roomNoInput, userNameInput, dormitorySelect].forEach(input => {
           if (input) {
-            input.addEventListener('input', () => {
-              // 모든 필수 필드가 유효하고, 비밀번호가 약하지 않아야 '다음' 버튼 활성화
-              const isFormValid = roomNoInput.value.trim() !== '' &&
-                                  userNameInput.value.trim() !== '' &&
-                                  dormitorySelect.value !== '' &&
-                                  reservationPasswordInput.value.length >= 4 &&
-                                  !isWeakPassword(reservationPasswordInput.value);
-              if (loginSubmitBtn) loginSubmitBtn.disabled = !isFormValid;
-            });
+            input.addEventListener('input', checkPasswordStrength); // 비밀번호 강도 체크 함수 재활용
           }
         });
-
+        
+        // 페이지 로드 시 "다음" 버튼 초기 상태 설정
+        if (loginSubmitBtn) loginSubmitBtn.disabled = true; // 초기에는 비활성화
 
         // 초기 DOM 로드 시 첫 페이지 표시
         showSection(loginPage);
