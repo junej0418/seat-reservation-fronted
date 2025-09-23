@@ -560,14 +560,60 @@
       };
 
       // 약한 비밀번호 검증 헬퍼 함수 (백엔드 로직과 동일하게)
-      function isWeakPassword(password) {
-        const weakPatterns = [
-          /^(.)\1{3,}$/, // 1111, aaaa 등 4자리 이상 반복
-          /^1234(5?6?7?8?9?)?$/, // 1234, 12345 등 순차적
-          /^0000$/, // 0000 (0이 4자리 이상)
-          // 필요한 경우 추가 패턴 정의
+     function isWeakPassword(password) {
+        const passwordLower = password.toLowerCase(); // 소문자로 변환하여 검사 (대소문자 무시)
+        const passwordLength = password.length;
+
+        // 1. 단순한 약한 패턴들 (Regex 사용)
+        const simpleWeakPatterns = [
+            /^(.)\1{3,}$/,       // 4자리 이상 동일한 문자/숫자 반복 (예: 1111, aaaa, ####)
+            // 키보드 상의 연속 패턴들 (4자리 이상부터)
+            /^abcd(e?f?g?h?i?j?k?l?m?n?o?p?q?r?s?t?u?v?w?x?y?z?)?$/, // 알파벳 순차 (abcd...)
+            /^qwer(t?y?u?i?o?p?)?$/,                               // QWERTY 키보드 상위열 (qwer...)
+            // 다른 자주 쓰이는 단순한 문자열도 추가 가능 (예: password, 0000, 123456 등)
         ];
-        return weakPatterns.some(pattern => pattern.test(password));
+
+        // 대소문자 무시하고 simpleWeakPatterns에 해당하는지 확인
+        if (simpleWeakPatterns.some(pattern => pattern.test(passwordLower))) {
+            return true;
+        }
+
+        // 2. 루프 기반의 순차/역순차 검사 (숫자 및 알파벳) - 4자리 이상 연속될 경우
+        if (passwordLength >= 4) {
+            for (let i = 0; i <= passwordLength - 4; i++) {
+                const sub = passwordLower.substring(i, i + 4); // 4자리씩 슬라이딩 윈도우
+
+                // 순차/역순차 숫자 검사
+                if (/^\d{4}$/.test(sub)) { // 4자리가 모두 숫자인지 확인
+                    const d0 = parseInt(sub[0], 10);
+                    const d1 = parseInt(sub[1], 10);
+                    const d2 = parseInt(sub[2], 10);
+                    const d3 = parseInt(sub[3], 10);
+
+                    // 순차적 (예: 1234, 5678, 6789) 또는 역순차적 (예: 4321, 9876)
+                    if ((d1 === d0 + 1 && d2 === d1 + 1 && d3 === d2 + 1) ||
+                        (d1 === d0 - 1 && d2 === d1 - 1 && d3 === d2 - 1)) {
+                        return true;
+                    }
+                }
+
+                // 순차/역순차 알파벳 검사
+                if (/^[a-z]{4}$/.test(sub)) { // 4자리가 모두 알파벳인지 확인
+                    const c0 = sub.charCodeAt(0);
+                    const c1 = sub.charCodeAt(1);
+                    const c2 = sub.charCodeAt(2);
+                    const c3 = sub.charCodeAt(3);
+
+                    // 순차적 (예: abcd, efgh) 또는 역순차적 (예: dcba, hgfe)
+                    if ((c1 === c0 + 1 && c2 === c1 + 1 && c3 === c2 + 1) ||
+                        (c1 === c0 - 1 && c2 === c1 - 1 && c3 === c2 - 1)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false; // 위 패턴에 해당하지 않으면 안전하다고 판단
       }
 
       // ---- API 통신 함수들 ----
