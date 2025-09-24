@@ -331,7 +331,7 @@
       <div id="nameError" class="error"></div>
 
       <label for="dormitory">기숙사 선택:</label>
-      <select id="dormitory" name="dormitory" required>
+      <select type="text" id="dormitory" name="dormitory" required>
         <option value="" disabled selected>선택하세요</option>
         <option value="꿈동">꿈동</option>
         <option value="미래동">미래동</option>
@@ -1877,7 +1877,8 @@
         if (cancelMyReservationBtn) cancelMyReservationBtn.addEventListener('click', handleClickCancelMyReservationBtn);
         
         if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleClickAdminLoginBtn);
-        const adminLoginBackBtn = document.getElementById('adminLoginBackBtn');
+        // let adminLoginBackBtn = document.getElementById('adminLoginBackBtn'); // 이곳에서 이미 선언되었을 경우 문제가 발생할 수 있습니다.
+        const adminLoginBackBtn = document.getElementById('adminLoginBackBtn'); // 기존 선언 문제 해결, const/let 확인
         if (adminLoginBackBtn) adminLoginBackBtn.addEventListener('click', handleClickAdminLoginBackBtn);
         if (adminLoginForm) adminLoginForm.addEventListener('submit', handleSubmitAdminLoginForm);
         if (adminLogoutBtn) adminLogoutBtn.addEventListener('click', handleClickAdminLogoutBtn);
@@ -1897,11 +1898,9 @@
         }
         
         // 로그인 폼의 다른 입력 필드에도 input 이벤트 리스너 추가하여 "다음" 버튼 활성화/비활성화 제어
-        [roomNoInput, userNameInput, dormitorySelect].forEach(input => {
-          if (input) {
-            input.addEventListener('input', checkPasswordStrength); // 비밀번호 강도 체크 함수 재활용
-          }
-        });
+        if (roomNoInput) roomNoInput.addEventListener('input', checkPasswordStrength);
+        if (userNameInput) userNameInput.addEventListener('input', checkPasswordStrength);
+        if (dormitorySelect) dormitorySelect.addEventListener('change', checkPasswordStrength);
         
         // 페이지 로드 시 "다음" 버튼 초기 상태 설정
         if (loginSubmitBtn) loginSubmitBtn.disabled = true; // 초기에는 비활성화
