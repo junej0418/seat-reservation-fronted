@@ -739,12 +739,17 @@
           }
       }
 
-      async function deleteReservation(id, password) {
+      // 개별 예약 삭제 API (관리자일 경우 비밀번호 없이 삭제 가능하도록 수정)
+      async function deleteReservation(id, password = null, adminUsername = null) {
         try {
+          const body = {};
+          if (password) body.password = password;
+          if (adminUsername) body.adminUsername = adminUsername; // 관리자 이름 추가
+
           const res = await fetch(`${BACKEND_URL}/api/reservations/${id}`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password, adminUsername: currentAdmin ? currentAdmin.username : null }) // 관리자 이름 전송
+            body: JSON.stringify(body)
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || '예약 취소 실패');
@@ -1218,19 +1223,30 @@
           cancelButton.textContent = '취소';
           cancelButton.dataset.id = res._id;
           cancelButton.addEventListener('click', async (e) => {
-            const userPassForCancel = prompt(`예약자 ${res.name}님의 비밀번호를 입력해주세요:`); // 예약자 비밀번호 입력받기
-            if (!userPassForCancel) {
-                alert('비밀번호가 입력되지 않아 취소를 취소합니다.');
-                return;
-            }
-
-            if (confirm(`이 예약을 취소하시겠습니까? (이름: ${res.name}, 좌석: ${res.dormitory} ${res.floor}층 ${res.seat}번)`)) {
-              const result = await deleteReservation(e.target.dataset.id, userPassForCancel); // 비밀번호 전달
-              if (result.success) {
-                alert(result.message);
-              } else {
-                alert('취소 실패: ' + result.message);
-              }
+            if (currentAdmin) { // 관리자로 로그인된 경우 (개별 예약 취소 시 비밀번호 입력 없음)
+                if (confirm(`관리자(${currentAdmin.username}) 권한으로 이 예약을 취소하시겠습니까? (이름: ${res.name}, 좌석: ${res.dormitory} ${res.floor}층 ${res.seat}번)`)) {
+                    // adminUsername만 전달하고 password는 null 또는 undefined로 전달
+                    const result = await deleteReservation(e.target.dataset.id, null, currentAdmin.username); 
+                    if (result.success) {
+                        alert(result.message);
+                    } else {
+                        alert('관리자 취소 실패: ' + result.message);
+                    }
+                }
+            } else { // 관리자가 아닌 경우 또는 admin이 null인 경우 (일반 사용자 취소)
+                const userPassForCancel = prompt(`예약자 ${res.name}님의 비밀번호를 입력해주세요:`); // 예약자 비밀번호 입력받기
+                if (!userPassForCancel) {
+                    alert('비밀번호가 입력되지 않아 취소를 취소합니다.');
+                    return;
+                }
+                if (confirm(`이 예약을 취소하시겠습니까? (이름: ${res.name}, 좌석: ${res.dormitory} ${res.floor}층 ${res.seat}번)`)) {
+                    const result = await deleteReservation(e.target.dataset.id, userPassForCancel, null); // 예약자 비밀번호 전달
+                    if (result.success) {
+                        alert(result.message);
+                    } else {
+                        alert('취소 실패: ' + result.message);
+                    }
+                }
             }
           });
           funcCell.appendChild(cancelButton);
@@ -1272,6 +1288,8 @@
       function formatDateTimeLocal(date) {
         if (!date) return '';
         const d = new Date(date);
+        // getTimezoneOffset()은 분 단위이므로 60000 곱해서 밀리초로
+        // local DateTime-Local 형식에 맞추기 위해 로컬 시간으로 보정
         return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
       }
 
@@ -1502,7 +1520,7 @@
         }
       }
 
-      // --- 수정: 모든 예약 취소 시 추가 프롬프트 없이 로그인된 관리자 이름만 전달 ---
+      // 모든 예약 취소 버튼: 관리자 이름으로만 요청
       async function handleClickClearAllReservationsBtn() {
         // 백엔드에서 adminUsername을 필요로 하므로, currentAdmin이 없으면 권한 없음 처리
         if (!currentAdmin || !currentAdmin.username) {
@@ -1833,7 +1851,6 @@
           if (adminPage && !adminPage.classList.contains("hidden")) {
             if (resStartTimeInput) resStartTimeInput.value = adminSettings.reservationStartTime ? formatDateTimeLocal(adminSettings.reservationStartTime) : '';
             if (resEndTimeInput) resEndTimeInput.value = adminSettings.reservationEndTime ? formatDateTimeLocal(adminSettings.reservationEndTime) : '';
-            // 메시지 업데이트용 (주석 처리)
           }
         });
 
@@ -1851,7 +1868,7 @@
           }
         });
         
-        // 관리자 전용 공지사항 업데이트 이벤트 리스너 (새로운 이벤트)
+        // 관리자 전용 공지사항 업데이트 이벤트 리스너
         socket.on('adminAnnouncementUpdated', (updatedAdminAnnouncement) => {
             console.log('관리자 전용 공지사항 업데이트 수신:', updatedAdminAnnouncement);
             currentAdminOnlyAnnouncement = updatedAdminAnnouncement;
@@ -1863,7 +1880,7 @@
                 if (adminOnlyAnnouncementActiveCheckbox) adminOnlyAnnouncementActiveCheckbox.checked = currentAdminOnlyAnnouncement ? currentAdminOnlyAnnouncement.active || false : false;
                 if (adminOnlyAnnouncementMessageStatus) { // 메시지 업데이트용
                     adminOnlyAnnouncementMessageStatus.textContent = '관리자 전용 공지사항이 업데이트되었습니다.';
-                    announcementMessageStatus.style.color = '#10b981'; // 여기는 adminOnlyAnnouncementMessageStatus여야 함
+                    adminOnlyAnnouncementMessageStatus.style.color = '#10b981'; 
                 }
             }
         });
@@ -1888,11 +1905,10 @@
             updateAnnouncementDisplay();
         });
 
-        // 초기 관리자 전용 공지사항 수신 (새로운 초기 이벤트)
+        // 초기 관리자 전용 공지사항 수신 
         socket.on('adminOnlyAnnouncementInitial', (initialAdminAnnouncement) => {
             console.log('초기 관리자 전용 공지사항 수신:', initialAdminAnnouncement);
             currentAdminOnlyAnnouncement = initialAdminAnnouncement;
-            // 관리자 전용 공지사항은 관리자 로그인 시에만 보이므로 초기 로드 시에는 숨김
         });
 
 
