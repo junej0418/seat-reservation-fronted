@@ -331,7 +331,7 @@
       <div id="nameError" class="error"></div>
 
       <label for="dormitory">기숙사 선택:</label>
-      <select type="text" id="dormitory" name="dormitory" required>
+      <select id="dormitory" name="dormitory" required>
         <option value="" disabled selected>선택하세요</option>
         <option value="꿈동">꿈동</option>
         <option value="미래동">미래동</option>
@@ -755,16 +755,18 @@
         }
       }
 
-      async function deleteAllReservations() { // 비밀번호 불필요
+      async function deleteAllReservations(adminPassword) { // 비밀번호 필드를 인자로 추가
         try {
-          // currentAdmin이 없거나 username이 없으면 권한 없음 처리
           if (!currentAdmin || !currentAdmin.username) {
             return { success: false, message: '권한이 없습니다. 관리자로 로그인했는지 확인해주세요.' };
+          }
+          if (!adminPassword) {
+            return { success: false, message: '관리자 비밀번호를 입력해주세요.' };
           }
           const res = await fetch(`${BACKEND_URL}/api/reservations/all`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ adminUsername: currentAdmin.username }) // 관리자 이름 전송
+            body: JSON.stringify({ adminUsername: currentAdmin.username, adminPassword: adminPassword }) // 관리자 이름과 비밀번호 전송
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || '모든 예약 취소 실패');
@@ -777,10 +779,21 @@
 
       async function updateAdminSettings(startTime, endTime) {
         try {
+          // 관리자 비밀번호를 다시 입력받는 프롬프트를 띄움
+          const adminPassword = prompt('설정 저장을 위해 관리자 비밀번호를 입력해주세요:');
+          if (!adminPassword) {
+            return { success: false, message: '관리자 비밀번호가 입력되지 않아 취소합니다.' };
+          }
+
           const res = await fetch(`${BACKEND_URL}/api/admin-settings`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reservationStartTime: startTime, reservationEndTime: endTime, adminUsername: currentAdmin ? currentAdmin.username : null }) // 관리자 이름 전송
+            body: JSON.stringify({
+                reservationStartTime: startTime,
+                reservationEndTime: endTime,
+                adminUsername: currentAdmin ? currentAdmin.username : null,
+                adminPassword: adminPassword // 관리자 비밀번호 전송
+            })
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || '설정 저장 실패');
@@ -793,10 +806,21 @@
 
       async function updateAnnouncement(message, active) {
         try {
+          // 관리자 비밀번호를 다시 입력받는 프롬프트를 띄움
+          const adminPassword = prompt('공지사항 저장을 위해 관리자 비밀번호를 입력해주세요:');
+          if (!adminPassword) {
+            return { success: false, message: '관리자 비밀번호가 입력되지 않아 취소합니다.' };
+          }
+
           const res = await fetch(`${BACKEND_URL}/api/announcement`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, active, adminUsername: currentAdmin ? currentAdmin.username : null }) // 관리자 이름 전송
+            body: JSON.stringify({
+                message: message,
+                active: active,
+                adminUsername: currentAdmin ? currentAdmin.username : null,
+                adminPassword: adminPassword // 관리자 비밀번호 전송
+            })
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || '공지사항 저장 실패');
@@ -810,10 +834,21 @@
       // 관리자 전용 공지사항 업데이트 (새로운 함수)
       async function updateAdminOnlyAnnouncement(message, active) {
         try {
+          // 관리자 비밀번호를 다시 입력받는 프롬프트를 띄움
+          const adminPassword = prompt('관리자 전용 공지 저장을 위해 관리자 비밀번호를 입력해주세요:');
+          if (!adminPassword) {
+            return { success: false, message: '관리자 비밀번호가 입력되지 않아 취소합니다.' };
+          }
+
           const res = await fetch(`${BACKEND_URL}/api/admin-announcement`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, active, adminUsername: currentAdmin ? currentAdmin.username : null }) // 관리자 이름 전송
+            body: JSON.stringify({
+                message: message,
+                active: active,
+                adminUsername: currentAdmin ? currentAdmin.username : null,
+                adminPassword: adminPassword // 관리자 비밀번호 전송
+            })
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || '관리자 전용 공지사항 저장 실패');
@@ -1386,7 +1421,7 @@
             return;
         }
 
-        const reservationPassword = prompt('예약 취소를 위해 비밀번호를 입력해주세요:'); // 비밀번호 입력받기
+        const reservationPassword = prompt('예약 취소를 위해 비밀번호를 입력해주세요:'); // 예약자 비밀번호 입력받기
         if (!reservationPassword) {
             alert('비밀번호가 입력되지 않아 취소를 취소합니다.');
             return;
@@ -1470,14 +1505,19 @@
       }
 
       async function handleClickClearAllReservationsBtn() {
-        // 백엔드에서 adminUsername을 필요로 하므로, currentAdmin이 없으면 경고
+        // 백엔드에서 adminUsername과 adminPassword를 모두 필요로 하므로, 둘 다 요청
         if (!currentAdmin || !currentAdmin.username) {
             alert('권한이 없습니다. 관리자로 로그인했는지 확인해주세요.');
             return;
         }
-        // 비밀번호를 묻지 않음! 바로 컨펌 메시지 띄우고 관리자 이름을 전송
+        const adminPasswordInput = prompt('모든 예약을 취소하려면 관리자 비밀번호를 입력해주세요:');
+        if (!adminPasswordInput) {
+            alert('관리자 비밀번호가 입력되지 않아 취소를 취소합니다.');
+            return;
+        }
+
         if (confirm(`경고: 관리자(${currentAdmin.username})님, 모든 예약을 정말로 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
-          const result = await deleteAllReservations(); // 이미 currentAdmin.username을 사용하여 API 호출
+          const result = await deleteAllReservations(adminPasswordInput); // 관리자 비밀번호 전달
           if (result.success) {
             alert(result.message);
             // 모든 예약이 삭제되었으므로, 기존 사용자 로그인 정보 초기화 및 로그인 페이지로 이동
@@ -1799,8 +1839,7 @@
           if (adminPage && !adminPage.classList.contains("hidden")) {
             if (resStartTimeInput) resStartTimeInput.value = adminSettings.reservationStartTime ? formatDateTimeLocal(adminSettings.reservationStartTime) : '';
             if (resEndTimeInput) resEndTimeInput.value = adminSettings.reservationEndTime ? formatDateTimeLocal(adminSettings.reservationEndTime) : '';
-            const fakeEvent = new Event('submit', { cancelable: true });
-            handleSubmitReservationTimeForm(fakeEvent); // 메시지 업데이트용
+            // handleSubmitReservationTimeForm(fakeEvent); // 메시지 업데이트용 (주석 처리)
           }
         });
 
@@ -1877,12 +1916,11 @@
         if (cancelMyReservationBtn) cancelMyReservationBtn.addEventListener('click', handleClickCancelMyReservationBtn);
         
         if (adminLoginBtn) adminLoginBtn.addEventListener('click', handleClickAdminLoginBtn);
-        // let adminLoginBackBtn = document.getElementById('adminLoginBackBtn'); // 이곳에서 이미 선언되었을 경우 문제가 발생할 수 있습니다.
-        const adminLoginBackBtn = document.getElementById('adminLoginBackBtn'); // 기존 선언 문제 해결, const/let 확인
+        const adminLoginBackBtn = document.getElementById('adminLoginBackBtn');
         if (adminLoginBackBtn) adminLoginBackBtn.addEventListener('click', handleClickAdminLoginBackBtn);
         if (adminLoginForm) adminLoginForm.addEventListener('submit', handleSubmitAdminLoginForm);
         if (adminLogoutBtn) adminLogoutBtn.addEventListener('click', handleClickAdminLogoutBtn);
-        if (clearAllReservationsBtn) clearAllReservationsBtn.addEventListener('click', handleClickClearAllReservationsBtn);
+        if (clearAllReservationsBtn) clearAllReservationsBtn.addEventListener('click', handleClickClearAllReservationsBtn); // 모든 예약 취소 버튼
         if (confirmBtn) confirmBtn.addEventListener('click', handleSubmitConfirmBtn);
         if (reservationTimeForm) reservationTimeForm.addEventListener('submit', handleSubmitReservationTimeForm);
         if (announcementForm) announcementForm.addEventListener('submit', handleSubmitAnnouncementForm);
