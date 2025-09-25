@@ -887,6 +887,17 @@
 
 
       // ---- 유틸리티 및 UI 로직 함수들 ----
+     // 유틸리티 함수: debounce - 지정된 딜레이 시간 동안 함수가 여러 번 호출되더라도 마지막 호출만 실행
+      function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+          const context = this;
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(context, args), delay);
+        };
+      }
+
+
       function isReservationTimeAllowed() {
         if (!adminSettings || !adminSettings.reservationStartTime || !adminSettings.reservationEndTime) {
           return { allowed: false, message: '관리자가 예약 가능 시간을 설정하지 않았습니다.' };
