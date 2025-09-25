@@ -760,16 +760,19 @@
         }
       }
 
-      // 모든 예약 삭제 (추가 비밀번호 프롬프트 없이, 로그인된 관리자 이름만 전달)
-      async function deleteAllReservations() { 
+      // 모든 예약 삭제 (로그인된 관리자 이름과 비밀번호를 전달)
+      async function deleteAllReservations(adminPassword) { // adminPassword 인자 추가
         try {
           if (!currentAdmin || !currentAdmin.username) {
             return { success: false, message: '권한이 없습니다. 관리자로 로그인했는지 확인해주세요.' };
           }
+          if (!adminPassword) { // 프론트엔드에서 비밀번호를 입력받지 못하면 에러 처리
+            return { success: false, message: '관리자 비밀번호가 입력되지 않아 취소를 취소합니다.' };
+          }
           const res = await fetch(`${BACKEND_URL}/api/reservations/all`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ adminUsername: currentAdmin.username }) // 로그인된 관리자 이름만 전달
+            body: JSON.stringify({ adminUsername: currentAdmin.username, adminPassword: adminPassword }) // 관리자 이름과 비밀번호 모두 전달
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.message || '모든 예약 취소 실패');
@@ -1520,16 +1523,21 @@
         }
       }
 
-      // 모든 예약 취소 버튼: 관리자 이름으로만 요청
+      // --- 수정: 모든 예약 취소 버튼 클릭 시 관리자 비밀번호 입력 받기 ---
       async function handleClickClearAllReservationsBtn() {
-        // 백엔드에서 adminUsername을 필요로 하므로, currentAdmin이 없으면 권한 없음 처리
+        // 백엔드에서 adminUsername과 adminPassword를 모두 필요로 하므로, 둘 다 요청
         if (!currentAdmin || !currentAdmin.username) {
             alert('권한이 없습니다. 관리자로 로그인했는지 확인해주세요.');
             return;
         }
-        
+        const adminPasswordInput = prompt('모든 예약을 취소하려면 관리자 비밀번호를 입력해주세요:');
+        if (!adminPasswordInput) {
+            alert('관리자 비밀번호가 입력되지 않아 취소를 취소합니다.');
+            return;
+        }
+
         if (confirm(`경고: 관리자(${currentAdmin.username})님, 모든 예약을 정말로 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
-          const result = await deleteAllReservations(); // 로그인된 관리자 이름은 함수 내부에서 currentAdmin으로 자동 전달
+          const result = await deleteAllReservations(adminPasswordInput); // 관리자 비밀번호 전달
           if (result.success) {
             alert(result.message);
             // 모든 예약이 삭제되었으므로, 기존 사용자 로그인 정보 초기화 및 로그인 페이지로 이동
