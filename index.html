@@ -1,706 +1,635 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>랜선석 예약 시스템</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>랜선석 예약 시스템</title>
+<style>
+  /* 기본 스타일 */
+  body {
+    font-family: 'Malgun Gothic', Arial, sans-serif;
+    margin: 0; padding: 10px 0;
+    background: #fafafc;
+    color: #2c3e50;
+  }
+  h1, h2 {
+    text-align: center;
+    margin: 1em 0;
+    color: #334155;
+  }
+  .container {
+    max-width: 960px;
+    margin: 10px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  }
+
+  /* 입력 폼 */
+  .input-group { margin-bottom: 1em; }
+  .input-group label {
+    display: block;
+    margin-bottom: 0.4em;
+    font-weight: 600;
+    font-size: 0.9em;
+    color: #334155;
+  }
+  .input-group input,
+  .input-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 1em;
+    box-sizing: border-box;
+  }
+  .input-group input:focus,
+  .input-group select:focus {
+    outline: none;
+    border-color: #6366f1;
+  }
+
+  /* 버튼 */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 0.8em;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .btn-primary {
+    background: #6366f1;
+    color: white;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: #4f46e5;
+  }
+  .btn-primary:disabled {
+    background: #cbd5e1;
+    cursor: not-allowed;
+  }
+  .btn-secondary {
+    background: #64748b;
+    color: white;
+  }
+  .btn-secondary:hover {
+    background: #475569;
+  }
+  .btn-danger {
+    background: #ef4444;
+    color: white;
+  }
+  .btn-danger:hover {
+    background: #dc2626;
+  }
+  .btn-success {
+    background: #10b981;
+    color: white;
+  }
+  .btn-success:hover {
+    background: #059669;
+  }
+
+  /* 섹션 전환 */
+  .section {
+    display: none;
+  }
+  .section.active {
+    display: block;
+  }
+
+  /* 좌석 선택 */
+  .floor-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 1.2em;
+  }
+  .floor-btn {
+    flex: 1 1 calc(50% - 6px);
+    padding: 18px;
+    background: #6366f1;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .floor-btn:hover {
+    background: #4f46e5;
+  }
+
+  /* 좌석 그리드 */
+  .seats {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 8px;
+    margin-top: 1.5em;
+  }
+  .seat {
+    aspect-ratio: 1;
+    border: 2px solid #cbd5e1;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+    font-size: 0.9em;
+  }
+  .seat.available {
+    background: #d1fae5;
+    border-color: #10b981;
+    color: #065f46;
+  }
+  .seat.available:hover {
+    background: #a7f3d0;
+  }
+  .seat.reserved {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #991b1b;
+    cursor: not-allowed;
+  }
+  .seat.my-seat {
+    background: #dbeafe;
+    border-color: #3b82f6;
+    color: #1e3a8a;
+  }
+
+  /* 범례 */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 1em 0;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+  }
+  .legend-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 2px solid;
+  }
+  .legend-box.available {
+    background: #d1fae5;
+    border-color: #10b981;
+  }
+  .legend-box.reserved {
+    background: #fee2e2;
+    border-color: #ef4444;
+  }
+  .legend-box.my-seat {
+    background: #dbeafe;
+    border-color: #3b82f6;
+  }
+
+  /* 관리자 테이블 */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1em;
+  }
+  th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  th {
+    background: #f1f5f9;
+    font-weight: 600;
+    color: #334155;
+  }
+  tbody tr:hover {
+    background: #fafafa;
+  }
+
+  /* 모달 */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  }
+  .modal.active {
+    display: flex;
+  }
+  .modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-content h2 {
+    margin-top: 0;
+  }
+  .modal-content .btn {
+    margin-top: 1em;
+  }
+
+  /* 개인정보 동의 모달 스타일 추가 */
+  #privacyConsentModal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  }
+  #privacyConsentModal.active {
+    display: flex;
+  }
+  #privacyConsentModal .modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 650px;
+    width: 90%;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  #privacyConsentModal h2 {
+    color: #334155;
+    border-bottom: 2px solid #6366f1;
+    padding-bottom: 10px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  #privacyConsentModal h3 {
+    color: #6366f1;
+    margin-top: 18px;
+    margin-bottom: 10px;
+    font-size: 1em;
+  }
+  #privacyConsentModal p, #privacyConsentModal li {
+    color: #475569;
+    font-size: 0.9em;
+    line-height: 1.7;
+  }
+  #privacyConsentModal ul {
+    margin-left: 20px;
+    margin-bottom: 12px;
+  }
+  .privacy-content {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  .consent-checkbox-wrapper {
+    text-align: center;
+    margin: 25px 0;
+  }
+  .consent-checkbox-wrapper label {
+    font-size: 1em;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    color: #334155;
+  }
+  .consent-checkbox-wrapper input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    cursor: pointer;
+  }
+  .privacy-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+  .privacy-buttons button {
+    padding: 12px 40px;
+    font-size: 1em;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+  }
+  #privacyConsentAgreeBtn {
+    background: #10b981;
+    color: white;
+  }
+  #privacyConsentAgreeBtn:hover {
+    background: #059669;
+  }
+  #privacyConsentCancelBtn {
+    background: #ef4444;
+    color: white;
+  }
+  #privacyConsentCancelBtn:hover {
+    background: #dc2626;
+  }
+
+  /* 반응형 */
+  @media (max-width: 600px) {
+    .seats {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
     }
-    
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-    
-    .container {
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      padding: 40px;
-      max-width: 500px;
-      width: 100%;
-    }
-    
-    h1 {
-      text-align: center;
-      color: #667eea;
-      margin-bottom: 30px;
-      font-size: 28px;
-    }
-    
-    h2 {
-      text-align: center;
-      color: #667eea;
-      margin-bottom: 20px;
-      font-size: 24px;
-    }
-    
-    .form-group {
-      margin-bottom: 20px;
-    }
-    
-    label {
-      display: block;
-      margin-bottom: 8px;
-      color: #333;
-      font-weight: 600;
-    }
-    
-    input[type="text"],
-    input[type="password"],
-    input[type="datetime-local"],
-    select,
-    textarea {
-      width: 100%;
-      padding: 12px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 16px;
-      transition: border-color 0.3s;
-    }
-    
-    input[type="text"]:focus,
-    input[type="password"]:focus,
-    input[type="datetime-local"]:focus,
-    select:focus,
-    textarea:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-    
-    textarea {
-      resize: vertical;
-      min-height: 100px;
-    }
-    
-    .btn {
-      width: 100%;
-      padding: 14px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-    
-    .btn:active {
-      transform: translateY(0);
-    }
-    
-    .btn-secondary {
-      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      margin-top: 10px;
-    }
-    
-    .btn-danger {
-      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-    }
-    
-    .btn-success {
-      background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
-    }
-    
-    .screen {
-      display: none;
-    }
-    
-    .screen.active {
-      display: block;
-    }
-    
-    /* 층 선택 화면 */
-    #floorSelectScreen .container {
-      max-width: 600px;
-    }
-    
-    .floor-buttons {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 15px;
-      margin: 20px 0;
-    }
-    
-    .floor-btn {
-      padding: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 18px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .floor-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-    }
-    
-    /* 좌석 배치도 화면 */
-    #seatMapScreen .container {
-      max-width: 900px;
-    }
-    
-    .seat-grid {
-      display: grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap: 10px;
-      margin: 20px 0;
-    }
-    
     .seat {
-      aspect-ratio: 1;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-      background: white;
+      font-size: 0.75em;
     }
-    
-    .seat.available {
-      background: #e8f5e9;
-      border-color: #4caf50;
-      color: #2e7d32;
+    .floor-btn {
+      flex: 1 1 100%;
     }
-    
-    .seat.available:hover {
-      background: #c8e6c9;
-      transform: scale(1.05);
-    }
-    
-    .seat.reserved {
-      background: #ffebee;
-      border-color: #f44336;
-      color: #c62828;
-      cursor: not-allowed;
-    }
-    
-    .seat.my-seat {
-      background: #e3f2fd;
-      border-color: #2196f3;
-      color: #1565c0;
-      font-weight: 700;
-    }
-    
-    .seat.my-seat:hover {
-      background: #bbdefb;
-      transform: scale(1.05);
-    }
-    
-    .legend {
-      display: flex;
-      justify-content: center;
-      gap: 20px;
-      margin: 20px 0;
-      flex-wrap: wrap;
-    }
-    
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .legend-box {
-      width: 20px;
-      height: 20px;
-      border-radius: 4px;
-      border: 2px solid;
-    }
-    
-    .legend-box.available {
-      background: #e8f5e9;
-      border-color: #4caf50;
-    }
-    
-    .legend-box.reserved {
-      background: #ffebee;
-      border-color: #f44336;
-    }
-    
-    .legend-box.my-seat {
-      background: #e3f2fd;
-      border-color: #2196f3;
-    }
-    
-    /* 관리자 페이지 */
-    #adminScreen .container {
-      max-width: 1200px;
-    }
-    
-    .admin-section {
-      margin-bottom: 30px;
-      padding: 20px;
-      background: #f5f5f5;
-      border-radius: 10px;
-    }
-    
-    .admin-section h3 {
-      color: #667eea;
-      margin-bottom: 15px;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: white;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #e0e0e0;
-    }
-    
-    th {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      font-weight: 600;
-    }
-    
-    tr:hover {
-      background: #f5f5f5;
-    }
-    
-    .action-btn {
-      padding: 6px 12px;
-      background: #f44336;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    
-    .action-btn:hover {
-      background: #d32f2f;
-    }
-    
-    .view-password-btn {
-      padding: 6px 12px;
-      background: #2196f3;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      margin-right: 5px;
-    }
-    
-    .view-password-btn:hover {
-      background: #1976d2;
-    }
-    
-    .checkbox-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    
-    .checkbox-group input[type="checkbox"] {
-      width: auto;
-      margin: 0;
-    }
-    
-    /* 모달 스타일 */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    
-    .modal.active {
-      display: flex;
-    }
-    
-    .modal-content {
-      background: white;
-      padding: 30px;
-      border-radius: 15px;
-      max-width: 500px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-    
-    .modal-content h2 {
-      margin-bottom: 20px;
-    }
-    
-    .modal-content p {
-      margin-bottom: 15px;
-      line-height: 1.6;
-      color: #555;
-    }
-    
-    .modal-buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    
-    .modal-buttons button {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    
-    /* 개인정보 동의 모달 스타일 */
-    #privacyConsentModal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-    }
+  }
 
-    #privacyConsentModal .modal-content {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      max-width: 600px;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
+  /* 비밀번호 강도 표시 */
+  .password-strength {
+    margin-top: 0.5em;
+    font-size: 0.85em;
+    font-weight: 600;
+  }
+  .strength-weak { color: #ef4444; }
+  .strength-medium { color: #f59e0b; }
+  .strength-strong { color: #10b981; }
 
-    #privacyConsentModal h2 {
-      color: #333;
-      border-bottom: 2px solid #4CAF50;
-      padding-bottom: 10px;
-      text-align: center;
-      margin-bottom: 20px;
-    }
+  /* 공지사항 스타일 */
+  .notice {
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 12px;
+    margin: 1em 0;
+    border-radius: 6px;
+    font-size: 0.9em;
+  }
 
-    #privacyConsentModal h3 {
-      color: #4CAF50;
-      margin-top: 15px;
-      margin-bottom: 8px;
-      font-size: 16px;
-    }
+  /* 관리자 섹션 */
+  .admin-section {
+    margin-bottom: 2em;
+    padding: 20px;
+    background: #f8fafc;
+    border-radius: 10px;
+  }
+  .admin-section h3 {
+    color: #6366f1;
+    margin-top: 0;
+    margin-bottom: 1em;
+  }
+  textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 1em;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 100px;
+    font-family: inherit;
+  }
+  textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+  }
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 0.8em;
+    cursor: pointer;
+  }
+  .checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
 
-    #privacyConsentModal p, #privacyConsentModal li {
-      color: #555;
-      font-size: 14px;
-    }
-
-    #privacyConsentModal ul {
-      margin-left: 20px;
-      margin-bottom: 10px;
-    }
-
-    .privacy-content {
-      background: #f9f9f9;
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-      line-height: 1.6;
-    }
-
-    .consent-checkbox-wrapper {
-      text-align: center;
-      margin: 20px 0;
-    }
-
-    .consent-checkbox-wrapper label {
-      font-size: 16px;
-      font-weight: bold;
-      display: inline-flex;
-      align-items: center;
-      cursor: pointer;
-    }
-
-    .consent-checkbox-wrapper input[type="checkbox"] {
-      width: 20px;
-      height: 20px;
-      margin-right: 8px;
-      cursor: pointer;
-    }
-
-    .privacy-buttons {
-      text-align: center;
-    }
-
-    .privacy-buttons button {
-      padding: 12px 40px;
-      font-size: 16px;
-      margin: 0 5px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    #privacyConsentAgreeBtn {
-      background: #4CAF50;
-      color: white;
-    }
-
-    #privacyConsentAgreeBtn:hover {
-      background: #45a049;
-    }
-
-    #privacyConsentCancelBtn {
-      background: #f44336;
-      color: white;
-    }
-
-    #privacyConsentCancelBtn:hover {
-      background: #da190b;
-    }
-    
-    /* 반응형 디자인 */
-    @media (max-width: 768px) {
-      .container {
-        padding: 20px;
-      }
-      
-      h1 {
-        font-size: 24px;
-      }
-      
-      .seat-grid {
-        grid-template-columns: repeat(5, 1fr);
-        gap: 5px;
-      }
-      
-      .floor-buttons {
-        grid-template-columns: 1fr;
-      }
-      
-      table {
-        font-size: 14px;
-      }
-      
-      th, td {
-        padding: 8px;
-      }
-    }
-  </style>
+  /* 작은 버튼 */
+  .btn-small {
+    padding: 6px 12px;
+    font-size: 0.85em;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .btn-small.btn-info {
+    background: #3b82f6;
+    color: white;
+  }
+  .btn-small.btn-info:hover {
+    background: #2563eb;
+  }
+  .btn-small.btn-danger {
+    background: #ef4444;
+    color: white;
+  }
+  .btn-small.btn-danger:hover {
+    background: #dc2626;
+  }
+</style>
 </head>
 <body>
-  <!-- 로그인 화면 -->
-  <div id="loginScreen" class="screen active">
-    <div class="container">
-      <h1>🖥️ 랜선석 예약 로그인</h1>
-      <div class="form-group">
-        <label for="roomNoInput">룸 번호 (000호 형식):</label>
-        <input type="text" id="roomNoInput" placeholder="예: 123" maxlength="3">
-      </div>
-      <div class="form-group">
-        <label for="nameInput">이름 (한글 2~4자):</label>
-        <input type="text" id="nameInput" placeholder="홍길동">
-      </div>
-      <div class="form-group">
-        <label for="dormitorySelect">기숙사 선택:</label>
-        <select id="dormitorySelect">
-          <option value="">선택하세요</option>
-          <option value="꿈동">꿈동</option>
-          <option value="미래동">미래동</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="passwordInput">예약 비밀번호 (4자 이상):</label>
-        <input type="password" id="passwordInput" placeholder="비밀번호">
-      </div>
-      <button class="btn" id="loginNextBtn">다음</button>
-      <button class="btn btn-secondary" id="adminLoginBtn">관리자 로그인</button>
-    </div>
-  </div>
 
-  <!-- 층 선택 화면 -->
-  <div id="floorSelectScreen" class="screen">
-    <div class="container">
-      <h1><span id="userNameDisplay"></span>님, 층을 선택해주세요</h1>
-      <div class="floor-buttons">
-        <button class="floor-btn" data-floor="2층">2층</button>
-        <button class="floor-btn" data-floor="3층">3층</button>
-        <button class="floor-btn" data-floor="4층">4층</button>
-        <button class="floor-btn" data-floor="5층">5층</button>
-      </div>
-      <button class="btn btn-secondary" id="backToLoginBtn">뒤로가기</button>
+<!-- 로그인 페이지 -->
+<div id="loginPage" class="section">
+  <div class="container">
+    <h1>🖥️ 랜선석 예약 로그인</h1>
+    <div class="input-group">
+      <label for="roomNoInput">룸 번호 (000호 형식):</label>
+      <input type="text" id="roomNoInput" placeholder="예: 123" maxlength="3" />
     </div>
+    <div class="input-group">
+      <label for="nameInput">이름 (한글 2~4자):</label>
+      <input type="text" id="nameInput" placeholder="홍길동" />
+    </div>
+    <div class="input-group">
+      <label for="dormitorySelect">기숙사 선택:</label>
+      <select id="dormitorySelect">
+        <option value="">선택하세요</option>
+        <option value="꿈동">꿈동</option>
+        <option value="미래동">미래동</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label for="passwordInput">예약 비밀번호 (4자 이상):</label>
+      <input type="password" id="passwordInput" placeholder="비밀번호" />
+      <div id="passwordStrength" class="password-strength"></div>
+    </div>
+    <button class="btn btn-primary" id="loginSubmitBtn">다음</button>
+    <button class="btn btn-secondary" id="goToAdminLoginBtn">관리자 로그인</button>
   </div>
+</div>
 
-  <!-- 좌석 선택 화면 -->
-  <div id="seatMapScreen" class="screen">
-    <div class="container">
-      <h2>좌석 배치도 - <span id="currentFloorDisplay"></span></h2>
-      <div class="legend">
-        <div class="legend-item">
-          <div class="legend-box available"></div>
-          <span>빈자리</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-box reserved"></div>
-          <span>예약됨</span>
-        </div>
-        <div class="legend-item">
-          <div class="legend-box my-seat"></div>
-          <span>내 자리</span>
-        </div>
+<!-- 층 선택 페이지 -->
+<div id="floorSelectPage" class="section">
+  <div class="container">
+    <h1><span id="userNameDisplay"></span>님, 층을 선택해주세요</h1>
+    <div class="floor-container">
+      <button class="floor-btn" data-floor="2층">2층</button>
+      <button class="floor-btn" data-floor="3층">3층</button>
+      <button class="floor-btn" data-floor="4층">4층</button>
+      <button class="floor-btn" data-floor="5층">5층</button>
+    </div>
+    <button class="btn btn-secondary" id="backToLoginFromFloorBtn">뒤로가기</button>
+    <button class="btn btn-success" id="goToSeatSelectionBtn">좌석 선택으로</button>
+  </div>
+</div>
+
+<!-- 좌석 선택 페이지 -->
+<div id="seatSelectPage" class="section">
+  <div class="container">
+    <h2>좌석 배치도 - <span id="currentFloorDisplay"></span></h2>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-box available"></div>
+        <span>빈자리</span>
       </div>
-      <div class="seat-grid" id="seatGrid"></div>
-      <div style="display: flex; gap: 10px; margin-top: 20px;">
-        <button class="btn btn-secondary" id="backToFloorBtn" style="flex: 1;">뒤로가기</button>
-        <button class="btn btn-danger" id="cancelMyReservationBtn" style="flex: 1;">내 예약 취소</button>
-        <button class="btn btn-success" id="confirmReservationBtn" style="flex: 1;">예약 확정</button>
+      <div class="legend-item">
+        <div class="legend-box reserved"></div>
+        <span>예약됨</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-box my-seat"></div>
+        <span>내 자리</span>
       </div>
     </div>
+    <div class="seats" id="seatGrid"></div>
+    <button class="btn btn-secondary" id="backToFloorFromSeatBtn">뒤로가기</button>
+    <button class="btn btn-danger" id="cancelReservationBtn">내 예약 취소</button>
+    <button class="btn btn-success" id="confirmReservationBtn">예약 확정</button>
   </div>
+</div>
 
-  <!-- 관리자 로그인 화면 -->
-  <div id="adminLoginScreen" class="screen">
-    <div class="container">
-      <h1>🔐 관리자 로그인</h1>
-      <div class="form-group">
-        <label for="adminUsernameInput">관리자 이름:</label>
-        <input type="text" id="adminUsernameInput" placeholder="관리자 이름">
+<!-- 관리자 로그인 페이지 -->
+<div id="adminLoginPage" class="section">
+  <div class="container">
+    <h1>🔐 관리자 로그인</h1>
+    <div class="input-group">
+      <label for="adminUsernameInput">관리자 이름:</label>
+      <input type="text" id="adminUsernameInput" placeholder="관리자 이름" />
+    </div>
+    <div class="input-group">
+      <label for="adminPasswordInput">비밀번호:</label>
+      <input type="password" id="adminPasswordInput" placeholder="관리자 비밀번호" />
+    </div>
+    <button class="btn btn-primary" id="adminLoginSubmitBtn">로그인</button>
+    <button class="btn btn-secondary" id="backToLoginFromAdminBtn">로그인페이지로 돌아가기</button>
+  </div>
+</div>
+
+<!-- 관리자 페이지 -->
+<div id="adminPage" class="section">
+  <div class="container">
+    <h1>⚙️ 관리자 페이지</h1>
+    <button class="btn btn-danger" id="adminLogoutBtn">로그아웃</button>
+
+    <!-- 예약 가능 시간 설정 -->
+    <div class="admin-section">
+      <h3>📅 예약 가능 시간 설정</h3>
+      <div class="input-group">
+        <label for="reservationStartTime">예약 시작 시간:</label>
+        <input type="datetime-local" id="reservationStartTime" />
       </div>
-      <div class="form-group">
-        <label for="adminPasswordInput">비밀번호:</label>
-        <input type="password" id="adminPasswordInput" placeholder="관리자 비밀번호">
+      <div class="input-group">
+        <label for="reservationEndTime">예약 종료 시간:</label>
+        <input type="datetime-local" id="reservationEndTime" />
       </div>
-      <button class="btn" id="adminLoginSubmitBtn">로그인</button>
-      <button class="btn btn-secondary" id="backToLoginFromAdminBtn">로그인페이지로 돌아가기</button>
+      <button class="btn btn-success" id="saveTimesBtn">시간 설정 저장</button>
+    </div>
+
+    <!-- 전체 공지사항 -->
+    <div class="admin-section">
+      <h3>📢 전체 공지사항 설정 (사용자에게도 표시)</h3>
+      <div class="input-group">
+        <label for="announcementText">공지 내용:</label>
+        <textarea id="announcementText" placeholder="공지사항을 입력하세요"></textarea>
+      </div>
+      <label class="checkbox-label">
+        <input type="checkbox" id="announcementActive" />
+        <span>공지 활성화</span>
+      </label>
+      <button class="btn btn-success" id="saveAnnouncementBtn">공지 저장</button>
+    </div>
+
+    <!-- 관리자 전용 공지사항 -->
+    <div class="admin-section">
+      <h3>🔒 관리자 전용 공지사항 설정 (관리자에게만 표시)</h3>
+      <div class="input-group">
+        <label for="adminAnnouncementText">관리자 공지 내용:</label>
+        <textarea id="adminAnnouncementText" placeholder="관리자 전용 공지를 입력하세요"></textarea>
+      </div>
+      <label class="checkbox-label">
+        <input type="checkbox" id="adminAnnouncementActive" />
+        <span>공지 활성화</span>
+      </label>
+      <button class="btn btn-success" id="saveAdminAnnouncementBtn">공지 저장</button>
+    </div>
+
+    <!-- 예약 현황 -->
+    <div class="admin-section">
+      <h3>📋 예약 현황</h3>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>이름</th>
+              <th>룸 번호</th>
+              <th>기숙사</th>
+              <th>층</th>
+              <th>자리 번호</th>
+              <th>예약 시간</th>
+              <th>예약 비밀번호</th>
+              <th>기능</th>
+            </tr>
+          </thead>
+          <tbody id="reservationTableBody"></tbody>
+        </table>
+      </div>
+      <button class="btn btn-danger" id="deleteAllReservationsBtn">모든 예약 취소</button>
     </div>
   </div>
+</div>
 
-  <!-- 관리자 페이지 -->
-  <div id="adminScreen" class="screen">
-    <div class="container">
-      <h1>⚙️ 관리자 페이지</h1>
-      <button class="btn btn-danger" id="adminLogoutBtn" style="margin-bottom: 20px;">로그아웃</button>
-      
-      <!-- 예약 가능 시간 설정 -->
-      <div class="admin-section">
-        <h3>📅 예약 가능 시간 설정</h3>
-        <div class="form-group">
-          <label for="reservationStartTime">예약 시작 시간:</label>
-          <input type="datetime-local" id="reservationStartTime">
-        </div>
-        <div class="form-group">
-          <label for="reservationEndTime">예약 종료 시간:</label>
-          <input type="datetime-local" id="reservationEndTime">
-        </div>
-        <button class="btn btn-success" id="saveReservationTimesBtn">시간 설정 저장</button>
-      </div>
-
-      <!-- 전체 공지사항 설정 -->
-      <div class="admin-section">
-        <h3>📢 전체 공지사항 설정 (사용자에게도 표시)</h3>
-        <div class="form-group">
-          <label for="announcementText">공지 내용:</label>
-          <textarea id="announcementText" placeholder="공지사항을 입력하세요"></textarea>
-        </div>
-        <div class="checkbox-group">
-          <input type="checkbox" id="announcementActive">
-          <label for="announcementActive">공지 활성화</label>
-        </div>
-        <button class="btn btn-success" id="saveAnnouncementBtn" style="margin-top: 10px;">공지 저장</button>
-      </div>
-
-      <!-- 관리자 전용 공지사항 설정 -->
-      <div class="admin-section">
-        <h3>🔒 관리자 전용 공지사항 설정 (관리자에게만 표시)</h3>
-        <div class="form-group">
-          <label for="adminAnnouncementText">관리자 공지 내용:</label>
-          <textarea id="adminAnnouncementText" placeholder="관리자 전용 공지를 입력하세요"></textarea>
-        </div>
-        <div class="checkbox-group">
-          <input type="checkbox" id="adminAnnouncementActive">
-          <label for="adminAnnouncementActive">공지 활성화</label>
-        </div>
-        <button class="btn btn-success" id="saveAdminAnnouncementBtn" style="margin-top: 10px;">공지 저장</button>
-      </div>
-
-      <!-- 예약 현황 -->
-      <div class="admin-section">
-        <h3>📋 예약 현황</h3>
-        <div style="overflow-x: auto;">
-          <table id="reservationTable">
-            <thead>
-              <tr>
-                <th>이름</th>
-                <th>룸 번호</th>
-                <th>기숙사</th>
-                <th>층</th>
-                <th>자리 번호</th>
-                <th>예약 시간</th>
-                <th>예약 비밀번호</th>
-                <th>기능</th>
-              </tr>
-            </thead>
-            <tbody id="reservationTableBody">
-            </tbody>
-          </table>
-        </div>
-        <button class="btn btn-danger" id="deleteAllReservationsBtn" style="margin-top: 20px;">모든 예약 취소</button>
-      </div>
-    </div>
+<!-- 공지사항 모달 -->
+<div id="announcementModal" class="modal">
+  <div class="modal-content">
+    <h2>📢 공지사항</h2>
+    <p id="announcementModalText"></p>
+    <button class="btn btn-primary" id="closeAnnouncementModalBtn">닫기</button>
   </div>
+</div>
 
-  <!-- 공지사항 모달 -->
-  <div id="announcementModal" class="modal">
-    <div class="modal-content">
-      <h2>📢 공지사항</h2>
-      <p id="announcementModalText"></p>
-      <button class="btn" id="closeAnnouncementModalBtn">닫기</button>
-    </div>
+<!-- 관리자 전용 공지사항 모달 -->
+<div id="adminAnnouncementModal" class="modal">
+  <div class="modal-content">
+    <h2>🔒 관리자 전용 공지사항</h2>
+    <p id="adminAnnouncementModalText"></p>
+    <button class="btn btn-primary" id="closeAdminAnnouncementModalBtn">닫기</button>
   </div>
+</div>
 
-  <!-- 관리자 전용 공지사항 모달 -->
-  <div id="adminAnnouncementModal" class="modal">
-    <div class="modal-content">
-      <h2>🔒 관리자 전용 공지사항</h2>
-      <p id="adminAnnouncementModalText"></p>
-      <button class="btn" id="closeAdminAnnouncementModalBtn">닫기</button>
-    </div>
-  </div>
-
-  <!-- 개인정보 수집·이용 동의 모달 -->
+<!-- 개인정보 수집·이용 동의 모달 -->
   <div id="privacyConsentModal" style="display:none;">
   <div class="modal-content">
     <h2>개인정보 수집·이용 동의</h2>
@@ -780,25 +709,28 @@
       <h3>11. 개인정보처리방침 변경에 관한 사항</h3>
       <p>본 처리방침은 2025년 11월 18일부터 적용됩니다. 법령 및 방침에 따른 변경 내용 추가, 삭제 및 정정이 있을 경우에는 변경사항 시행 7일 전부터 웹사이트 공지사항을 통하여 고지하며, 불가피하게 정보주체의 권리 또는 의무에 중대한 영향을 미치는 변경의 경우에는 30일 전부터 고지합니다.</p>
     </div>
-      
-      <div class="consent-checkbox-wrapper">
-        <label>
-          <input type="checkbox" id="privacyConsentCheck">
-          위 개인정보 수집·이용에 동의합니다.
-        </label>
-      </div>
-      
-      <div class="privacy-buttons">
-        <button id="privacyConsentAgreeBtn">동의</button>
-        <button id="privacyConsentCancelBtn">취소</button>
-      </div>
+    
+    <div class="consent-checkbox-wrapper">
+      <label>
+        <input type="checkbox" id="privacyConsentCheck">
+        위 개인정보 수집·이용에 동의합니다.
+      </label>
+    </div>
+    
+    <div class="privacy-buttons">
+      <button id="privacyConsentAgreeBtn">동의</button>
+      <button id="privacyConsentCancelBtn">취소</button>
     </div>
   </div>
+</div>
 
-  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-  <script>
-    // API 기본 URL 설정
-    const API_BASE = 'http://localhost:3000'; // 배포 시 실제 서버 URL로 변경
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+  (function(){
+    'use strict';
+
+    // API 기본 URL (배포 시 실제 서버 URL로 변경)
+    const API_BASE = 'http://localhost:3000';
 
     // Socket.IO 연결
     const socket = io(API_BASE);
@@ -810,35 +742,82 @@
     let allReservations = [];
     let adminCredentials = null;
 
+    // DOM 요소
+    const loginPage = document.getElementById('loginPage');
+    const floorSelectPage = document.getElementById('floorSelectPage');
+    const seatSelectPage = document.getElementById('seatSelectPage');
+    const adminLoginPage = document.getElementById('adminLoginPage');
+    const adminPage = document.getElementById('adminPage');
+
+    const roomNoInput = document.getElementById('roomNoInput');
+    const nameInput = document.getElementById('nameInput');
+    const dormitorySelect = document.getElementById('dormitorySelect');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+    const goToAdminLoginBtn = document.getElementById('goToAdminLoginBtn');
+
+    const userNameDisplay = document.getElementById('userNameDisplay');
+    const floorButtons = document.querySelectorAll('.floor-btn');
+    const backToLoginFromFloorBtn = document.getElementById('backToLoginFromFloorBtn');
+    const goToSeatSelectionBtn = document.getElementById('goToSeatSelectionBtn');
+
+    const currentFloorDisplay = document.getElementById('currentFloorDisplay');
+    const seatGrid = document.getElementById('seatGrid');
+    const backToFloorFromSeatBtn = document.getElementById('backToFloorFromSeatBtn');
+    const cancelReservationBtn = document.getElementById('cancelReservationBtn');
+    const confirmReservationBtn = document.getElementById('confirmReservationBtn');
+
+    const adminUsernameInput = document.getElementById('adminUsernameInput');
+    const adminPasswordInput = document.getElementById('adminPasswordInput');
+    const adminLoginSubmitBtn = document.getElementById('adminLoginSubmitBtn');
+    const backToLoginFromAdminBtn = document.getElementById('backToLoginFromAdminBtn');
+
+    const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+    const reservationStartTime = document.getElementById('reservationStartTime');
+    const reservationEndTime = document.getElementById('reservationEndTime');
+    const saveTimesBtn = document.getElementById('saveTimesBtn');
+    const announcementText = document.getElementById('announcementText');
+    const announcementActive = document.getElementById('announcementActive');
+    const saveAnnouncementBtn = document.getElementById('saveAnnouncementBtn');
+    const adminAnnouncementText = document.getElementById('adminAnnouncementText');
+    const adminAnnouncementActive = document.getElementById('adminAnnouncementActive');
+    const saveAdminAnnouncementBtn = document.getElementById('saveAdminAnnouncementBtn');
+    const reservationTableBody = document.getElementById('reservationTableBody');
+    const deleteAllReservationsBtn = document.getElementById('deleteAllReservationsBtn');
+
+    const announcementModal = document.getElementById('announcementModal');
+    const announcementModalText = document.getElementById('announcementModalText');
+    const closeAnnouncementModalBtn = document.getElementById('closeAnnouncementModalBtn');
+
+    const adminAnnouncementModal = document.getElementById('adminAnnouncementModal');
+    const adminAnnouncementModalText = document.getElementById('adminAnnouncementModalText');
+    const closeAdminAnnouncementModalBtn = document.getElementById('closeAdminAnnouncementModalBtn');
+
+    // 개인정보 동의 모달 요소
+    const privacyConsentModal = document.getElementById('privacyConsentModal');
+    const privacyConsentCheck = document.getElementById('privacyConsentCheck');
+    const privacyConsentAgreeBtn = document.getElementById('privacyConsentAgreeBtn');
+    const privacyConsentCancelBtn = document.getElementById('privacyConsentCancelBtn');
+
     // 화면 전환 함수
-    function showScreen(screenId) {
-      document.querySelectorAll('.screen').forEach(screen => {
-        screen.classList.remove('active');
+    function showSection(section) {
+      [loginPage, floorSelectPage, seatSelectPage, adminLoginPage, adminPage].forEach(s => {
+        if (s) s.classList.remove('active');
       });
-      document.getElementById(screenId).classList.add('active');
+      if (section) section.classList.add('active');
     }
 
-    // ===== 개인정보 동의 모달 표시 함수 (신규 추가) =====
+    // 개인정보 동의 모달 표시 함수
     function showPrivacyConsentModal(roomNo, name, dormitory, password) {
-      const modal = document.getElementById('privacyConsentModal');
-      const checkbox = document.getElementById('privacyConsentCheck');
-      const agreeBtn = document.getElementById('privacyConsentAgreeBtn');
-      const cancelBtn = document.getElementById('privacyConsentCancelBtn');
+      privacyConsentCheck.checked = false;
+      privacyConsentModal.classList.add('active');
       
-      // 초기화
-      checkbox.checked = false;
-      
-      // 모달 표시
-      modal.style.display = 'flex';
-      
-      // 동의 버튼 클릭
-      agreeBtn.onclick = async function() {
-        if(!checkbox.checked) {
+      privacyConsentAgreeBtn.onclick = async function() {
+        if(!privacyConsentCheck.checked) {
           alert('개인정보 수집·이용에 동의해주세요.');
           return;
         }
         
-        // 동의 정보 서버에 저장
         try {
           const response = await fetch(`${API_BASE}/api/privacy-consent`, {
             method: 'POST',
@@ -849,8 +828,7 @@
           const data = await response.json();
           
           if(data.success) {
-            modal.style.display = 'none';
-            // 층 선택 화면으로 이동
+            privacyConsentModal.classList.remove('active');
             proceedToFloorSelection(roomNo, name, dormitory, password);
           } else {
             alert('동의 정보 저장 중 오류가 발생했습니다.');
@@ -861,160 +839,170 @@
         }
       };
       
-      // 취소 버튼 클릭
-      cancelBtn.onclick = function() {
-        modal.style.display = 'none';
+      privacyConsentCancelBtn.onclick = function() {
+        privacyConsentModal.classList.remove('active');
         alert('개인정보 수집·이용에 동의하지 않으면 서비스를 이용할 수 없습니다.');
       };
     }
 
-    // ===== 층 선택 화면으로 이동하는 함수 (신규 추가) =====
+    // 층 선택 화면으로 이동
     function proceedToFloorSelection(roomNo, name, dormitory, password) {
       currentUser = {roomNo, name, dormitory, password};
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('floorSelectScreen').style.display = 'block';
-      document.getElementById('userNameDisplay').textContent = name;
-      showScreen('floorSelectScreen');
+      userNameDisplay.textContent = name;
+      showSection(floorSelectPage);
     }
 
-    // 로그인 다음 버튼 (개인정보 동의 확인 로직 추가)
-    document.getElementById('loginNextBtn').addEventListener('click', async function(){
-      const roomNo = document.getElementById('roomNoInput').value.trim();
-      const name = document.getElementById('nameInput').value.trim();
-      const dormitorySelect = document.getElementById('dormitorySelect');
-      const dormitory = dormitorySelect.value;
-      const password = document.getElementById('passwordInput').value.trim();
-      
-      // 유효성 검사
-      if(!roomNo){
-        alert('룸 번호를 입력해주세요.');
-        return;
-      }
-      const roomNoPattern = /^\d{3}$/;
-      if(!roomNoPattern.test(roomNo)){
-        alert('룸 번호는 000호 형식(3자리 숫자)으로 입력해주세요.');
-        return;
-      }
-      if(!name){
-        alert('이름을 입력해주세요.');
-        return;
-      }
-      const namePattern = /^[가-힣]{2,4}$/;
-      if(!namePattern.test(name)){
-        alert('이름은 한글 2~4자로 입력해주세요.');
-        return;
-      }
-      if(!dormitory){
-        alert('기숙사를 선택해주세요.');
-        return;
-      }
-      if(!password){
-        alert('예약 비밀번호를 입력해주세요.');
-        return;
-      }
-      if(password.length < 4){
-        alert('예약 비밀번호는 4자 이상이어야 합니다.');
-        return;
-      }
-      
-      // ===== 개인정보 동의 확인 (신규 추가) =====
-      try {
-        const checkResponse = await fetch(`${API_BASE}/api/privacy-consent/check`, {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({roomNo, name, dormitory})
-        });
+    // 로그인 다음 버튼
+    if (loginSubmitBtn) {
+      loginSubmitBtn.addEventListener('click', async function(){
+        const roomNo = roomNoInput.value.trim();
+        const name = nameInput.value.trim();
+        const dormitory = dormitorySelect.value;
+        const password = passwordInput.value.trim();
         
-        const checkData = await checkResponse.json();
-        
-        if(!checkData.success) {
-          alert('개인정보 동의 확인 중 오류가 발생했습니다.');
+        if(!roomNo){
+          alert('룸 번호를 입력해주세요.');
+          return;
+        }
+        const roomNoPattern = /^\d{3}$/;
+        if(!roomNoPattern.test(roomNo)){
+          alert('룸 번호는 000호 형식(3자리 숫자)으로 입력해주세요.');
+          return;
+        }
+        if(!name){
+          alert('이름을 입력해주세요.');
+          return;
+        }
+        const namePattern = /^[가-힣]{2,4}$/;
+        if(!namePattern.test(name)){
+          alert('이름은 한글 2~4자로 입력해주세요.');
+          return;
+        }
+        if(!dormitory){
+          alert('기숙사를 선택해주세요.');
+          return;
+        }
+        if(!password){
+          alert('예약 비밀번호를 입력해주세요.');
+          return;
+        }
+        if(password.length < 4){
+          alert('예약 비밀번호는 4자 이상이어야 합니다.');
           return;
         }
         
-        if(checkData.hasConsent) {
-          // 이미 동의한 사용자 - 바로 층 선택 화면으로 이동
-          proceedToFloorSelection(roomNo, name, dormitory, password);
-        } else {
-          // 동의하지 않은 사용자 - 동의 모달 표시
-          showPrivacyConsentModal(roomNo, name, dormitory, password);
+        // 개인정보 동의 확인
+        try {
+          const checkResponse = await fetch(`${API_BASE}/api/privacy-consent/check`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({roomNo, name, dormitory})
+          });
+          
+          const checkData = await checkResponse.json();
+          
+          if(!checkData.success) {
+            alert('개인정보 동의 확인 중 오류가 발생했습니다.');
+            return;
+          }
+          
+          if(checkData.hasConsent) {
+            proceedToFloorSelection(roomNo, name, dormitory, password);
+          } else {
+            showPrivacyConsentModal(roomNo, name, dormitory, password);
+          }
+        } catch(err) {
+          console.error('개인정보 동의 확인 실패:', err);
+          alert('서버와의 통신 중 오류가 발생했습니다.');
         }
-      } catch(err) {
-        console.error('개인정보 동의 확인 실패:', err);
-        alert('서버와의 통신 중 오류가 발생했습니다.');
-      }
-      // ===== 개인정보 동의 확인 끝 =====
-    });
+      });
+    }
 
-    // 뒤로가기 버튼
-    document.getElementById('backToLoginBtn').addEventListener('click', function(){
-      showScreen('loginScreen');
-      currentUser = null;
-    });
+    // 관리자 로그인 버튼
+    if (goToAdminLoginBtn) {
+      goToAdminLoginBtn.addEventListener('click', () => showSection(adminLoginPage));
+    }
 
-    // 층 선택 버튼들
-    document.querySelectorAll('.floor-btn').forEach(btn => {
+    // 뒤로가기 버튼들
+    if (backToLoginFromFloorBtn) {
+      backToLoginFromFloorBtn.addEventListener('click', () => {
+        showSection(loginPage);
+        currentUser = null;
+        selectedFloor = null;
+      });
+    }
+
+    if (backToFloorFromSeatBtn) {
+      backToFloorFromSeatBtn.addEventListener('click', () => {
+        showSection(floorSelectPage);
+        selectedSeat = null;
+      });
+    }
+
+    if (backToLoginFromAdminBtn) {
+      backToLoginFromAdminBtn.addEventListener('click', () => showSection(loginPage));
+    }
+
+    // 층 선택 버튼
+    floorButtons.forEach(btn => {
       btn.addEventListener('click', function(){
         selectedFloor = this.dataset.floor;
-        document.getElementById('currentFloorDisplay').textContent = selectedFloor;
-        renderSeatMap();
-        showScreen('seatMapScreen');
       });
     });
 
-    // 좌석 배치도에서 뒤로가기
-    document.getElementById('backToFloorBtn').addEventListener('click', function(){
-      showScreen('floorSelectScreen');
-      selectedSeat = null;
-    });
+    // 좌석 선택으로 이동
+    if (goToSeatSelectionBtn) {
+      goToSeatSelectionBtn.addEventListener('click', function(){
+        if(!selectedFloor){
+          alert('층을 선택해주세요.');
+          return;
+        }
+        currentFloorDisplay.textContent = selectedFloor;
+        renderSeats();
+        showSection(seatSelectPage);
+      });
+    }
 
-    // 좌석 배치도 렌더링
-    function renderSeatMap() {
-      const seatGrid = document.getElementById('seatGrid');
+    // 좌석 렌더링
+    function renderSeats() {
       seatGrid.innerHTML = '';
-      
-      for(let i = 1; i <= 50; i++) {
-        const seatDiv = document.createElement('div');
-        seatDiv.className = 'seat';
-        seatDiv.textContent = i;
-        seatDiv.dataset.seat = i;
+      for(let i = 1; i <= 50; i++){
+        const seat = document.createElement('div');
+        seat.className = 'seat';
+        seat.textContent = i;
+        seat.dataset.seat = i;
         
-        // 예약 상태 확인
         const reservation = allReservations.find(r => 
           r.dormitory === currentUser.dormitory && 
           r.floor === selectedFloor && 
           r.seat === i
         );
         
-        if(reservation) {
-          if(reservation.roomNo === currentUser.roomNo && reservation.name === currentUser.name) {
-            seatDiv.classList.add('my-seat');
+        if(reservation){
+          if(reservation.roomNo === currentUser.roomNo && reservation.name === currentUser.name){
+            seat.classList.add('my-seat');
             selectedSeat = i;
           } else {
-            seatDiv.classList.add('reserved');
+            seat.classList.add('reserved');
           }
         } else {
-          seatDiv.classList.add('available');
+          seat.classList.add('available');
         }
         
-        // 좌석 클릭 이벤트
-        seatDiv.addEventListener('click', function(){
-          if(this.classList.contains('reserved')) {
+        seat.addEventListener('click', function(){
+          if(this.classList.contains('reserved')){
             alert('이미 예약된 좌석입니다.');
             return;
           }
           
-          // 이전 선택 취소
           document.querySelectorAll('.seat').forEach(s => {
-            if(!s.classList.contains('reserved') && !s.classList.contains('my-seat')) {
+            if(!s.classList.contains('reserved') && !s.classList.contains('my-seat')){
               s.classList.remove('my-seat');
               s.classList.add('available');
             }
           });
           
-          // 새로운 선택
-          if(this.classList.contains('my-seat')) {
-            // 이미 내 자리면 선택 취소
+          if(this.classList.contains('my-seat')){
             this.classList.remove('my-seat');
             this.classList.add('available');
             selectedSeat = null;
@@ -1025,274 +1013,272 @@
           }
         });
         
-        seatGrid.appendChild(seatDiv);
+        seatGrid.appendChild(seat);
       }
     }
 
-    // 예약 확정 버튼
-    document.getElementById('confirmReservationBtn').addEventListener('click', async function(){
-      if(!selectedSeat) {
-        alert('좌석을 선택해주세요.');
-        return;
-      }
-      
-      try {
-        const response = await fetch(`${API_BASE}/api/reservations`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            roomNo: currentUser.roomNo,
-            name: currentUser.name,
-            dormitory: currentUser.dormitory,
-            floor: selectedFloor,
-            seat: selectedSeat,
-            password: currentUser.password
-          })
-        });
-        
-        const data = await response.json();
-        
-        if(response.ok && data.success) {
-          alert(data.message || '예약이 완료되었습니다!');
-        } else {
-          alert(data.message || '예약에 실패했습니다.');
+    // 예약 확정
+    if (confirmReservationBtn) {
+      confirmReservationBtn.addEventListener('click', async function(){
+        if(!selectedSeat){
+          alert('좌석을 선택해주세요.');
+          return;
         }
-      } catch(err) {
-        console.error('예약 요청 실패:', err);
-        alert('서버와의 통신 중 오류가 발생했습니다.');
-      }
-    });
-
-    // 내 예약 취소 버튼
-    document.getElementById('cancelMyReservationBtn').addEventListener('click', async function(){
-      const myReservation = allReservations.find(r => 
-        r.roomNo === currentUser.roomNo && 
-        r.name === currentUser.name
-      );
-      
-      if(!myReservation) {
-        alert('취소할 예약이 없습니다.');
-        return;
-      }
-      
-      if(!confirm('정말로 예약을 취소하시겠습니까?')) {
-        return;
-      }
-      
-      try {
-        const response = await fetch(`${API_BASE}/api/reservations/${myReservation._id}`, {
-          method: 'DELETE',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            password: currentUser.password
-          })
-        });
         
-        const data = await response.json();
-        
-        if(response.ok && data.success) {
-          alert('예약이 취소되었습니다.');
-          selectedSeat = null;
-        } else {
-          alert(data.message || '예약 취소에 실패했습니다.');
+        try {
+          const response = await fetch(`${API_BASE}/api/reservations`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              roomNo: currentUser.roomNo,
+              name: currentUser.name,
+              dormitory: currentUser.dormitory,
+              floor: selectedFloor,
+              seat: selectedSeat,
+              password: currentUser.password
+            })
+          });
+          
+          const data = await response.json();
+          
+          if(response.ok && data.success){
+            alert(data.message || '예약이 완료되었습니다!');
+          } else {
+            alert(data.message || '예약에 실패했습니다.');
+          }
+        } catch(err){
+          console.error('예약 요청 실패:', err);
+          alert('서버와의 통신 중 오류가 발생했습니다.');
         }
-      } catch(err) {
-        console.error('예약 취소 실패:', err);
-        alert('서버와의 통신 중 오류가 발생했습니다.');
-      }
-    });
+      });
+    }
 
-    // 관리자 로그인 버튼
-    document.getElementById('adminLoginBtn').addEventListener('click', function(){
-      showScreen('adminLoginScreen');
-    });
-
-    document.getElementById('backToLoginFromAdminBtn').addEventListener('click', function(){
-      showScreen('loginScreen');
-    });
-
-    // 관리자 로그인 제출
-    document.getElementById('adminLoginSubmitBtn').addEventListener('click', async function(){
-      const username = document.getElementById('adminUsernameInput').value.trim();
-      const password = document.getElementById('adminPasswordInput').value.trim();
-      
-      if(!username || !password) {
-        alert('관리자 이름과 비밀번호를 모두 입력해주세요.');
-        return;
-      }
-      
-      try {
-        const response = await fetch(`${API_BASE}/api/admin-login`, {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({username, password})
-        });
+    // 예약 취소
+    if (cancelReservationBtn) {
+      cancelReservationBtn.addEventListener('click', async function(){
+        const myReservation = allReservations.find(r => 
+          r.roomNo === currentUser.roomNo && 
+          r.name === currentUser.name
+        );
         
-        const data = await response.json();
-        
-        if(response.ok && data.success) {
-          adminCredentials = {username, password};
-          showScreen('adminScreen');
-          loadAdminData();
-        } else {
-          alert(data.message || '로그인 실패');
+        if(!myReservation){
+          alert('취소할 예약이 없습니다.');
+          return;
         }
-      } catch(err) {
-        console.error('관리자 로그인 실패:', err);
-        alert('서버와의 통신 중 오류가 발생했습니다.');
-      }
-    });
+        
+        if(!confirm('정말로 예약을 취소하시겠습니까?')){
+          return;
+        }
+        
+        try {
+          const response = await fetch(`${API_BASE}/api/reservations/${myReservation._id}`, {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({password: currentUser.password})
+          });
+          
+          const data = await response.json();
+          
+          if(response.ok && data.success){
+            alert('예약이 취소되었습니다.');
+            selectedSeat = null;
+          } else {
+            alert(data.message || '예약 취소에 실패했습니다.');
+          }
+        } catch(err){
+          console.error('예약 취소 실패:', err);
+          alert('서버와의 통신 중 오류가 발생했습니다.');
+        }
+      });
+    }
+
+    // 관리자 로그인
+    if (adminLoginSubmitBtn) {
+      adminLoginSubmitBtn.addEventListener('click', async function(){
+        const username = adminUsernameInput.value.trim();
+        const password = adminPasswordInput.value.trim();
+        
+        if(!username || !password){
+          alert('관리자 이름과 비밀번호를 모두 입력해주세요.');
+          return;
+        }
+        
+        try {
+          const response = await fetch(`${API_BASE}/api/admin-login`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username, password})
+          });
+          
+          const data = await response.json();
+          
+          if(response.ok && data.success){
+            adminCredentials = {username, password};
+            showSection(adminPage);
+            loadAdminData();
+          } else {
+            alert(data.message || '로그인 실패');
+          }
+        } catch(err){
+          console.error('관리자 로그인 실패:', err);
+          alert('서버와의 통신 중 오류가 발생했습니다.');
+        }
+      });
+    }
 
     // 관리자 로그아웃
-    document.getElementById('adminLogoutBtn').addEventListener('click', function(){
-      adminCredentials = null;
-      document.getElementById('adminUsernameInput').value = '';
-      document.getElementById('adminPasswordInput').value = '';
-      showScreen('loginScreen');
-    });
+    if (adminLogoutBtn) {
+      adminLogoutBtn.addEventListener('click', function(){
+        adminCredentials = null;
+        adminUsernameInput.value = '';
+        adminPasswordInput.value = '';
+        showSection(loginPage);
+      });
+    }
 
     // 관리자 데이터 로드
     async function loadAdminData() {
-      // 예약 가능 시간 로드
       try {
         const response = await fetch(`${API_BASE}/api/admin-settings`);
         const settings = await response.json();
         
-        if(settings.reservationStartTime) {
-          document.getElementById('reservationStartTime').value = new Date(settings.reservationStartTime).toISOString().slice(0,16);
+        if(settings.reservationStartTime){
+          reservationStartTime.value = new Date(settings.reservationStartTime).toISOString().slice(0,16);
         }
-        if(settings.reservationEndTime) {
-          document.getElementById('reservationEndTime').value = new Date(settings.reservationEndTime).toISOString().slice(0,16);
+        if(settings.reservationEndTime){
+          reservationEndTime.value = new Date(settings.reservationEndTime).toISOString().slice(0,16);
         }
-      } catch(err) {
+      } catch(err){
         console.error('관리자 설정 로드 실패:', err);
       }
       
-      // 공지사항 로드
       try {
         const response = await fetch(`${API_BASE}/api/announcement`);
         const announcement = await response.json();
         
-        document.getElementById('announcementText').value = announcement.message || '';
-        document.getElementById('announcementActive').checked = announcement.active || false;
-      } catch(err) {
+        announcementText.value = announcement.message || '';
+        announcementActive.checked = announcement.active || false;
+      } catch(err){
         console.error('공지사항 로드 실패:', err);
       }
       
-      // 관리자 전용 공지사항 로드
       try {
         const response = await fetch(`${API_BASE}/api/admin-announcement`);
         const adminAnnouncement = await response.json();
         
-        document.getElementById('adminAnnouncementText').value = adminAnnouncement.message || '';
-        document.getElementById('adminAnnouncementActive').checked = adminAnnouncement.active || false;
-      } catch(err) {
+        adminAnnouncementText.value = adminAnnouncement.message || '';
+        adminAnnouncementActive.checked = adminAnnouncement.active || false;
+      } catch(err){
         console.error('관리자 전용 공지사항 로드 실패:', err);
       }
       
-      // 예약 현황 테이블 업데이트
       updateReservationTable();
     }
 
     // 예약 시간 설정 저장
-    document.getElementById('saveReservationTimesBtn').addEventListener('click', async function(){
-      const startTime = document.getElementById('reservationStartTime').value;
-      const endTime = document.getElementById('reservationEndTime').value;
-      
-      if(!startTime || !endTime) {
-        alert('시작 시간과 종료 시간을 모두 입력해주세요.');
-        return;
-      }
-      
-      try {
-        const response = await fetch(`${API_BASE}/api/admin-settings`, {
-          method: 'PUT',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            reservationStartTime: new Date(startTime).toISOString(),
-            reservationEndTime: new Date(endTime).toISOString(),
-            adminUsername: adminCredentials.username,
-            adminPassword: adminCredentials.password
-          })
-        });
+    if (saveTimesBtn) {
+      saveTimesBtn.addEventListener('click', async function(){
+        const startTime = reservationStartTime.value;
+        const endTime = reservationEndTime.value;
         
-        const data = await response.json();
-        
-        if(response.ok && data.success) {
-          alert('예약 가능 시간이 설정되었습니다.');
-        } else {
-          alert(data.message || '설정 저장 실패');
+        if(!startTime || !endTime){
+          alert('시작 시간과 종료 시간을 모두 입력해주세요.');
+          return;
         }
-      } catch(err) {
-        console.error('예약 시간 설정 실패:', err);
-        alert('서버와의 통신 중 오류가 발생했습니다.');
-      }
-    });
+        
+        try {
+          const response = await fetch(`${API_BASE}/api/admin-settings`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              reservationStartTime: new Date(startTime).toISOString(),
+              reservationEndTime: new Date(endTime).toISOString(),
+              adminUsername: adminCredentials.username,
+              adminPassword: adminCredentials.password
+            })
+          });
+          
+          const data = await response.json();
+          
+          if(response.ok && data.success){
+            alert('예약 가능 시간이 설정되었습니다.');
+          } else {
+            alert(data.message || '설정 저장 실패');
+          }
+        } catch(err){
+          console.error('예약 시간 설정 실패:', err);
+          alert('서버와의 통신 중 오류가 발생했습니다.');
+        }
+      });
+    }
 
     // 공지사항 저장
-    document.getElementById('saveAnnouncementBtn').addEventListener('click', async function(){
-      const message = document.getElementById('announcementText').value;
-      const active = document.getElementById('announcementActive').checked;
-      
-      try {
-        const response = await fetch(`${API_BASE}/api/announcement`, {
-          method: 'PUT',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            message,
-            active,
-            adminUsername: adminCredentials.username,
-            adminPassword: adminCredentials.password
-          })
-        });
+    if (saveAnnouncementBtn) {
+      saveAnnouncementBtn.addEventListener('click', async function(){
+        const message = announcementText.value;
+        const active = announcementActive.checked;
         
-        const data = await response.json();
-        
-        if(response.ok && data.success) {
-          alert('공지사항이 저장되었습니다.');
-        } else {
-          alert(data.message || '공지 저장 실패');
+        try {
+          const response = await fetch(`${API_BASE}/api/announcement`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              message,
+              active,
+              adminUsername: adminCredentials.username,
+              adminPassword: adminCredentials.password
+            })
+          });
+          
+          const data = await response.json();
+          
+          if(response.ok && data.success){
+            alert('공지사항이 저장되었습니다.');
+          } else {
+            alert(data.message || '공지 저장 실패');
+          }
+        } catch(err){
+          console.error('공지사항 저장 실패:', err);
+          alert('서버와의 통신 중 오류가 발생했습니다.');
         }
-      } catch(err) {
-        console.error('공지사항 저장 실패:', err);
-        alert('서버와의 통신 중 오류가 발생했습니다.');
-      }
-    });
+      });
+    }
 
     // 관리자 전용 공지사항 저장
-    document.getElementById('saveAdminAnnouncementBtn').addEventListener('click', async function(){
-      const message = document.getElementById('adminAnnouncementText').value;
-      const active = document.getElementById('adminAnnouncementActive').checked;
-      
-      try {
-        const response = await fetch(`${API_BASE}/api/admin-announcement`, {
-          method: 'PUT',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            message,
-            active,
-            adminUsername: adminCredentials.username,
-            adminPassword: adminCredentials.password
-          })
-        });
+    if (saveAdminAnnouncementBtn) {
+      saveAdminAnnouncementBtn.addEventListener('click', async function(){
+        const message = adminAnnouncementText.value;
+        const active = adminAnnouncementActive.checked;
         
-        const data = await response.json();
-        
-        if(response.ok && data.success) {
-          alert('관리자 전용 공지사항이 저장되었습니다.');
-        } else {
-          alert(data.message || '공지 저장 실패');
+        try {
+          const response = await fetch(`${API_BASE}/api/admin-announcement`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              message,
+              active,
+              adminUsername: adminCredentials.username,
+              adminPassword: adminCredentials.password
+            })
+          });
+          
+          const data = await response.json();
+          
+          if(response.ok && data.success){
+            alert('관리자 전용 공지사항이 저장되었습니다.');
+          } else {
+            alert(data.message || '공지 저장 실패');
+          }
+        } catch(err){
+          console.error('관리자 전용 공지사항 저장 실패:', err);
+          alert('서버와의 통신 중 오류가 발생했습니다.');
         }
-      } catch(err) {
-        console.error('관리자 전용 공지사항 저장 실패:', err);
-        alert('서버와의 통신 중 오류가 발생했습니다.');
-      }
-    });
+      });
+    }
 
     // 예약 현황 테이블 업데이트
     function updateReservationTable() {
-      const tbody = document.getElementById('reservationTableBody');
-      tbody.innerHTML = '';
+      reservationTableBody.innerHTML = '';
       
       allReservations.forEach(reservation => {
         const tr = document.createElement('tr');
@@ -1304,17 +1290,16 @@
           <td>${reservation.seat}</td>
           <td>${new Date(reservation.createdAt).toLocaleString('ko-KR')}</td>
           <td>
-            <button class="view-password-btn" data-id="${reservation._id}">보기</button>
+            <button class="btn-small btn-info view-password-btn" data-id="${reservation._id}">보기</button>
             <span id="password-${reservation._id}">****</span>
           </td>
           <td>
-            <button class="action-btn" data-id="${reservation._id}">취소</button>
+            <button class="btn-small btn-danger cancel-btn" data-id="${reservation._id}">취소</button>
           </td>
         `;
-        tbody.appendChild(tr);
+        reservationTableBody.appendChild(tr);
       });
       
-      // 비밀번호 보기 버튼
       document.querySelectorAll('.view-password-btn').forEach(btn => {
         btn.addEventListener('click', async function(){
           const id = this.dataset.id;
@@ -1331,24 +1316,23 @@
             
             const data = await response.json();
             
-            if(response.ok && data.success) {
+            if(response.ok && data.success){
               document.getElementById(`password-${id}`).textContent = data.plainPassword;
             } else {
               alert(data.message || '비밀번호 조회 실패');
             }
-          } catch(err) {
+          } catch(err){
             console.error('비밀번호 조회 실패:', err);
             alert('서버와의 통신 중 오류가 발생했습니다.');
           }
         });
       });
       
-      // 예약 취소 버튼
-      document.querySelectorAll('.action-btn').forEach(btn => {
+      document.querySelectorAll('.cancel-btn').forEach(btn => {
         btn.addEventListener('click', async function(){
           const id = this.dataset.id;
           
-          if(!confirm('정말로 이 예약을 취소하시겠습니까?')) {
+          if(!confirm('정말로 이 예약을 취소하시겠습니까?')){
             return;
           }
           
@@ -1356,19 +1340,17 @@
             const response = await fetch(`${API_BASE}/api/reservations/${id}`, {
               method: 'DELETE',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({
-                adminUsername: adminCredentials.username
-              })
+              body: JSON.stringify({adminUsername: adminCredentials.username})
             });
             
             const data = await response.json();
             
-            if(response.ok && data.success) {
+            if(response.ok && data.success){
               alert('예약이 취소되었습니다.');
             } else {
               alert(data.message || '예약 취소 실패');
             }
-          } catch(err) {
+          } catch(err){
             console.error('예약 취소 실패:', err);
             alert('서버와의 통신 중 오류가 발생했습니다.');
           }
@@ -1377,102 +1359,157 @@
     }
 
     // 모든 예약 취소
-    document.getElementById('deleteAllReservationsBtn').addEventListener('click', async function(){
-      if(!confirm('정말로 모든 예약을 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
-        return;
-      }
-      
-      try {
-        const response = await fetch(`${API_BASE}/api/reservations/all`, {
-          method: 'DELETE',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            adminUsername: adminCredentials.username,
-            adminPassword: adminCredentials.password
-          })
-        });
-        
-        const data = await response.json();
-        
-        if(response.ok && data.success) {
-          alert('모든 예약이 취소되었습니다.');
-        } else {
-          alert(data.message || '예약 취소 실패');
+    if (deleteAllReservationsBtn) {
+      deleteAllReservationsBtn.addEventListener('click', async function(){
+        if(!confirm('정말로 모든 예약을 취소하시겠습니까? 이 작업은 되돌릴 수 없습니다.')){
+          return;
         }
-      } catch(err) {
-        console.error('전체 예약 취소 실패:', err);
-        alert('서버와의 통신 중 오류가 발생했습니다.');
-      }
-    });
+        
+        try {
+          const response = await fetch(`${API_BASE}/api/reservations/all`, {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              adminUsername: adminCredentials.username,
+              adminPassword: adminCredentials.password
+            })
+          });
+          
+          const data = await response.json();
+          
+          if(response.ok && data.success){
+            alert('모든 예약이 취소되었습니다.');
+          } else {
+            alert(data.message || '예약 취소 실패');
+          }
+        } catch(err){
+          console.error('전체 예약 취소 실패:', err);
+          alert('서버와의 통신 중 오류가 발생했습니다.');
+        }
+      });
+    }
 
     // 공지사항 모달 닫기
-    document.getElementById('closeAnnouncementModalBtn').addEventListener('click', function(){
-      document.getElementById('announcementModal').classList.remove('active');
-    });
+    if (closeAnnouncementModalBtn) {
+      closeAnnouncementModalBtn.addEventListener('click', () => {
+        announcementModal.classList.remove('active');
+      });
+    }
 
-    document.getElementById('closeAdminAnnouncementModalBtn').addEventListener('click', function(){
-      document.getElementById('adminAnnouncementModal').classList.remove('active');
-    });
+    if (closeAdminAnnouncementModalBtn) {
+      closeAdminAnnouncementModalBtn.addEventListener('click', () => {
+        adminAnnouncementModal.classList.remove('active');
+      });
+    }
 
-    // Socket.IO 이벤트 리스너
+    // Socket.IO 이벤트
     socket.on('reservationsInitial', (reservations) => {
       allReservations = reservations;
-      if(selectedFloor && currentUser) {
-        renderSeatMap();
+      if(selectedFloor && currentUser){
+        renderSeats();
       }
     });
 
     socket.on('reservationsUpdated', (reservations) => {
       allReservations = reservations;
-      if(selectedFloor && currentUser) {
-        renderSeatMap();
+      if(selectedFloor && currentUser){
+        renderSeats();
       }
-      if(adminCredentials) {
+      if(adminCredentials){
         updateReservationTable();
       }
     });
 
     socket.on('announcementInitial', (announcement) => {
-      if(announcement && announcement.active && announcement.message) {
-        document.getElementById('announcementModalText').textContent = announcement.message;
-        document.getElementById('announcementModal').classList.add('active');
+      if(announcement && announcement.active && announcement.message){
+        announcementModalText.textContent = announcement.message;
+        announcementModal.classList.add('active');
       }
     });
 
     socket.on('announcementUpdated', (announcement) => {
-      if(announcement && announcement.active && announcement.message) {
-        document.getElementById('announcementModalText').textContent = announcement.message;
-        document.getElementById('announcementModal').classList.add('active');
+      if(announcement && announcement.active && announcement.message){
+        announcementModalText.textContent = announcement.message;
+        announcementModal.classList.add('active');
       } else {
-        document.getElementById('announcementModal').classList.remove('active');
+        announcementModal.classList.remove('active');
       }
     });
 
     socket.on('adminOnlyAnnouncementInitial', (announcement) => {
-      if(adminCredentials && announcement && announcement.active && announcement.message) {
-        document.getElementById('adminAnnouncementModalText').textContent = announcement.message;
-        document.getElementById('adminAnnouncementModal').classList.add('active');
+      if(adminCredentials && announcement && announcement.active && announcement.message){
+        adminAnnouncementModalText.textContent = announcement.message;
+        adminAnnouncementModal.classList.add('active');
       }
     });
 
     socket.on('adminAnnouncementUpdated', (announcement) => {
-      if(adminCredentials && announcement && announcement.active && announcement.message) {
-        document.getElementById('adminAnnouncementModalText').textContent = announcement.message;
-        document.getElementById('adminAnnouncementModal').classList.add('active');
+      if(adminCredentials && announcement && announcement.active && announcement.message){
+        adminAnnouncementModalText.textContent = announcement.message;
+        adminAnnouncementModal.classList.add('active');
       } else {
-        document.getElementById('adminAnnouncementModal').classList.remove('active');
+        adminAnnouncementModal.classList.remove('active');
       }
     });
 
-    // 페이지 로드 시 초기 데이터 가져오기
+    // 페이지 로드 시 초기 데이터
     window.addEventListener('load', async () => {
       try {
         const response = await fetch(`${API_BASE}/api/reservations`);
         allReservations = await response.json();
-      } catch(err) {
+      } catch(err){
         console.error('초기 예약 데이터 로드 실패:', err);
       }
     });
-  </script>
+
+    // 비밀번호 강도 체크 함수
+    function checkPasswordStrength() {
+      const password = passwordInput ? passwordInput.value : '';
+      const strengthDiv = document.getElementById('passwordStrength');
+      
+      if (!password || !strengthDiv) return;
+      
+      let strength = 0;
+      if (password.length >= 4) strength++;
+      if (password.length >= 8) strength++;
+      if (/[a-zA-Z]/.test(password) && /[0-9]/.test(password)) strength++;
+      if (/[^a-zA-Z0-9]/.test(password)) strength++;
+      
+      if (password.length < 4) {
+        strengthDiv.textContent = '';
+      } else if (strength <= 1) {
+        strengthDiv.textContent = '약함';
+        strengthDiv.className = 'password-strength strength-weak';
+      } else if (strength === 2) {
+        strengthDiv.textContent = '보통';
+        strengthDiv.className = 'password-strength strength-medium';
+      } else {
+        strengthDiv.textContent = '강함';
+        strengthDiv.className = 'password-strength strength-strong';
+      }
+      
+      // 모든 필드가 채워졌는지 확인
+      const roomNo = roomNoInput ? roomNoInput.value.trim() : '';
+      const userName = nameInput ? nameInput.value.trim() : '';
+      const dormitory = dormitorySelect ? dormitorySelect.value : '';
+      
+      if (loginSubmitBtn) {
+        loginSubmitBtn.disabled = !(roomNo && userName && dormitory && password.length >= 4);
+      }
+    }
+
+    // 입력 필드 이벤트 리스너
+    document.addEventListener('DOMContentLoaded', function() {
+      if (passwordInput) passwordInput.addEventListener('input', checkPasswordStrength);
+      if (roomNoInput) roomNoInput.addEventListener('input', checkPasswordStrength);
+      if (nameInput) nameInput.addEventListener('input', checkPasswordStrength);
+      if (dormitorySelect) dormitorySelect.addEventListener('change', checkPasswordStrength);
+      
+      // 초기 상태
+      if (loginSubmitBtn) loginSubmitBtn.disabled = true;
+      showSection(loginPage);
+    });
+  })();
+</script>
 </body>
 </html>
