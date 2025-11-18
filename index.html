@@ -316,6 +316,125 @@
   .legend-box.empty { background-color: #CCFFCC; border-color: #88CC88; }
   .legend-box.booked { background-color: #FFCCCC; border-color: #CC8888; }
   .legend-box.mine { background-color: #FFCCFF; border-color: #CC88CC; }
+
+  /* 개인정보 동의 모달 스타일 */
+  #privacyConsentModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none !important;
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #privacyConsentModal.show {
+    display: flex !important;
+  }
+
+  #privacyConsentModal .modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  }
+
+  #privacyConsentModal h2 {
+    margin-top: 0;
+    text-align: center;
+    color: #334155;
+  }
+
+  #privacyConsentModal h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #475569;
+    font-size: 14px;
+  }
+
+  #privacyConsentModal p {
+    margin: 10px 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #64748b;
+  }
+
+  #privacyConsentModal ul {
+    margin: 10px 0 10px 20px;
+    padding-left: 20px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  #privacyConsentModal ul li {
+    margin: 5px 0;
+    color: #64748b;
+  }
+
+  .privacy-content {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #f8fafc;
+  }
+
+  .privacy-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  .privacy-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .privacy-buttons .agree-btn {
+    background: #3b82f6;
+    color: white;
+  }
+
+  .privacy-buttons .agree-btn:hover {
+    background: #2563eb;
+  }
+
+  .privacy-buttons .disagree-btn {
+    background: #e2e8f0;
+    color: #334155;
+  }
+
+  .privacy-buttons .disagree-btn:hover {
+    background: #cbd5e1;
+  }
+
+  .privacy-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0;
+    font-size: 14px;
+  }
+
+  .privacy-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #3b82f6;
+  }
 </style>
 </head>
 <body>
@@ -1977,5 +2096,98 @@
       });
     })();
   </script>
+
+<!-- 개인정보 수집·이용 동의 모달 -->
+<div id="privacyConsentModal" style="display:none;">
+  <div class="modal-content">
+    <h2>개인정보 수집·이용 동의</h2>
+
+    <div class="privacy-content">
+      <p style="margin-bottom: 15px; line-height: 1.6;">
+        본 기숙사 랜선석 예약 시스템(이하 '본 시스템')은 정보주체의 개인정보를 중요하게 생각하며, 「개인정보 보호법」 등 관련 법령을 준수하고 있습니다. 다음 사항에 대하여 동의하시면, 본 시스템을 이용하실 수 있습니다.
+      </p>
+
+      <h3>1. 개인정보처리자의 명칭</h3>
+      <p>본 시스템의 개인정보처리자는 고양국제고 기숙사부입니다. 여기서 고양국제고 기숙사부라 함은 꿈동, 미래동 사감실을 포함하여 학생회 기숙생활부, 기숙사 관련 부서를 포함합니다.</p>
+
+      <h3>2. 개인정보의 수집 및 이용 목적</h3>
+      <p>본 시스템은 다음과 같은 목적으로 학생의 개인정보를 수집 및 이용합니다.</p>
+      <ul>
+        <li>기숙사 랜선석 예약 및 좌석 배정</li>
+        <li>예약자 본인 확인 및 중복 예약 방지</li>
+        <li>예약 현황 관리</li>
+        <li>서비스 이용 관련 공지사항 전달</li>
+      </ul>
+
+      <h3>3. 수집하는 개인정보 항목</h3>
+      <p>본 시스템은 서비스 제공을 위해 아래와 같은 개인정보를 수집합니다.</p>
+      <ul>
+        <li>필수항목: 이름, 룸 번호, 기숙사 건물명, 예약 비밀번호</li>
+        <li>자동 수집 항목: 접속 기기 IP 주소, 예약 일시, 좌석 위치(층 및 좌석 번호)</li>
+      </ul>
+
+      <h3>4. 개인정보의 보유 및 이용 기간</h3>
+      <p>수집된 개인정보는 예약 관리 및 학사 행정 목적을 위해 학기 종료 후 1년까지 보관되며, 해당 기간 경과 시 지체 없이 파기됩니다. 다만, 관련 법령에 따라 보존 의무가 있는 경우 해당 법령이 정한 기간 동안 보관될 수 있습니다.</p>
+
+      <h3>5. 개인정보의 파기 절차 및 방법</h3>
+      <p>개인정보는 보유 기간이 경과한 후에는 다음 절차 및 방법에 따라 파기됩니다.</p>
+      <ul>
+        <li><strong>파기 절차:</strong> 정보주체로부터 동의받은 개인정보 보유기간이 경과하거나 처리 목적이 달성된 후 내부 방침 및 기타 관련 법령에 따라 일정 기간 저장된 후 파기됩니다.</li>
+        <li><strong>파기 방법:</strong> 전자적 파일 형태로 기록된 개인정보는 MongoDB Atlas 데이터베이스에서 영구 삭제하며, 종이 문서에 기록된 개인정보는 분쇄기로 분쇄하거나 소각하여 파기합니다.</li>
+      </ul>
+
+      <h3>6. 개인정보의 제3자 제공</h3>
+      <p>본 시스템은 정보주체의 개인정보를 개인정보의 수집 및 이용 목적에서 명시한 범위 내에서만 이용하며, 정보주체의 사전 동의 없이 해당 범위를 초과하여 이용하거나 원칙적으로 제3자에게 제공하지 않습니다. 단, 다음의 경우에는 개인정보를 제공할 수 있습니다.</p>
+      <ul>
+        <li>정보주체(학생) 본인이 자신의 정보를 열람하는 경우</li>
+        <li>학교 측의 정당한 요청으로 예약 내역 등을 공개해야 하는 경우</li>
+        <li>시스템 관리 권한을 가진 담당 교사 또는 관리자가 학생들의 예약 현황을 조회하는 경우</li>
+        <li>법령의 규정에 의거하거나, 수사 목적으로 법령에 정해진 절차와 방법에 따라 수사기관의 요구가 있는 경우</li>
+      </ul>
+
+      <h3>7. 개인정보 처리 업무의 위탁</h3>
+      <p>본 시스템은 원활한 개인정보 처리 업무를 위하여 다음과 같이 개인정보 처리 업무를 위탁하고 있습니다.</p>
+      <ul>
+        <li><strong>수탁업체:</strong> Render (클라우드 서비스 제공 및 백엔드 서버 운영)</li>
+        <li><strong>수탁업체:</strong> Netlify (프론트엔드 웹사이트 호스팅 및 운영)</li>
+        <li><strong>수탁업체:</strong> MongoDB Atlas (데이터베이스 서비스 제공)</li>
+        <li><strong>위탁 업무 내용:</strong> 시스템 서버 운영 및 데이터베이스 관리, 서비스 인프라 제공 등</li>
+      </ul>
+      <p>위탁 계약 시 「개인정보 보호법」 등 관련 법령에 따라 위탁 업무 수행 목적 외 개인정보 처리 금지, 기술적·관리적 보호조치 등 책임에 관한 사항을 확인하고 수탁자가 개인정보를 안전하게 처리하는지 감독하고 있습니다.</p>
+
+      <h3>8. 정보주체의 권리 행사 방법</h3>
+      <p>정보주체(학생)는 언제든지 개인정보 열람, 정정·삭제, 처리정지 요청 및 개인정보 수집 및 이용 동의 철회를 요구할 수 있습니다. 권리 행사는 담당 부서 또는 관리자에게 서면, 전화 등을 통하여 요청하시면 지체 없이 조치하겠습니다. 단, 권리 행사 시 관리자가 본인 확인 등의 확인 절차를 거치기 위해 추가적인 개인정보를 요구할 수 있습니다.</p>
+
+      <h3>9. 동의 거부권 및 불이익</h3>
+      <p>귀하는 위 개인정보 수집 및 이용에 대한 동의를 거부할 권리가 있습니다. 다만, 필수항목에 대한 동의를 거부하실 경우, 본 시스템의 랜선석 예약 서비스 이용이 제한됩니다.</p>
+
+      <h3>10. 개인정보의 안전성 확보 조치</h3>
+      <p>본 시스템은 「개인정보 보호법」 제29조에 따라 다음과 같이 안전성 확보에 필요한 기술적·관리적 및 물리적 조치를 하고 있습니다.</p>
+      <ul>
+        <li>개인정보 취급 담당자의 최소화 및 교육</li>
+        <li>내부 관리 계획 수립 및 시행</li>
+        <li>개인정보 데이터 암호화 (비밀번호 bcrypt 해싱 처리)</li>
+        <li>개인정보 조회 시 로그인 및 비밀번호 인증 필요</li>
+        <li>개인정보 데이터베이스에 대한 접근 통제 및 접근 권한 제한</li>
+        <li>접속 기록의 보관 및 위·변조 방지 조치</li>
+        <li>보안 프로그램 설치 및 주기적 갱신</li>
+        <li>생성형 인공지능 등의 AI를 활용한 접근 제한</li>
+      </ul>
+
+      <h3>11. 개인정보처리방침 변경에 관한 사항</h3>
+      <p>본 처리방침은 2025년 11월 18일부터 적용됩니다. 법령 및 방침에 따른 변경 내용 추가, 삭제 및 정정이 있을 경우에는 변경사항 시행 7일 전부터 웹사이트 공지사항을 통하여 고지하며, 불가피하게 정보주체의 권리 또는 의무에 중대한 영향을 미치는 변경의 경우에는 30일 전부터 고지합니다.</p>
+    </div>
+
+    <div class="privacy-checkbox">
+      <input type="checkbox" id="privacyAgreeCheckbox">
+      <label for="privacyAgreeCheckbox">위 개인정보 수집·이용에 동의합니다.</label>
+    </div>
+
+    <div class="privacy-buttons">
+      <button class="agree-btn" id="privacyAgreeBtn">동의</button>
+      <button class="disagree-btn" id="privacyDisagreeBtn">거부</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
