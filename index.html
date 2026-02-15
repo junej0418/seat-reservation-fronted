@@ -326,7 +326,7 @@
       <input type="text" id="roomNo" name="roomNo" placeholder="예: 101호" required />
       <div id="roomError" class="error"></div>
 
-      <label for="userName">이름 (한글 2~4자):</label>
+      <label for="userName">이름 (한글 2~5자):</label>
       <input type="text" id="userName" name="userName" placeholder="예: 홍길동" required />
       <div id="nameError" class="error"></div>
 
@@ -502,7 +502,7 @@
       let selectedSeat = null;
 
       const roomNoPattern = /^\d{3}호$/;
-      const koreanNamePattern = /^[가-힣]{2,4}$/;
+      const koreanNamePattern = /^[가-힣]{2,5}$/;
 
       const seatLayouts = {
         "꿈동": {
